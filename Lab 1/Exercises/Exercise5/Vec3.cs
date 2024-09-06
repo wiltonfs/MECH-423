@@ -18,9 +18,16 @@ namespace Exercise4
             Y = y;
             Z = z;
         }
+        public Vec3()
+        {
+            X = 0; Y = 0; Z = 0;
+        }
 
         public float Length() { return (float)Math.Sqrt(X * X + Y * Y + Z * Z); }
 
-        override public string ToString() { return "{" + X.ToString() + ", " + Y.ToString() + ", " + Z.ToString() + "}";
+        override public string ToString()
+        {
+            return "{" + X.ToString() + ", " + Y.ToString() + ", " + Z.ToString() + "}";
+        }
     }
 }

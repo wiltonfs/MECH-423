@@ -48,6 +48,7 @@
             this.label5 = new System.Windows.Forms.Label();
             this.aZDisplay = new System.Windows.Forms.TextBox();
             this.label6 = new System.Windows.Forms.Label();
+            this.calibrationButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // serialComboBox
@@ -209,11 +210,22 @@
             this.label6.Text = "aZ:";
             this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
+            // calibrationButton
+            // 
+            this.calibrationButton.Location = new System.Drawing.Point(647, 162);
+            this.calibrationButton.Name = "calibrationButton";
+            this.calibrationButton.Size = new System.Drawing.Size(75, 23);
+            this.calibrationButton.TabIndex = 17;
+            this.calibrationButton.Text = "Calibrate";
+            this.calibrationButton.UseVisualStyleBackColor = true;
+            this.calibrationButton.Click += new System.EventHandler(this.calibrationButton_Click);
+            // 
             // SerialDemo
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.calibrationButton);
             this.Controls.Add(this.aZDisplay);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.aYDisplay);
@@ -260,6 +272,7 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.TextBox aZDisplay;
         private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Button calibrationButton;
     }
 }
 

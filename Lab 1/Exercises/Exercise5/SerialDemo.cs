@@ -23,7 +23,8 @@ namespace Exercise4
         ExpectedNextRead expectedNextRead = ExpectedNextRead.LEAD;
         
         Queue<Vec3> accelQueue = new Queue<Vec3>();
-        Vec3 bias = new Vec3(0f, 0f, 0f);
+        Vec3 mostRecentAccel = new Vec3();
+        Vec3 bias = new Vec3();
         Vec3 scale = new Vec3(1f, 1f, 1f);
 
         public SerialDemo()
@@ -139,6 +140,7 @@ namespace Exercise4
                             break;
                         case ExpectedNextRead.Z:
                             accelQueue.Last<Vec3>().Z = correctedZ;
+                            mostRecentAccel = accelQueue.Last();
                             expectedNextRead = ExpectedNextRead.LEAD;
                             break;
                         default:
@@ -150,22 +152,50 @@ namespace Exercise4
             }
         }
 
-        private void SetUpCorrectionFactors()
+        private void CalibrateCorrectionFactors()
         {
-            //TODO: Implement this
+            int calibrationSize = 10;
+
+            if (accelQueue.Count > calibrationSize)
+            {
+                // Collect last n values
+                float avgX, avgY, avgZ;
+                float totalX, totalY, totalZ;
+
+                //TODO: Finish implementing this
+
+
+
+
+
+                Vec3 expectedValues = new Vec3(0f, -9.8f, 0f);
+
+            }
+            else
+            {
+                MessageBox.Show("Not enough measurements to calibrate.", "Insuficient Data", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void DisplayInstantAccel()
         {
-            aXDisplay.Text = accelQueue.Last().X.ToString();
-            aYDisplay.Text = accelQueue.Last().Y.ToString();
-            aZDisplay.Text = accelQueue.Last().Z.ToString();
+            if (accelQueue.Count > 0)
+            {
+                aXDisplay.Text = mostRecentAccel.X.ToString();
+                aYDisplay.Text = mostRecentAccel.Y.ToString();
+                aZDisplay.Text = mostRecentAccel.Z.ToString();
+            }
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
             ProcessSerialData();
             DisplayInstantAccel();
+        }
+
+        private void calibrationButton_Click(object sender, EventArgs e)
+        {
+            CalibrateCorrectionFactors();
         }
     }
 }
