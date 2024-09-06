@@ -12,10 +12,19 @@ using System.Windows.Forms;
 
 namespace Exercise4
 {
+    enum ExpectedNextRead
+    {
+        LEAD, X, Y, Z
+    }
+
     public partial class SerialDemo : Form
     {
-        string serialDataString = "";
         ConcurrentQueue<Int32> dataQueue = new ConcurrentQueue<Int32>();
+        ExpectedNextRead expectedNextRead = ExpectedNextRead.LEAD;
+        
+        Queue<Vec3> accelQueue = new Queue<Vec3>();
+        Vec3 bias = new Vec3(0f, 0f, 0f);
+        Vec3 scale = new Vec3(1f, 1f, 1f);
 
         public SerialDemo()
         {
@@ -67,7 +76,6 @@ namespace Exercise4
             while (bytesToRead != 0)
             {
                 newByte = serialPort1.ReadByte();
-                serialDataString = serialDataString + newByte.ToString() + ", ";
                 dataQueue.Enqueue(newByte);
 
                 bytesToRead = serialPort1.BytesToRead;
@@ -75,39 +83,89 @@ namespace Exercise4
 
         }
 
-        private void DisplaySerialData()
+        private void ProcessSerialData()
         {
             if (serialPort1.IsOpen)
                 bytesInput.Text = serialPort1.BytesToRead.ToString();
             else
+            {
                 bytesInput.Text = "port not open";
+            }
 
-            // Display sizes of data containers
-            lengthInput.Text = serialDataString.Length.ToString();
+            // Display sizes of the queue
             queueSizeDisplay.Text = dataQueue.Count.ToString();
 
-            // Display contents of string container (DEPRECATED)
-            //serialDisplay.AppendText(serialDataString);
-            serialDataString = "";
+            // Read and process queue
+            ReadQueue();
 
-            // Display contents of queue container
+            // Display contents of queue
+            foreach (var item in dataQueue)
+            {
+                serialDisplay.AppendText(item.ToString() + "    ");
+            }
+            
+        }
+
+        // --- Acceleration and Queue Related Functions ---
+
+        private void ReadQueue()
+        {
             int nextVal;
             bool succ = dataQueue.TryDequeue(out nextVal);
             while (succ)
             {
-                serialDisplay.AppendText(nextVal.ToString() + ", ");
+                if (nextVal == 255)
+                {
+                    // Indicates new data frame
+                    expectedNextRead = ExpectedNextRead.X;
+                } 
+                else
+                {
+                    float correctedX = (nextVal + bias.X) * scale.X;
+                    float correctedY = (nextVal + bias.Y) * scale.Y;
+                    float correctedZ = (nextVal + bias.Z) * scale.Z;
+                    switch (expectedNextRead)
+                    {
+                        case ExpectedNextRead.LEAD:
+                            break;
+                        case ExpectedNextRead.X:
+                            accelQueue.Enqueue(new Vec3(correctedX, 0.0f, 0.0f));
+                            expectedNextRead++;
+                            break;
+                        case ExpectedNextRead.Y:
+                            
+                            accelQueue.Last<Vec3>().Y = correctedY;
+                            expectedNextRead++;
+                            break;
+                        case ExpectedNextRead.Z:
+                            accelQueue.Last<Vec3>().Z = correctedZ;
+                            expectedNextRead = ExpectedNextRead.LEAD;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
                 succ = dataQueue.TryDequeue(out nextVal);
             }
         }
 
+        private void SetUpCorrectionFactors()
+        {
+            //TODO: Implement this
+        }
+
         private void DisplayInstantAccel()
         {
-
+            aXDisplay.Text = accelQueue.Last().X.ToString();
+            aYDisplay.Text = accelQueue.Last().Y.ToString();
+            aZDisplay.Text = accelQueue.Last().Z.ToString();
         }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            DisplaySerialData();
+            ProcessSerialData();
+            DisplayInstantAccel();
         }
     }
 }
