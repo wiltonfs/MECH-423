@@ -61,8 +61,8 @@ namespace Exercise2
                 MessageBox.Show("Your input for N is larger than the ammount of items in the queue. Please try again.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            
 
+            int count = 0;
             // If there are elements to remove
             if (n > 0)
             {
@@ -70,11 +70,15 @@ namespace Exercise2
                 for (int i = 0; i < n; i++)
                 {
                     int removedValue;
-                    dataQueue.TryDequeue(out removedValue);
-                    total += removedValue;
+                    bool succ = dataQueue.TryDequeue(out removedValue);
+                    if (succ)
+                    {
+                        total += removedValue;
+                        count++;
+                    }
                 }
 
-                double avg = Math.Round((double)total / n, 1);
+                double avg = Math.Round((double)total / count, 1);
                 averageDisplay.Text = "Average: " + avg.ToString();
             }
 
