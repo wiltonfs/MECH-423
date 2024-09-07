@@ -14,9 +14,11 @@ namespace Exercise4
 
         public Vec3(float x, float y, float z)
         {
-            X = x;
-            Y = y;
-            Z = z;
+            X = x; Y = y; Z = z;
+        }
+        public Vec3(float val)
+        {
+            X = val; Y = val; Z = val;
         }
         public Vec3()
         {
@@ -24,6 +26,42 @@ namespace Exercise4
         }
 
         public float Length() { return (float)Math.Sqrt(X * X + Y * Y + Z * Z); }
+
+        public float AbsX() { return (float)Math.Abs(X);}
+        public float AbsY() { return (float)Math.Abs(Y); }
+        public float AbsZ() { return (float)Math.Abs(Z); }
+
+        public string UpAxis() 
+        {
+            float threshold = 5f;
+
+            if (Length() < threshold) 
+            {
+                return "Freefall";
+            }
+
+            if (AbsX() > threshold && AbsX() > Math.Max(AbsY(), AbsZ()))
+                return "X";
+            else if (AbsY() > threshold && AbsY() > Math.Max(AbsX(), AbsZ()))
+                return "Y";
+            else
+                return "Z";
+        }
+
+        public int UpAxisSign()
+        {
+            switch (UpAxis())
+            {
+                case "X":
+                    return (int)(X / AbsX());
+                case "Y":
+                    return (int)(Y / AbsY());
+                case "Z":
+                    return (int)(Z / AbsZ());
+                default:
+                    return 0;
+            }
+        }
 
         override public string ToString()
         {

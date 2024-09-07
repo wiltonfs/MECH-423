@@ -24,8 +24,8 @@ namespace Exercise4
         
         Queue<Vec3> accelQueue = new Queue<Vec3>();
         Vec3 mostRecentAccel = new Vec3();
-        Vec3 bias = new Vec3();
-        Vec3 scale = new Vec3(1f, 1f, 1f);
+        Vec3 bias = new Vec3(0f);
+        Vec3 scale = new Vec3(1f);
 
         public SerialDemo()
         {
@@ -96,14 +96,16 @@ namespace Exercise4
             // Display sizes of the queue
             queueSizeDisplay.Text = dataQueue.Count.ToString();
 
-            // Read and process queue
-            ReadQueue();
-
             // Display contents of queue
             foreach (var item in dataQueue)
             {
-                serialDisplay.AppendText(item.ToString() + "    ");
+                serialDisplay.AppendText(item.ToString() + ", ");
             }
+
+            // Read and process queue
+            ReadQueue();
+
+            
             
         }
 
@@ -152,29 +154,9 @@ namespace Exercise4
             }
         }
 
-        private void CalibrateCorrectionFactors()
+        private void DisplayOrientation()
         {
-            int calibrationSize = 10;
-
-            if (accelQueue.Count > calibrationSize)
-            {
-                // Collect last n values
-                float avgX, avgY, avgZ;
-                float totalX, totalY, totalZ;
-
-                //TODO: Finish implementing this
-
-
-
-
-
-                Vec3 expectedValues = new Vec3(0f, -9.8f, 0f);
-
-            }
-            else
-            {
-                MessageBox.Show("Not enough measurements to calibrate.", "Insuficient Data", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            orientationLabel.Text = "The board's top face is the " + mostRecentAccel.UpAxisSign() + " " + mostRecentAccel.UpAxis() + " axis";
         }
 
         private void DisplayInstantAccel()
@@ -191,11 +173,21 @@ namespace Exercise4
         {
             ProcessSerialData();
             DisplayInstantAccel();
+            DisplayOrientation();
         }
 
-        private void calibrationButton_Click(object sender, EventArgs e)
+        private void unitsCheckbox_CheckedChanged(object sender, EventArgs e)
         {
-            CalibrateCorrectionFactors();
+            if (unitsCheckbox.Checked)
+            {
+                bias = new Vec3(-125f, -126f, -125f);
+                scale = new Vec3(0.35f, 0.35f, 0.35f);
+            }
+            else
+            {
+                bias = new Vec3(0f);
+                scale = new Vec3(1.0f);
+            }
         }
     }
 }

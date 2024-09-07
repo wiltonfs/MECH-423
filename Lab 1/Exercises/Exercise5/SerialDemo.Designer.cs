@@ -48,7 +48,8 @@
             this.label5 = new System.Windows.Forms.Label();
             this.aZDisplay = new System.Windows.Forms.TextBox();
             this.label6 = new System.Windows.Forms.Label();
-            this.calibrationButton = new System.Windows.Forms.Button();
+            this.orientationLabel = new System.Windows.Forms.Label();
+            this.unitsCheckbox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // serialComboBox
@@ -210,22 +211,33 @@
             this.label6.Text = "aZ:";
             this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // calibrationButton
+            // orientationLabel
             // 
-            this.calibrationButton.Location = new System.Drawing.Point(647, 162);
-            this.calibrationButton.Name = "calibrationButton";
-            this.calibrationButton.Size = new System.Drawing.Size(75, 23);
-            this.calibrationButton.TabIndex = 17;
-            this.calibrationButton.Text = "Calibrate";
-            this.calibrationButton.UseVisualStyleBackColor = true;
-            this.calibrationButton.Click += new System.EventHandler(this.calibrationButton_Click);
+            this.orientationLabel.AutoSize = true;
+            this.orientationLabel.Location = new System.Drawing.Point(13, 425);
+            this.orientationLabel.Name = "orientationLabel";
+            this.orientationLabel.Size = new System.Drawing.Size(129, 13);
+            this.orientationLabel.TabIndex = 18;
+            this.orientationLabel.Text = "The board is upside down";
+            // 
+            // unitsCheckbox
+            // 
+            this.unitsCheckbox.AutoSize = true;
+            this.unitsCheckbox.Location = new System.Drawing.Point(15, 405);
+            this.unitsCheckbox.Name = "unitsCheckbox";
+            this.unitsCheckbox.Size = new System.Drawing.Size(109, 17);
+            this.unitsCheckbox.TabIndex = 19;
+            this.unitsCheckbox.Text = "Display in m/(ss)?";
+            this.unitsCheckbox.UseVisualStyleBackColor = true;
+            this.unitsCheckbox.CheckedChanged += new System.EventHandler(this.unitsCheckbox_CheckedChanged);
             // 
             // SerialDemo
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.calibrationButton);
+            this.Controls.Add(this.unitsCheckbox);
+            this.Controls.Add(this.orientationLabel);
             this.Controls.Add(this.aZDisplay);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.aYDisplay);
@@ -272,7 +284,8 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.TextBox aZDisplay;
         private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Button calibrationButton;
+        private System.Windows.Forms.Label orientationLabel;
+        private System.Windows.Forms.CheckBox unitsCheckbox;
     }
 }
 
