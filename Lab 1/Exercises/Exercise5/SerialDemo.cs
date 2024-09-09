@@ -24,8 +24,8 @@ namespace Exercise4
         
         Queue<Vec3> accelQueue = new Queue<Vec3>();
         Vec3 mostRecentAccel = new Vec3();
-        Vec3 bias = new Vec3(0f);
-        Vec3 scale = new Vec3(1f);
+        Vec3 bias = new Vec3(-125f, -126f, -125f);
+        Vec3 scale = new Vec3(0.35f, 0.35f, 0.35f);
 
         public SerialDemo()
         {
@@ -163,9 +163,22 @@ namespace Exercise4
         {
             if (accelQueue.Count > 0)
             {
-                aXDisplay.Text = mostRecentAccel.X.ToString();
-                aYDisplay.Text = mostRecentAccel.Y.ToString();
-                aZDisplay.Text = mostRecentAccel.Z.ToString();
+
+                if (unitsCheckbox.Checked)
+                {
+                    aXDisplay.Text = mostRecentAccel.X.ToString();
+                    aYDisplay.Text = mostRecentAccel.Y.ToString();
+                    aZDisplay.Text = mostRecentAccel.Z.ToString();
+                } else
+                {
+                    // De-convert bias and offset
+                    float correctedX = (mostRecentAccel.X / scale.X) - bias.X;
+                    float correctedY = (mostRecentAccel.Y / scale.Y) - bias.Y;
+                    float correctedZ = (mostRecentAccel.Z / scale.Z) - bias.Z;
+                    aXDisplay.Text = correctedX.ToString();
+                    aYDisplay.Text = correctedY.ToString();
+                    aZDisplay.Text = correctedZ.ToString();
+                }
             }
         }
 
@@ -174,20 +187,6 @@ namespace Exercise4
             ProcessSerialData();
             DisplayInstantAccel();
             DisplayOrientation();
-        }
-
-        private void unitsCheckbox_CheckedChanged(object sender, EventArgs e)
-        {
-            if (unitsCheckbox.Checked)
-            {
-                bias = new Vec3(-125f, -126f, -125f);
-                scale = new Vec3(0.35f, 0.35f, 0.35f);
-            }
-            else
-            {
-                bias = new Vec3(0f);
-                scale = new Vec3(1.0f);
-            }
         }
     }
 }

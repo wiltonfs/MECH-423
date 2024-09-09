@@ -229,7 +229,6 @@
             this.unitsCheckbox.TabIndex = 19;
             this.unitsCheckbox.Text = "Display in m/(ss)?";
             this.unitsCheckbox.UseVisualStyleBackColor = true;
-            this.unitsCheckbox.CheckedChanged += new System.EventHandler(this.unitsCheckbox_CheckedChanged);
             // 
             // SerialDemo
             // 
