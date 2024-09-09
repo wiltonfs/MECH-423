@@ -80,8 +80,17 @@ namespace Exercise2
         private void enqueueButton_Click(object sender, EventArgs e)
         {
             // Get new int and add to queue
-            Int32 newEntry = Convert.ToInt32(enqueueEntryBox.Text);
-            dataQueue.Enqueue(newEntry);
+            int newInt;
+            bool isInt = int.TryParse(enqueueEntryBox.Text, out newInt);
+            
+            if (isInt)
+            {
+                dataQueue.Enqueue(newInt);
+            } 
+            else
+            {
+                enqueueEntryBox.Text = "";
+            }
 
             RefreshVisuals();
         }
