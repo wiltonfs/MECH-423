@@ -42,7 +42,7 @@
             this.gestureDisplay = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.gestureCheck = new System.Windows.Forms.Timer(this.components);
-            this.label6 = new System.Windows.Forms.Label();
+            this.StateStringDisplay = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -151,21 +151,21 @@
             this.gestureCheck.Enabled = true;
             this.gestureCheck.Tick += new System.EventHandler(this.gestureCheck_Tick);
             // 
-            // label6
+            // StateStringDisplay
             // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(16, 100);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(93, 13);
-            this.label6.TabIndex = 12;
-            this.label6.Text = "StateStringDisplay";
+            this.StateStringDisplay.AutoSize = true;
+            this.StateStringDisplay.Location = new System.Drawing.Point(403, 94);
+            this.StateStringDisplay.Name = "StateStringDisplay";
+            this.StateStringDisplay.Size = new System.Drawing.Size(93, 13);
+            this.StateStringDisplay.TabIndex = 12;
+            this.StateStringDisplay.Text = "StateStringDisplay";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.label6);
+            this.Controls.Add(this.StateStringDisplay);
             this.Controls.Add(this.gestureDisplay);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.historyDisplay);
@@ -200,7 +200,7 @@
         private System.Windows.Forms.TextBox gestureDisplay;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Timer gestureCheck;
-        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Label StateStringDisplay;
     }
 }
 

@@ -14,15 +14,9 @@ namespace Exercise7
     enum PunchState
     {
         IDLE,
-
-        X_POS_acc, X_POS_decc,
-        X_NEG_acc, X_NEG_decc,
-
-        Y_POS_acc, Y_POS_decc,
-        Y_NEG_acc, Y_NEG_decc,
-
-        Z_POS_acc, Z_POS_decc,
-        Z_NEG_acc, Z_NEG_decc
+        X_POS_acc, X_NEG_acc,
+        Y_POS_acc, Y_NEG_acc,
+        Z_POS_acc, Z_NEG_acc,
     }
     public partial class Form1 : Form
     {
@@ -113,18 +107,20 @@ namespace Exercise7
         {
             string stateString = PunchStringFormat(QueueToString());
 
+            StateStringDisplay.Text = stateString;
+
             // if ending with an idle
-            if (stateString.EndsWith("I"))
+            if (stateString.Length > 1 && stateString.EndsWith("P"))
             {
-                if (stateString.Contains("XYZ"))
+                if (stateString.Equals("XYZP"))
                 {
                     // Right-hook
                     gestureDisplay.AppendText("Right Hook \r\n");
-                } else if (stateString.Contains("ZX"))
+                } else if (stateString.Equals("ZXP"))
                 {
                     // High punch
                     gestureDisplay.AppendText("High Punch \r\n");
-                } else if (stateString.Contains("X"))
+                } else if (stateString.Equals("XP"))
                 {
                     // Simple punch
                     gestureDisplay.AppendText("Simple Punch \r\n");
@@ -156,38 +152,20 @@ namespace Exercise7
                     case PunchState.X_POS_acc:
                         sb.Append("X");
                         break;
-                    case PunchState.X_POS_decc:
-                        sb.Append("x");
-                        break;
                     case PunchState.X_NEG_acc:
                         sb.Append("A");
-                        break;
-                    case PunchState.X_NEG_decc:
-                        sb.Append("a");
                         break;
                     case PunchState.Y_POS_acc:
                         sb.Append("Y");
                         break;
-                    case PunchState.Y_POS_decc:
-                        sb.Append("y");
-                        break;
                     case PunchState.Y_NEG_acc:
                         sb.Append("B");
-                        break;
-                    case PunchState.Y_NEG_decc:
-                        sb.Append("b");
                         break;
                     case PunchState.Z_POS_acc:
                         sb.Append("Z");
                         break;
-                    case PunchState.Z_POS_decc:
-                        sb.Append("z");
-                        break;
                     case PunchState.Z_NEG_acc:
                         sb.Append("C");
-                        break;
-                    case PunchState.Z_NEG_decc:
-                        sb.Append("c");
                         break;
                     default:
                         break;
@@ -199,27 +177,90 @@ namespace Exercise7
 
         private string PunchStringFormat(string input)
         {
+            // Number of sequential "idles" before considered a "pause"
             int idlesToPause = 5;
 
-            // On stateString:
-            // - Delete runs of "I" < idlesToPause
-            input = Regex.Replace(input, @"I{1," + (idlesToPause - 1) + "}", "");
-            // - Collapse duplicates of characters
+            // Ignore idles < idlesToPause, insert a pause for idles > idlesToPause
             StringBuilder sb = new StringBuilder();
+            int idleCount = 0;
+            foreach (char currentChar in input)
+            {
+                if (currentChar == 'I')
+                {
+                    idleCount++;
+                    if (idleCount >= idlesToPause)
+                    {
+                        sb.Append("P");
+                    }
+                } 
+                else
+                {
+                    idleCount = 0;
+                    sb.Append(currentChar);
+                }
+            }
+            input = sb.ToString();
+
+            // - Collapse duplicates of characters
+            sb = new StringBuilder();
             char previousChar = '\0';
             foreach (char currentChar in input)
             {
                 if (currentChar != previousChar)
                 {
                     sb.Append(currentChar);
-                    previousChar = currentChar;
+                }
+                previousChar = currentChar;
+            }
+            input = sb.ToString();
+
+
+            // - Delete paired deccelerations
+            sb = new StringBuilder();
+            previousChar = '\0';
+            foreach (char currentChar in input)
+            {
+                if (InvertFromChar(currentChar) == previousChar)
+                { }
+                else
+                { sb.Append(currentChar); }
+                previousChar = currentChar;
+            }
+            input = sb.ToString();
+
+            // - Remove any 'P' from the start of the string
+            sb = new StringBuilder();
+            bool pastStartingP = false;
+            foreach (char currentChar in input)
+            {
+                if (pastStartingP)
+                {
+                    sb.Append(currentChar);
+                } else if (currentChar != 'P')
+                {
+                    sb.Append(currentChar);
+                    pastStartingP = true;
                 }
             }
             input = sb.ToString();
-            // - Delete lowercase characters (ignores deccel for now)
-            input = Regex.Replace(input, @"[a-z]", "");
 
             return input;
+        }
+
+        private char InvertFromChar(char input)
+        {
+            char[] inputs =  { 'X', 'Y', 'Z', 'A', 'B', 'C'};
+            char[] outputs = { 'A', 'B', 'C', 'X', 'Y', 'Z'};
+
+            for (int i = 0; i < inputs.Length; i++)
+            {
+                if (input == inputs[i])
+                {
+                    return outputs[i];
+                }
+            }
+
+            return '_';
         }
     }
 }
