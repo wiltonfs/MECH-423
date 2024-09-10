@@ -6,7 +6,9 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Media;
 using System.Reflection;
+using System.Runtime.Remoting.Lifetime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -16,6 +18,13 @@ namespace Exercise4
     enum ExpectedNextRead
     {
         LEAD, X, Y, Z
+    }
+    enum PunchState
+    {
+        IDLE,
+        X_POS_acc, X_NEG_acc,
+        Y_POS_acc, Y_NEG_acc,
+        Z_POS_acc, Z_NEG_acc,
     }
 
     public partial class PunchDetector : Form
@@ -32,6 +41,13 @@ namespace Exercise4
         Vec3 mostRecentAccel = new Vec3();
         Vec3 bias = new Vec3(-125f, -126f, -125f);
         Vec3 scale = new Vec3(0.35f, 0.35f, 0.35f);
+
+        // Gesture detection
+        PunchState currentState = PunchState.IDLE;
+        Queue<PunchState> stateQueue = new Queue<PunchState>();
+        int idlesToPause = 25; // Number of sequential "idles" before considered a "pause"
+        int ignoreLessThan = 3; // Number of sequential states before being considered a state
+        float thresholdAccel = 3.0f; // Minimum accel to not be idle
 
         public PunchDetector()
         {
@@ -83,6 +99,14 @@ namespace Exercise4
             DisplayInstantAccel();
             DisplayOrientation();
             AvgAndDisplayLastNPoints();
+            currentStateDisplay.Text = "Current state: " + currentState;
+
+            // Decay one char from the gesture display
+            int l = gestureDisplayLabel.Text.Length;
+            if (l > 0)
+            {
+                //gestureDisplayLabel.Text = gestureDisplayLabel.Text.Substring(0, l - 1);
+            }
         }
 
         private void serialPort1_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
@@ -90,9 +114,6 @@ namespace Exercise4
             int newByte = 0;
             int bytesToRead;
             bytesToRead = serialPort1.BytesToRead;
-
-            // Display serial buffer size here
-            serialBufferSizeLabel.Text = "Serial buffer size: " + bytesToRead;
             while (bytesToRead != 0)
             {
                 newByte = serialPort1.ReadByte();
@@ -108,6 +129,12 @@ namespace Exercise4
         {
             // Display queue size here
             queueSizeLabel.Text = "Concurrent queue size: " + dataQueue.Count;
+
+            // Display serial buffer size here
+            int bytesToRead = 0;
+            if (serialPort1.IsOpen)
+                bytesToRead = serialPort1.BytesToRead;
+            serialBufferSizeLabel.Text = "Serial buffer size: " + bytesToRead;
 
             int nextVal;
             bool succ = dataQueue.TryDequeue(out nextVal);
@@ -138,6 +165,8 @@ namespace Exercise4
                         case ExpectedNextRead.Z:
                             accelQueue.Last<Vec3>().Z = correctedZ;
                             mostRecentAccel = accelQueue.Last();
+                            StateMachine();
+                            ScanForGestures();
                             expectedNextRead = ExpectedNextRead.LEAD;
                             break;
                         default:
@@ -182,7 +211,7 @@ namespace Exercise4
         {
             if (accelQueue.Count >= accelerationAveragingCount)
             {
-                // Have enough to avg at least
+                // Have enough to avg
 
                 // Skip to get just the last accelerationAveragingCount
                 int skip = accelQueue.Count - accelerationAveragingCount;
@@ -208,9 +237,9 @@ namespace Exercise4
                 if (!unitsCheckbox.Checked)
                 {
                     // De-convert bias and offset
-                    float correctedX = (mostRecentAccel.X / scale.X) - bias.X;
-                    float correctedY = (mostRecentAccel.Y / scale.Y) - bias.Y;
-                    float correctedZ = (mostRecentAccel.Z / scale.Z) - bias.Z;
+                    avgX = (mostRecentAccel.X / scale.X) - bias.X;
+                    avgY = (mostRecentAccel.Y / scale.Y) - bias.Y;
+                    avgZ = (mostRecentAccel.Z / scale.Z) - bias.Z;
                 }
                 // Reduce to 3 decimal points
                 avgX = (float)Math.Round((double)avgX, 3);
@@ -222,6 +251,256 @@ namespace Exercise4
                 avgYDisplay.Text = avgY.ToString();
                 avgZDisplay.Text = avgZ.ToString();
             }
+        }
+
+        // ---------------------------------------------------------
+        // ---------- Gesture Detection Related Functions ----------
+        // ---------------------------------------------------------
+
+        private void StateMachine()
+        {
+            PunchState lastState = currentState;
+            currentState = GetNextState();
+            stateQueue.Enqueue(currentState);
+
+            // Display state history
+            stateHistory.AppendText(lastState + " -> " + mostRecentAccel.ToString() + " -> " + currentState + "\r\n");
+        }
+
+        private PunchState GetNextState()
+        {
+            // Remove gravity from mostRecentAccel
+            Vec3 Accel = new Vec3(mostRecentAccel.X, mostRecentAccel.Y, mostRecentAccel.Z - 9.81f);
+            float absX = Math.Abs(Accel.X); float absY = Math.Abs(Accel.Y); float absZ = Math.Abs(Accel.Z);
+
+            if (absX > thresholdAccel && absX >= absY && absX >= absZ)
+            {
+                // X wins out
+                if (Accel.X > 0)
+                {
+                    return PunchState.X_POS_acc;
+                }
+                return PunchState.X_NEG_acc;
+            }
+            else if (absY > thresholdAccel && absY >= absX && absY >= absZ)
+            {
+                // Y wins out
+                if (Accel.Y > 0)
+                {
+                    return PunchState.Y_POS_acc;
+                }
+                return PunchState.Y_NEG_acc;
+            }
+            else if (absZ > thresholdAccel && absZ >= absX && absZ >= absY)
+            {
+                // Z wins out
+                if (Accel.Z > 0)
+                {
+                    return PunchState.Z_POS_acc;
+                }
+                return PunchState.Z_NEG_acc;
+            }
+
+            // Nothing is bigger than the threshold value so still idle
+            return PunchState.IDLE;
+        }
+        private void ScanForGestures()
+        {
+            string preStateString = QueueToString();
+            string stateString = PunchStringFormat(preStateString);
+
+            // if ending with an idle
+            if (stateString.Length > 1 && stateString.EndsWith("P"))
+            {
+                if (stateString.Equals("XYZP"))
+                {
+                    // Right-hook
+                    GestureDetected("Right Hook detected");
+                    SoundPlayer player = new SoundPlayer("C:\\Users\\fsant\\Desktop\\MECH-423\\Lab 1\\Exercises\\Exercise8\\RightHook.wav");
+                    player.Play();
+                }
+                else if (stateString.Equals("ZXP"))
+                {
+                    // High punch
+                    GestureDetected("High Punch detected");
+                    SoundPlayer player = new SoundPlayer("C:\\Users\\fsant\\Desktop\\MECH-423\\Lab 1\\Exercises\\Exercise8\\HighPunch.wav");
+                    player.Play();
+                }
+                else if (stateString.Equals("XP"))
+                {
+                    // Simple punch
+                    GestureDetected("Simple Punch detected");
+                    SoundPlayer player = new SoundPlayer("C:\\Users\\fsant\\Desktop\\MECH-423\\Lab 1\\Exercises\\Exercise8\\SimplePunch.wav");
+                    player.Play();
+                }
+                else
+                {
+                    GestureDetected("Invalid Gesture detected");
+                }
+                preStringVisual.Text = preStateString;
+                postStringVisual.Text = stateString;
+                // Clear gesture tracking
+                stateQueue.Clear();
+            }
+        }
+
+        private void GestureDetected(string gesture)
+        {
+            gestureDisplayLabel.Text = gesture;
+            // TOOD: fancier detection
+        }
+
+        // ----------------------------------------------
+        // ---------- Gesture String Functions ----------
+        // ----------------------------------------------
+
+        private string QueueToString()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach (PunchState item in stateQueue)
+            {
+                switch (item)
+                {
+                    case PunchState.IDLE:
+                        sb.Append("I");
+                        break;
+                    case PunchState.X_POS_acc:
+                        sb.Append("X");
+                        break;
+                    case PunchState.X_NEG_acc:
+                        sb.Append("A");
+                        break;
+                    case PunchState.Y_POS_acc:
+                        sb.Append("Y");
+                        break;
+                    case PunchState.Y_NEG_acc:
+                        sb.Append("B");
+                        break;
+                    case PunchState.Z_POS_acc:
+                        sb.Append("Z");
+                        break;
+                    case PunchState.Z_NEG_acc:
+                        sb.Append("C");
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        private string PunchStringFormat(string input)
+        {
+            // Number of sequential "idles" before considered a "pause"
+            int idlesToPause = 5;
+
+            // Ignore idles < idlesToPause, insert a pause for idles > idlesToPause
+            StringBuilder sb = new StringBuilder();
+            int idleCount = 0;
+            foreach (char currentChar in input)
+            {
+                if (currentChar == 'I')
+                {
+                    idleCount++;
+                    if (idleCount >= idlesToPause)
+                    {
+                        sb.Append("P");
+                    }
+                }
+                else
+                {
+                    idleCount = 0;
+                    sb.Append(currentChar);
+                }
+            }
+            input = sb.ToString();
+
+            // Ignore "noise" by removing random chars that don't string > ignoreLessThan
+            sb = new StringBuilder();
+            int repeatCount = 0;
+            char previousChar = '\0';
+            foreach (char currentChar in input)
+            {
+                if (currentChar == previousChar) { repeatCount++; } else { repeatCount = 0; }
+
+                if (currentChar != 'P')
+                {
+                    if (repeatCount >= ignoreLessThan)
+                    {
+                        sb.Append(currentChar);
+                    }
+                }
+                else
+                {
+                    sb.Append('P');
+                }
+                previousChar = currentChar;
+            }
+            input = sb.ToString();
+
+            // - Collapse duplicates of characters
+            sb = new StringBuilder();
+            previousChar = '\0';
+            foreach (char currentChar in input)
+            {
+                if (currentChar != previousChar)
+                {
+                    sb.Append(currentChar);
+                }
+                previousChar = currentChar;
+            }
+            input = sb.ToString();
+
+
+            // - Delete paired deccelerations
+            sb = new StringBuilder();
+            previousChar = '\0';
+            foreach (char currentChar in input)
+            {
+                if (InvertFromChar(currentChar) == previousChar)
+                { }
+                else
+                { sb.Append(currentChar); }
+                previousChar = currentChar;
+            }
+            input = sb.ToString();
+
+            // - Remove any 'P' from the start of the string
+            sb = new StringBuilder();
+            bool pastStartingP = false;
+            foreach (char currentChar in input)
+            {
+                if (pastStartingP)
+                {
+                    sb.Append(currentChar);
+                }
+                else if (currentChar != 'P')
+                {
+                    sb.Append(currentChar);
+                    pastStartingP = true;
+                }
+            }
+            input = sb.ToString();
+
+            return input;
+        }
+
+        private char InvertFromChar(char input)
+        {
+            char[] inputs = { 'X', 'Y', 'Z', 'A', 'B', 'C' };
+            char[] outputs = { 'A', 'B', 'C', 'X', 'Y', 'Z' };
+
+            for (int i = 0; i < inputs.Length; i++)
+            {
+                if (input == inputs[i])
+                {
+                    return outputs[i];
+                }
+            }
+
+            return '_';
         }
     }
 }

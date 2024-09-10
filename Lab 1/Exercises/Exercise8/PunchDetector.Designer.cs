@@ -43,7 +43,6 @@
             this.orientationLabel = new System.Windows.Forms.Label();
             this.unitsCheckbox = new System.Windows.Forms.CheckBox();
             this.visualTimer = new System.Windows.Forms.Timer(this.components);
-            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.avgZDisplay = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.avgYDisplay = new System.Windows.Forms.TextBox();
@@ -54,6 +53,10 @@
             this.serialBufferSizeLabel = new System.Windows.Forms.Label();
             this.queueSizeLabel = new System.Windows.Forms.Label();
             this.gestureDisplayLabel = new System.Windows.Forms.Label();
+            this.currentStateDisplay = new System.Windows.Forms.Label();
+            this.stateHistory = new System.Windows.Forms.TextBox();
+            this.postStringVisual = new System.Windows.Forms.Label();
+            this.preStringVisual = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // serialComboBox
@@ -169,7 +172,6 @@
             // visualTimer
             // 
             this.visualTimer.Enabled = true;
-            this.visualTimer.Interval = 250;
             this.visualTimer.Tick += new System.EventHandler(this.visualTimer_Tick);
             // 
             // avgZDisplay
@@ -262,11 +264,51 @@
             this.gestureDisplayLabel.TabIndex = 30;
             this.gestureDisplayLabel.Text = "Simple Punch detected!";
             // 
+            // currentStateDisplay
+            // 
+            this.currentStateDisplay.AutoSize = true;
+            this.currentStateDisplay.Location = new System.Drawing.Point(335, 267);
+            this.currentStateDisplay.Name = "currentStateDisplay";
+            this.currentStateDisplay.Size = new System.Drawing.Size(70, 13);
+            this.currentStateDisplay.TabIndex = 31;
+            this.currentStateDisplay.Text = "Current state:";
+            // 
+            // stateHistory
+            // 
+            this.stateHistory.Location = new System.Drawing.Point(335, 286);
+            this.stateHistory.Multiline = true;
+            this.stateHistory.Name = "stateHistory";
+            this.stateHistory.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.stateHistory.Size = new System.Drawing.Size(453, 152);
+            this.stateHistory.TabIndex = 32;
+            // 
+            // postStringVisual
+            // 
+            this.postStringVisual.AutoSize = true;
+            this.postStringVisual.Location = new System.Drawing.Point(14, 380);
+            this.postStringVisual.Name = "postStringVisual";
+            this.postStringVisual.Size = new System.Drawing.Size(120, 13);
+            this.postStringVisual.TabIndex = 33;
+            this.postStringVisual.Text = "Simple Punch detected!";
+            // 
+            // preStringVisual
+            // 
+            this.preStringVisual.AutoSize = true;
+            this.preStringVisual.Location = new System.Drawing.Point(14, 367);
+            this.preStringVisual.Name = "preStringVisual";
+            this.preStringVisual.Size = new System.Drawing.Size(120, 13);
+            this.preStringVisual.TabIndex = 34;
+            this.preStringVisual.Text = "Simple Punch detected!";
+            // 
             // PunchDetector
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.preStringVisual);
+            this.Controls.Add(this.postStringVisual);
+            this.Controls.Add(this.stateHistory);
+            this.Controls.Add(this.currentStateDisplay);
             this.Controls.Add(this.gestureDisplayLabel);
             this.Controls.Add(this.queueSizeLabel);
             this.Controls.Add(this.serialBufferSizeLabel);
@@ -312,7 +354,6 @@
         private System.Windows.Forms.Label orientationLabel;
         private System.Windows.Forms.CheckBox unitsCheckbox;
         private System.Windows.Forms.Timer visualTimer;
-        private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private System.Windows.Forms.TextBox avgZDisplay;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox avgYDisplay;
@@ -323,6 +364,10 @@
         private System.Windows.Forms.Label serialBufferSizeLabel;
         private System.Windows.Forms.Label queueSizeLabel;
         private System.Windows.Forms.Label gestureDisplayLabel;
+        private System.Windows.Forms.Label currentStateDisplay;
+        private System.Windows.Forms.TextBox stateHistory;
+        private System.Windows.Forms.Label postStringVisual;
+        private System.Windows.Forms.Label preStringVisual;
     }
 }
 
