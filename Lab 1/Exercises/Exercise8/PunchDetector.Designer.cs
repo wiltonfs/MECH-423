@@ -260,9 +260,9 @@
             this.gestureDisplayLabel.AutoSize = true;
             this.gestureDisplayLabel.Location = new System.Drawing.Point(13, 393);
             this.gestureDisplayLabel.Name = "gestureDisplayLabel";
-            this.gestureDisplayLabel.Size = new System.Drawing.Size(120, 13);
+            this.gestureDisplayLabel.Size = new System.Drawing.Size(109, 13);
             this.gestureDisplayLabel.TabIndex = 30;
-            this.gestureDisplayLabel.Text = "Simple Punch detected!";
+            this.gestureDisplayLabel.Text = "Try making a gesture!";
             // 
             // currentStateDisplay
             // 
@@ -287,18 +287,18 @@
             this.postStringVisual.AutoSize = true;
             this.postStringVisual.Location = new System.Drawing.Point(14, 380);
             this.postStringVisual.Name = "postStringVisual";
-            this.postStringVisual.Size = new System.Drawing.Size(120, 13);
+            this.postStringVisual.Size = new System.Drawing.Size(112, 13);
             this.postStringVisual.TabIndex = 33;
-            this.postStringVisual.Text = "Simple Punch detected!";
+            this.postStringVisual.Text = "Cleaned gesture string";
             // 
             // preStringVisual
             // 
             this.preStringVisual.AutoSize = true;
             this.preStringVisual.Location = new System.Drawing.Point(14, 367);
             this.preStringVisual.Name = "preStringVisual";
-            this.preStringVisual.Size = new System.Drawing.Size(120, 13);
+            this.preStringVisual.Size = new System.Drawing.Size(95, 13);
             this.preStringVisual.TabIndex = 34;
-            this.preStringVisual.Text = "Simple Punch detected!";
+            this.preStringVisual.Text = "Raw gesture string";
             // 
             // PunchDetector
             // 

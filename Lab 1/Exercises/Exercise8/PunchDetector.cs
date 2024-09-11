@@ -39,15 +39,16 @@ namespace Exercise4
         ExpectedNextRead expectedNextRead = ExpectedNextRead.LEAD;
         Queue<Vec3> accelQueue = new Queue<Vec3>();
         Vec3 mostRecentAccel = new Vec3();
-        Vec3 bias = new Vec3(-125f, -126f, -125f);
-        Vec3 scale = new Vec3(0.35f, 0.35f, 0.35f);
+        // Calibration data:  x:151, 125, 100     y: 152, 126, 100    z: 153, 103 
+        Vec3 bias = new Vec3(-125f, -126f, -128f);
+        Vec3 scale = new Vec3(0.3849f, 0.3773f, 0.3924f);
 
         // Gesture detection
         PunchState currentState = PunchState.IDLE;
         Queue<PunchState> stateQueue = new Queue<PunchState>();
         int idlesToPause = 25; // Number of sequential "idles" before considered a "pause"
-        int ignoreLessThan = 3; // Number of sequential states before being considered a state
-        float thresholdAccel = 3.0f; // Minimum accel to not be idle
+        int ignoreLessThan = 2; // Number of sequential states before being considered a state
+        float thresholdAccel = 10.0f; // Minimum accel to not be idle
 
         public PunchDetector()
         {
