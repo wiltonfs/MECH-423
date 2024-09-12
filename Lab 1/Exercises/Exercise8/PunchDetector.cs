@@ -29,7 +29,7 @@ namespace Exercise4
 
     public partial class PunchDetector : Form
     {
-        // Editable parameters
+        // UI parameters
         int accelerationAveragingCount = 100;
 
         // Concurrent Queue
@@ -43,12 +43,16 @@ namespace Exercise4
         Vec3 bias = new Vec3(-125f, -126f, -128f);
         Vec3 scale = new Vec3(0.3849f, 0.3773f, 0.3924f);
 
-        // Gesture detection
+        // Gesture detection parameters
         PunchState currentState = PunchState.IDLE;
         Queue<PunchState> stateQueue = new Queue<PunchState>();
         int idlesToPause = 25; // Number of sequential "idles" before considered a "pause"
         int ignoreLessThan = 2; // Number of sequential states before being considered a state
         float thresholdAccel = 10.0f; // Minimum accel to not be idle
+        string GESTURE_ONE = "X"; string GESTURE_ONE_NAME = "Simple Punch";
+        string GESTURE_TWO = "ZX"; string GESTURE_TWO_NAME = "High Punch";
+        string GESTURE_THREE = "XYZ"; string GESTURE_THREE_NAME = "Right Hook";
+        char[] IGNORED_STATES = { 'A', 'B', 'C' };
 
         public PunchDetector()
         {
@@ -313,25 +317,26 @@ namespace Exercise4
             // if ending with an idle
             if (stateString.Length > 1 && stateString.EndsWith("P"))
             {
-                if (stateString.Equals("XYZP"))
+                string pureString = RemoveChar(stateString, 'P');
+                if (pureString.Equals(GESTURE_ONE))
                 {
-                    // Right-hook
-                    GestureDetected("Right Hook detected");
-                    SoundPlayer player = new SoundPlayer("C:\\Users\\fsant\\Desktop\\MECH-423\\Lab 1\\Exercises\\Exercise8\\RightHook.wav");
+                    // Gesture One
+                    GestureDetected(GESTURE_ONE_NAME);
+                    SoundPlayer player = new SoundPlayer("C:\\Users\\fsant\\Desktop\\MECH-423\\Lab 1\\Exercises\\Exercise8\\SimplePunch.wav");
                     player.Play();
                 }
-                else if (stateString.Equals("ZXP"))
+                else if (pureString.Equals(GESTURE_TWO))
                 {
-                    // High punch
-                    GestureDetected("High Punch detected");
+                    // Gesture Two
+                    GestureDetected(GESTURE_TWO_NAME);
                     SoundPlayer player = new SoundPlayer("C:\\Users\\fsant\\Desktop\\MECH-423\\Lab 1\\Exercises\\Exercise8\\HighPunch.wav");
                     player.Play();
                 }
-                else if (stateString.Equals("XP"))
+                else if (pureString.Equals(GESTURE_THREE))
                 {
-                    // Simple punch
-                    GestureDetected("Simple Punch detected");
-                    SoundPlayer player = new SoundPlayer("C:\\Users\\fsant\\Desktop\\MECH-423\\Lab 1\\Exercises\\Exercise8\\SimplePunch.wav");
+                    // Gesture Three
+                    GestureDetected(GESTURE_THREE_NAME);
+                    SoundPlayer player = new SoundPlayer("C:\\Users\\fsant\\Desktop\\MECH-423\\Lab 1\\Exercises\\Exercise8\\RightHook.wav");
                     player.Play();
                 }
                 else
@@ -418,6 +423,18 @@ namespace Exercise4
             }
             input = sb.ToString();
 
+            // Ignore chars in the ignore list
+            sb = new StringBuilder();
+            foreach (char currentChar in input)
+            {
+                if (!IGNORED_STATES.Contains(currentChar))
+                {
+                    sb.Append(currentChar);
+                }
+            }
+            input = sb.ToString();
+
+
             // Ignore "noise" by removing random chars that don't string > ignoreLessThan
             sb = new StringBuilder();
             int repeatCount = 0;
@@ -502,6 +519,19 @@ namespace Exercise4
             }
 
             return '_';
+        }
+
+        private string RemoveChar(string input, char target)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach (char c in input)
+            {
+                if (c != target)
+                    sb.Append(c);
+            }
+
+            return sb.ToString();
         }
     }
 }
