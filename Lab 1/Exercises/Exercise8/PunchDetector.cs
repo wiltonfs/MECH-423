@@ -25,6 +25,10 @@ namespace Exercise4
         X_POS_acc, X_NEG_acc,
         Y_POS_acc, Y_NEG_acc,
         Z_POS_acc, Z_NEG_acc,
+
+        X_POS_2_acc, X_NEG_2_acc,
+        Y_POS_2_acc, Y_NEG_2_acc,
+        Z_POS_2_acc, Z_NEG_2_acc,
     }
 
     public partial class PunchDetector : Form
@@ -46,13 +50,14 @@ namespace Exercise4
         // Gesture detection parameters
         PunchState currentState = PunchState.IDLE;
         Queue<PunchState> stateQueue = new Queue<PunchState>();
-        int idlesToPause = 25; // Number of sequential "idles" before considered a "pause"
-        int ignoreLessThan = 2; // Number of sequential states before being considered a state
-        float thresholdAccel = 10.0f; // Minimum accel to not be idle
+        int idlesToPause = 10; // Number of sequential "idles" before considered a "pause"
+        int ignoreLessThan = 3; // Number of sequential states before being considered a state
+        float thresholdAccel = 8.0f; // Minimum accel to not be idle
+        float thresholdAccel2 = 18.0f; // Minimum accel to count as double accel
         string GESTURE_ONE = "X"; string GESTURE_ONE_NAME = "Simple Punch";
         string GESTURE_TWO = "ZX"; string GESTURE_TWO_NAME = "High Punch";
         string GESTURE_THREE = "XYZ"; string GESTURE_THREE_NAME = "Right Hook";
-        char[] IGNORED_STATES = { 'A', 'B', 'C' };
+        char[] IGNORED_STATES = {'A', 'B', 'C' };
 
         public PunchDetector()
         {
@@ -281,29 +286,68 @@ namespace Exercise4
             if (absX > thresholdAccel && absX >= absY && absX >= absZ)
             {
                 // X wins out
-                if (Accel.X > 0)
+                if (absX > thresholdAccel2)
                 {
-                    return PunchState.X_POS_acc;
+                    // Double strength
+                    if (Accel.X > 0)
+                    {
+                        return PunchState.X_POS_2_acc;
+                    }
+                    return PunchState.X_NEG_2_acc;
                 }
-                return PunchState.X_NEG_acc;
+                else
+                {
+                    // Single strength
+                    if (Accel.X > 0)
+                    {
+                        return PunchState.X_POS_acc;
+                    }
+                    return PunchState.X_NEG_acc;
+                }
             }
             else if (absY > thresholdAccel && absY >= absX && absY >= absZ)
             {
                 // Y wins out
-                if (Accel.Y > 0)
+                if (absY > thresholdAccel2)
                 {
-                    return PunchState.Y_POS_acc;
+                    // Double strength
+                    if (Accel.Y > 0)
+                    {
+                        return PunchState.Y_POS_2_acc;
+                    }
+                    return PunchState.Y_NEG_2_acc;
                 }
-                return PunchState.Y_NEG_acc;
+                else
+                {
+                    // Single strength
+                    if (Accel.Y > 0)
+                    {
+                        return PunchState.Y_POS_acc;
+                    }
+                    return PunchState.Y_NEG_acc;
+                }
             }
             else if (absZ > thresholdAccel && absZ >= absX && absZ >= absY)
             {
                 // Z wins out
-                if (Accel.Z > 0)
+                if (absZ > thresholdAccel2)
                 {
-                    return PunchState.Z_POS_acc;
+                    // Double strength
+                    if (Accel.Z > 0)
+                    {
+                        return PunchState.Z_POS_2_acc;
+                    }
+                    return PunchState.Z_NEG_2_acc;
                 }
-                return PunchState.Z_NEG_acc;
+                else
+                {
+                    // Single strength
+                    if (Accel.Z > 0)
+                    {
+                        return PunchState.Z_POS_acc;
+                    }
+                    return PunchState.Z_NEG_acc;
+                }
             }
 
             // Nothing is bigger than the threshold value so still idle
@@ -315,9 +359,9 @@ namespace Exercise4
             string stateString = PunchStringFormat(preStateString);
 
             // if ending with an idle
-            if (stateString.Length > 1 && stateString.EndsWith("P"))
+            if (stateString.Length > 0 && stateString.EndsWith("P"))
             {
-                string pureString = RemoveChar(stateString, 'P');
+                string pureString = stateString.Replace("P", "");
                 if (pureString.Equals(GESTURE_ONE))
                 {
                     // Gesture One
@@ -338,6 +382,12 @@ namespace Exercise4
                     GestureDetected(GESTURE_THREE_NAME);
                     SoundPlayer player = new SoundPlayer("C:\\Users\\fsant\\Desktop\\MECH-423\\Lab 1\\Exercises\\Exercise8\\RightHook.wav");
                     player.Play();
+                }
+                else if (pureString.Equals(""))
+                {
+                    // Idled
+                    stateQueue.Clear();
+                    return;
                 }
                 else
                 {
@@ -389,9 +439,29 @@ namespace Exercise4
                     case PunchState.Z_NEG_acc:
                         sb.Append("C");
                         break;
+                    case PunchState.X_POS_2_acc:
+                        sb.Append("XXX");
+                        break;
+                    case PunchState.X_NEG_2_acc:
+                        sb.Append("AAA");
+                        break;
+                    case PunchState.Y_POS_2_acc:
+                        sb.Append("YYY");
+                        break;
+                    case PunchState.Y_NEG_2_acc:
+                        sb.Append("BBB");
+                        break;
+                    case PunchState.Z_POS_2_acc:
+                        sb.Append("ZZZ");
+                        break;
+                    case PunchState.Z_NEG_2_acc:
+                        sb.Append("CCC");
+                        break;
                     default:
                         break;
                 }
+
+                sb.Append(',');
             }
 
             return sb.ToString();
@@ -399,8 +469,8 @@ namespace Exercise4
 
         private string PunchStringFormat(string input)
         {
-            // Number of sequential "idles" before considered a "pause"
-            int idlesToPause = 5;
+            // Strip out seperator commas
+            input = input.Replace(",", "");
 
             // Ignore idles < idlesToPause, insert a pause for idles > idlesToPause
             StringBuilder sb = new StringBuilder();
@@ -424,16 +494,10 @@ namespace Exercise4
             input = sb.ToString();
 
             // Ignore chars in the ignore list
-            sb = new StringBuilder();
-            foreach (char currentChar in input)
+            foreach (char c in IGNORED_STATES)
             {
-                if (!IGNORED_STATES.Contains(currentChar))
-                {
-                    sb.Append(currentChar);
-                }
+                input = input.Replace("" + c, "");
             }
-            input = sb.ToString();
-
 
             // Ignore "noise" by removing random chars that don't string > ignoreLessThan
             sb = new StringBuilder();
@@ -454,6 +518,7 @@ namespace Exercise4
                 {
                     sb.Append('P');
                 }
+
                 previousChar = currentChar;
             }
             input = sb.ToString();
@@ -485,23 +550,6 @@ namespace Exercise4
             }
             input = sb.ToString();
 
-            // - Remove any 'P' from the start of the string
-            sb = new StringBuilder();
-            bool pastStartingP = false;
-            foreach (char currentChar in input)
-            {
-                if (pastStartingP)
-                {
-                    sb.Append(currentChar);
-                }
-                else if (currentChar != 'P')
-                {
-                    sb.Append(currentChar);
-                    pastStartingP = true;
-                }
-            }
-            input = sb.ToString();
-
             return input;
         }
 
@@ -519,19 +567,6 @@ namespace Exercise4
             }
 
             return '_';
-        }
-
-        private string RemoveChar(string input, char target)
-        {
-            StringBuilder sb = new StringBuilder();
-
-            foreach (char c in input)
-            {
-                if (c != target)
-                    sb.Append(c);
-            }
-
-            return sb.ToString();
         }
     }
 }
