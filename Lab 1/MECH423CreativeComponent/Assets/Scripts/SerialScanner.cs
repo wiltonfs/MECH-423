@@ -33,19 +33,15 @@ public class SerialScanner : MonoBehaviour
     Vector3 mostRecentAccelBuffer1 = new Vector3();
     int currentBuffer = -1;
 
+    void Awake()
+    {
+        DontDestroyOnLoad(gameObject);
+    }
 
     // Start is called before the first frame update
     void Start()
     {
-        data_stream = new SerialPort(portName, baudRate);
-        data_stream.DataBits = 8;
-	    //data_stream.DiscardNull = false;
-        data_stream.Handshake = Handshake.None;
-        data_stream.Parity = Parity.None;
-	    data_stream.ReadTimeout = -1;
-        data_stream.StopBits = StopBits.One;
-        data_stream.Open();
-        Debug.Log("Starting serial scanner");
+        SearchForPorts();
     }
 
     // FixedUpdate is called 50 times per second
@@ -54,11 +50,50 @@ public class SerialScanner : MonoBehaviour
         ReadSerial();
     }
 
+    public void SearchForPorts()
+    {
+        string[] ports = System.IO.Ports.SerialPort.GetPortNames();
+
+        if (ports.Length > 0)
+        {
+            if (ports.Contains<string>(portName))
+            {
+                SetupPort(portName, baudRate);
+            }
+            else
+            {
+                SetupPort(ports[0], baudRate);
+            }
+        }
+        else
+        {
+            Debug.LogError("No COM ports available.");
+        }
+    }
+
+    private void SetupPort(string targetPortName, int targetBaudRate)
+    {
+        data_stream = new SerialPort(targetPortName, targetBaudRate);
+        data_stream.DataBits = 8;
+        //data_stream.DiscardNull = false;
+        data_stream.Handshake = Handshake.None;
+        data_stream.Parity = Parity.None;
+        data_stream.ReadTimeout = -1;
+        data_stream.StopBits = StopBits.One;
+        data_stream.Open();
+        openPort = true;
+        Debug.Log("Starting serial scanner");
+    }
+
     private void ReadSerial()
     {
+        if (data_stream == null || !openPort)
+            return;
+
+
+
         if (data_stream.IsOpen)
         {
-            openPort = true;
             int newByte = 0;
             int bytesToRead;
             bytesToRead = data_stream.BytesToRead;
@@ -74,11 +109,6 @@ public class SerialScanner : MonoBehaviour
                 bytesToRead = data_stream.BytesToRead;
             }
         }
-        else
-        {
-            openPort = false;
-            data_stream.Open();
-        }
     }
 
     private void ReadByte(int newByte)
@@ -87,32 +117,31 @@ public class SerialScanner : MonoBehaviour
         {
             // Indicates new data frame
             expectedNextRead = ExpectedNextRead.X;
+            return;
         }
-        else
+
+        float correctedX = (newByte + bias.x) * scale.x;
+        float correctedY = (newByte + bias.y) * scale.y;
+        float correctedZ = (newByte + bias.z) * scale.z;
+        switch (expectedNextRead)
         {
-            float correctedX = (newByte + bias.x) * scale.x;
-            float correctedY = (newByte + bias.y) * scale.y;
-            float correctedZ = (newByte + bias.z) * scale.z;
-            switch (expectedNextRead)
-            {
-                case ExpectedNextRead.LEAD:
-                    break;
-                case ExpectedNextRead.X:
-                    WriteToAccelBuffer(0, correctedX);
-                    expectedNextRead++;
-                    break;
-                case ExpectedNextRead.Y:
-                    WriteToAccelBuffer(1, correctedY);
-                    expectedNextRead++;
-                    break;
-                case ExpectedNextRead.Z:
-                    WriteToAccelBuffer(2, correctedZ);
-                    SwapAccelBuffers();
-                    expectedNextRead = ExpectedNextRead.LEAD;
-                    break;
-                default:
-                    break;
-            }
+            case ExpectedNextRead.LEAD:
+                break;
+            case ExpectedNextRead.X:
+                WriteToAccelBuffer(0, correctedX);
+                expectedNextRead++;
+                break;
+            case ExpectedNextRead.Y:
+                WriteToAccelBuffer(1, correctedY);
+                expectedNextRead++;
+                break;
+            case ExpectedNextRead.Z:
+                WriteToAccelBuffer(2, correctedZ);
+                SwapAccelBuffers();
+                expectedNextRead = ExpectedNextRead.LEAD;
+                break;
+            default:
+                break;
         }
     }
 
