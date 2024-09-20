@@ -31,19 +31,20 @@ namespace Exercise4
         string GESTURE_ONE = "X"; string GESTURE_ONE_NAME = "Simple Punch";
         string GESTURE_TWO = "ZX"; string GESTURE_TWO_NAME = "High Punch";
         string GESTURE_THREE = "XYZ"; string GESTURE_THREE_NAME = "Right Hook";
+        char[] disabledChannels = new char[] {'A', 'B', 'C' };
 
         // Concurrent Queue
         ConcurrentQueue<Int32> dataQueue = new ConcurrentQueue<Int32>();
         // Vec3 Queue
         ExpectedNextRead expectedNextRead = ExpectedNextRead.LEAD;
         List<Vec3> accelerations = new List<Vec3>();
-        Vec3 mostRecentAccel = new Vec3();
         // Calibration data:  x:151, 125, 100     y: 152, 126, 100    z: 153, 103 
         Vec3 bias = new Vec3(-125f, -126f, -128f);
         Vec3 scale = new Vec3(0.3849f, 0.3773f, 0.3924f);
         // Gesture detection
         int idleTimer = 0;
         string compoundGesture = "";
+        bool[] channelRecentlyDetected = new bool[6];
         float[] movementMatch = new float[] {
             0.57735f, 0f, -0.096225f, 0f, 0.096225f, 0.288675f, 0.673575f, 1.5396f, 3.27165f, 
             7.698f, 15.0111f, 20.880825f, 15.396f, -6.5433f, -28.001475f, -21.265725f, -11.450775f, 
@@ -101,7 +102,6 @@ namespace Exercise4
             DisplayInstantAccel();
             DisplayOrientation();
             AvgAndDisplayLastNPoints();
-            currentStateDisplay.Text = "Current state: ";
             preStringVisual.Text = "Current compound gesture: " + compoundGesture;
 
             // Check the idle timer
@@ -178,7 +178,6 @@ namespace Exercise4
                             break;
                         case ExpectedNextRead.Z:
                             accelerations.Last<Vec3>().Z = correctedZ;
-                            mostRecentAccel = accelerations.Last();
                             ScanForMovements();
                             expectedNextRead = ExpectedNextRead.LEAD;
                             break;
@@ -193,26 +192,28 @@ namespace Exercise4
 
         private void DisplayOrientation()
         {
+            Vec3 latestAccel = accelerations.Count > 1 ? accelerations[accelerations.Count - 2] : new Vec3();
             if (accelerations.Count > 0)
-                orientationLabel.Text = "The board's top face is the " + mostRecentAccel.UpAxisSign() + " " + mostRecentAccel.UpAxis() + " axis";
+                orientationLabel.Text = "The board's top face is the " + latestAccel.UpAxisSign() + " " + latestAccel.UpAxis() + " axis";
         }
 
         private void DisplayInstantAccel()
         {
             if (accelerations.Count > 0)
             {
+                Vec3 latestAccel = accelerations[accelerations.Count - 2];
                 if (unitsCheckbox.Checked)
                 {
-                    aXDisplay.Text = mostRecentAccel.X.ToString();
-                    aYDisplay.Text = mostRecentAccel.Y.ToString();
-                    aZDisplay.Text = mostRecentAccel.Z.ToString();
+                    aXDisplay.Text = latestAccel.X.ToString();
+                    aYDisplay.Text = latestAccel.Y.ToString();
+                    aZDisplay.Text = latestAccel.Z.ToString();
                 } 
                 else
                 {
                     // De-convert bias and offset
-                    float correctedX = (mostRecentAccel.X / scale.X) - bias.X;
-                    float correctedY = (mostRecentAccel.Y / scale.Y) - bias.Y;
-                    float correctedZ = (mostRecentAccel.Z / scale.Z) - bias.Z;
+                    float correctedX = (latestAccel.X / scale.X) - bias.X;
+                    float correctedY = (latestAccel.Y / scale.Y) - bias.Y;
+                    float correctedZ = (latestAccel.Z / scale.Z) - bias.Z;
                     aXDisplay.Text = correctedX.ToString();
                     aYDisplay.Text = correctedY.ToString();
                     aZDisplay.Text = correctedZ.ToString();
@@ -250,9 +251,9 @@ namespace Exercise4
                 if (!unitsCheckbox.Checked)
                 {
                     // De-convert bias and offset
-                    avgX = (mostRecentAccel.X / scale.X) - bias.X;
-                    avgY = (mostRecentAccel.Y / scale.Y) - bias.Y;
-                    avgZ = (mostRecentAccel.Z / scale.Z) - bias.Z;
+                    avgX = (avgX / scale.X) - bias.X;
+                    avgY = (avgY / scale.Y) - bias.Y;
+                    avgZ = (avgZ / scale.Z) - bias.Z;
                 }
                 // Reduce to 3 decimal points
                 avgX = (float)Math.Round((double)avgX, 3);
@@ -320,42 +321,51 @@ namespace Exercise4
                 return;
             }
 
-            // Check X
+            // Parameters to check 6 channels
             char[] targets = new char[]         { 'X', 'Y', 'Z', 'A', 'B', 'C' };
             float[] directions = new float[]    { 1f,  1f,  1f,  -1f, -1f, -1f };
-            int[] channels = new int[]          {  0,   1,   2,    0,   1,   2 };
+            int[] axes = new int[]              {  0,   1,   2,    0,   1,   2 };
 
+            // Iterate through the 6 channels
             for (int j = 0; j < 6; j++)
             {
-                char target = targets[j]; float direction = directions[j]; int channel = channels[j];
+                char target = targets[j]; float direction = directions[j]; int axis = axes[j];
+
+                if (disabledChannels.Contains(target)){break;} // Ignore disabled channels
 
                 int start = accelerations.Count - movementMatch.Length;
                 float total = 0;
                 for (int i = 0; i < movementMatch.Length; i++)
                 {
-                    total += direction * ReachAccelChannel(start + i, channel) * movementMatch[i];
+                    total += direction * ReachAccelChannel(start + i, axis) * movementMatch[i];
                 }
                 if (total > detectionThreshold)
                 {
                     // Detected the target
                     idleTimer = millisToIdle;
-                    if (compoundGesture.Length == 0 || compoundGesture[compoundGesture.Length - 1] != target)
+                    if (!channelRecentlyDetected[j] && (compoundGesture.Length == 0 || compoundGesture[compoundGesture.Length - 1] != target))
                     {
                         // The target was novel
                         compoundGesture += target;
+                        channelRecentlyDetected[j] = true;
                     }
+                }
+                else if (total < detectionThreshold / 2f)
+                {
+                    // Far off target, reset our detection tracker for this channel
+                    channelRecentlyDetected[j] = false;
                 }
             }   
         }
 
-        private float ReachAccelChannel(int index, int channel)
+        private float ReachAccelChannel(int index, int axis)
         {
-            if (channel  == 0)
+            if (axis == 0)
             {
                 // Read X
                 return accelerations[index].X;
             }
-            if (channel == 1)
+            if (axis == 1)
             {
                 // Read Y
                 return accelerations[index].Y;
@@ -363,9 +373,5 @@ namespace Exercise4
             // Read Z without the gravity factor
             return accelerations[index].Z - 9.81f;
         }
-
-        // ----------------------------------------------
-        // ---------- Gesture String Functions ----------
-        // ----------------------------------------------
     }
 }
