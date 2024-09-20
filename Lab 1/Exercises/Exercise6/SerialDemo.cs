@@ -24,8 +24,8 @@ namespace Exercise4
         
         Queue<Vec3> accelQueue = new Queue<Vec3>();
         Vec3 mostRecentAccel = new Vec3();
-        Vec3 bias = new Vec3(-125f, -126f, -125f);
-        Vec3 scale = new Vec3(0.35f, 0.35f, 0.35f);
+        Vec3 bias = new Vec3(-125f, -126f, -128f);
+        Vec3 scale = new Vec3(0.3849f, 0.3773f, 0.3924f);
 
         bool recordingValues = false;
         Queue<Vec3> recordedAccels = new Queue<Vec3>();
