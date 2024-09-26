@@ -18,8 +18,12 @@ int main(void)
 
 	// The switches S1 and S2 are connected to P4.0 and P4.1 on the EXP Board. Enable the internal pull-up resistors for both switches
     //      (L) page 315 has general instructions about PxREN
-    //      Nothing says explicitly if its pull up or pull down that I can see. It's either on or off.
+    //      1b = pullup/pulldown enabled
     P4REN |= (BIT0 | BIT1);
+    //      (L) page 314 has general instructions about PxOUT. In input mode, this is how we select between pullup or pulldown.
+    //      1b = Pullup.
+    //      On (S) page 17 we see the switches bridge GND to P4.0 and P4.1 so we need to pullup.
+    P4OUT |= (BIT0 | BIT1);
 
 
 	// Set P4.0 and P4.1 to get interrupted from a rising edge (i.e. an interrupt occurs when the user lets go of the button). Enable local and global interrupts
@@ -37,6 +41,9 @@ int main(void)
     P3DIR |=   (BIT6 | BIT7);
     P3SEL1 &= ~(BIT6 | BIT7);
     P3SEL0 &= ~(BIT6 | BIT7);
+
+    // Turn off LED7 and LED8 for debug purpose
+    P3OUT &= ~(BIT6 | BIT7);
 
     // Main loop. The MCU will mostly sleep and respond to interrupts.
     while(1) {}
