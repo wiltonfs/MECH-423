@@ -5,6 +5,10 @@
  * main.c
  */
 
+// (L) = MSP430 Fammily User Guide [576 pages]
+// (M) = MSPE430 Datasheet [124 pages]
+// (S) = MSP-EXP430FR5739 User Guide [28 pages]
+
 // SOME TAKEAWAYS:
 // 16 bit registers are often split into two 8 bit registers
 // These are called HIGH and LOW
@@ -60,21 +64,22 @@ int main(void)
     _EINT(); // Global interrupt enable
 
     // Configure P3.6 (LED7) and P3.7 (LED8) as outputs
+    // Using these for debug
     //      (M) page 81 and 82
     P3DIR |=   (BIT6 | BIT7);
     P3SEL1 &= ~(BIT6 | BIT7);
     P3SEL0 &= ~(BIT6 | BIT7);
 
-    // Configure PJ.0 (LED1) as digital outputs
+    // Configure PJ.0 (LED1) as digital output
     //      (M) page 86
     PJDIR |=   (BIT0);
     PJSEL1 &= ~(BIT0);
     PJSEL0 &= ~(BIT0);
 
-    // Turn off LED7 and LED8 for debug purpose
-    P3OUT &= ~(BIT6 | BIT7);
+    // Turn off LED8 for debug visual
+    P3OUT &= ~BIT7;
 
-    // Turn on LED7
+    // Turn on LED7 for debug visual
     P3OUT |= BIT6;
 
     // Inside the while loop, send 'a' periodically
@@ -94,14 +99,15 @@ int main(void)
 #pragma vector = USCI_A0_VECTOR
 __interrupt void uart_echo_ISR(void)
 {
-    // Turn on LED8
+    // Turn on LED8 for debug visual
     P3OUT |= BIT7;
+
     unsigned char RxByte = 0;
-    RxByte = UCA0RXBUF;
-    while (!(UCA0IFG & UCTXIFG));
-    UCA0TXBUF = RxByte;
-    while (!(UCA0IFG & UCTXIFG));
-    UCA0TXBUF = RxByte + 1;
+    RxByte = UCA0RXBUF; // Read from the receive buffer
+    while (!(UCA0IFG & UCTXIFG)); // Hold until the "finish last transmission" flag is up
+    UCA0TXBUF = RxByte; // Write to transmit buffer
+    while (!(UCA0IFG & UCTXIFG)); // Hold until the "finish last transmission" flag is up
+    UCA0TXBUF = RxByte + 1; // Write to transmit buffer
 
     if (RxByte == 'j')
     {
