@@ -11,14 +11,15 @@ int main(void)
 	
 	StandardClockSetup_8Mhz_1Mhz();
 
-	SetupLEDPins(BIT0 | BIT1 | BIT2 | BIT3);
+	SetupLEDPins(ALL_LEDs);
+	TurnOffLED(ALL_LEDs);
 	TurnOnLED(BIT1);
-	TurnOffLED(BIT0 | BIT2 | BIT3);
+
 
 	while (1)
 	{
 	    DelayMillis_8Mhz(100);
-	    ToggleLED(255);
+	    ToggleLED(ALL_LEDs);
 	}
 
 	return 0;

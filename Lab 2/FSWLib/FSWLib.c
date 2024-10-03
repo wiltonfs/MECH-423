@@ -14,6 +14,8 @@
 // -- LED Output Functions --
 // --------------------------
 
+#define ALL_LEDs 255
+
 void SetupLEDPins(unsigned char selectionMask);
 // Ex - Setup LED 1:            SetupLEDPins(0b00000001);
 // Ex - Setup LED 2, 4, 6, 8:   SetupLEDPins(0b10101010);
