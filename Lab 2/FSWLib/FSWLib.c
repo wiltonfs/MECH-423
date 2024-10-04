@@ -20,6 +20,10 @@ void SetupLEDPins(unsigned char selectionMask);
 // Ex - Setup LED 1:            SetupLEDPins(0b00000001);
 // Ex - Setup LED 2, 4, 6, 8:   SetupLEDPins(0b10101010);
 
+void WriteCharToLED(unsigned char displayedValue);
+// Ex - Display 73:             WriteCharToLED(73);
+// Equivalent to:               TurnOffLED(ALL_LEDs); TurnOnLED(0b01001001);
+
 void TurnOnLED(unsigned char selectionMask);
 // [Make sure it has been setup with SetupLEDPins();]
 // Ex - Light LED 1:            TurnOnLED(0b00000001);
@@ -87,6 +91,12 @@ void SetupLEDPins(unsigned char selectionMask)
 	P3DIR |=   (selectionMask & (BIT4 | BIT5 | BIT6 | BIT7));
 	P3SEL1 &= ~(selectionMask & (BIT4 | BIT5 | BIT6 | BIT7));
 	P3SEL0 &= ~(selectionMask & (BIT4 | BIT5 | BIT6 | BIT7));
+}
+
+void WriteCharToLED(unsigned char displayedValue)
+{
+    TurnOffLED(ALL_LEDs);
+    TurnOnLED(displayedValue);
 }
 
 void TurnOnLED(unsigned char selectionMask)
