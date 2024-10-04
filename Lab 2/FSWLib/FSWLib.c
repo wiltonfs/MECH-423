@@ -52,6 +52,14 @@ void StandardUART0Setup_9600_8();
 // [Requires StandardClockSetup_8Mhz_1Mhz()]
 // Setup UART0 at 9800 baud, 8 data bits, no parity, 1 stop bit
 
+void TimerB1Setup_UpCount_500Hz();
+// [Requires StandardClockSetup_8Mhz_1Mhz()]
+// Setup TimerB1 in the "up count" mode at 500 Hz
+
+void TimerB1_PWM(int channel, unsigned int dutyCycleCounter);
+// [Requires StandardClockSetup_8Mhz_1Mhz() and TimerB1Setup_UpCount_500Hz()]
+// Setup TB1.channel to produce a square wave with a duty cycle of dutyCycleCounter/500
+
 // --------------------
 // -- Misc Functions --
 // --------------------
@@ -161,6 +169,32 @@ void StandardUART0Setup_9600_8()
 
     // Start UART
     UCA0CTLW0 &= ~UCSWRST;       // Undo reset on eUSCI (L) pg. 495
+}
+
+void TimerB1Setup_UpCount_500Hz()
+{
+    // Setup Timer B in the "up count" mode
+    TB1CTL |= TBCLR;            // Clear Timer B            (L) pg.372
+    TB1CTL |= (BIT4);           // Up mode                  (L) pg. 372
+    TB1CTL |= TBSSEL__SMCLK;    // Clock source select      (L) pg. 372
+    TB1CTL |= (BIT7 | BIT6);    // 1/8 divider (125 kHz)    (L) pg. 372
+    TB1CCR0  = 249;             // now 500 Hz               (L) pg. 377
+    // 249 = 496 Hz
+    // 247 = 500 Hz
+    // 245 = 504 Hz
+}
+void TimerB1_PWM(int channel, unsigned int dutyCycleCounter)
+{
+    if (channel == 1)
+    {
+        TB1CCTL1 = OUTMOD_7;        // Reset/Set mode           (L) pg. 365, 366, and 375
+        TB1CCR1 = dutyCycleCounter;
+    }
+    else
+    {
+        TB1CCTL2 = OUTMOD_7;        // Reset/Set mode           (L) pg. 365, 366, and 375
+        TB1CCR2 = dutyCycleCounter;
+    }
 }
 
 // --------------------
