@@ -33,6 +33,8 @@ int main(void)
     TurnOffLED(ALL_LEDs);
     StandardUART0Setup_9600_8();
 
+    /*
+
     // Configure P2.7 to output high to power the accelerometer
     P2DIR  |=  BIT7;            // P2.7 in Output mode  (M) pg. 74
     P2SEL1 &= ~BIT7;
@@ -57,6 +59,7 @@ int main(void)
     TimerB1Setup_UpCount_125kHz(1250); // 125000 / x = 100
     TB1CCTL0 |= CCIE;            // Enable interrupt         (L) pg. 375
     __enable_interrupt();        // Enable global interrupts
+    */
 
     while(1)
     {
@@ -155,6 +158,4 @@ __interrupt void UNHANDLED_ISR(void)
     // Handle unexpected interrupts
     TurnOnLED(BIT7); // Indicate that an unexpected interrupt occurred
     DelayMillis_8Mhz(1); // Don't lose the ISR
-
-
 }
