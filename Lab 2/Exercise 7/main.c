@@ -33,7 +33,7 @@ int main(void)
     TurnOffLED(ALL_LEDs);
     StandardUART0Setup_9600_8();
 
-    /*
+
 
     // Configure P2.7 to output high to power the accelerometer
     P2DIR  |=  BIT7;            // P2.7 in Output mode  (M) pg. 74
@@ -57,14 +57,14 @@ int main(void)
     // Set up a timer interrupt to trigger an interrupt every 40 ms (25Hz)
     // I changed to every 10 ms (100Hz) and just transmit one part of the data packet
     TimerB1Setup_UpCount_125kHz(1250); // 125000 / x = 100
-    TB1CCTL0 |= CCIE;            // Enable interrupt         (L) pg. 375
+    //TB1CCTL0 |= CCIE;            // Enable interrupt         (L) pg. 375
     __enable_interrupt();        // Enable global interrupts
-    */
+
 
     while(1)
     {
         // Heart beat to display general program progression
-        DelayMillis_8Mhz(500);
+        DelayMillis_8Mhz(100);
         ToggleLED(BIT0);
     }
 
