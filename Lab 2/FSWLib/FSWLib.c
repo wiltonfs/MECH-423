@@ -52,6 +52,13 @@ void StandardUART0Setup_9600_8();
 // [Requires StandardClockSetup_8Mhz_1Mhz()]
 // Setup UART0 at 9800 baud, 8 data bits, no parity, 1 stop bit
 
+void StandardADCSetup();
+// Setup the ADC with 10-bit conversion, 256 samples per conversion
+// Also sets up the internal reference generator at 1.5V
+
+void TurnOnAccelerometer();
+// Power P2.7 to power the accelerometer
+
 void TimerB1Setup_UpCount_125kHz(unsigned short upCountTarget);
 // [Requires StandardClockSetup_8Mhz_1Mhz()]
 // Setup TimerB1 in the "up count" mode at 125kHz
@@ -65,6 +72,10 @@ void TimerB1_PWM(int channel, unsigned int dutyCycleCounter);
 // --------------------
 // -- Misc Functions --
 // --------------------
+
+void ADC_SampleFromAnalogChannel(int channel);
+// [Requires StandardADCSetup()]
+// Point the ADC at the given channel and start a conversion
 
 void DelayMillis_8Mhz(unsigned int millis);
 void DelayMillis_1Mhz(unsigned int millis);
@@ -173,6 +184,32 @@ void StandardUART0Setup_9600_8()
     UCA0CTLW0 &= ~UCSWRST;       // Undo reset on eUSCI (L) pg. 495
 }
 
+void StandardADCSetup()
+{
+    // Set up the Analog Digital Converter (ADC)
+    ADC10CTL0 |= ADC10ON;       // ADC on                           (L) pg. 450
+    ADC10CTL0 |= ADC10SHT_8;    // 256 samples per conversion       (L) pg. 449
+    ADC10CTL1 |= ADC10CONSEQ_0; // 1 channel and 1 conversion       (L) pg. 452
+    ADC10CTL1 |= ADC10SHP;      // Software initiated conversion    (L) pg. 451
+    ADC10CTL2 |= ADC10RES;      // 10-bit conversion                (L) pg. 453
+    ADC10MCTL0 |= ADC10SREF_1;  // Reference selection              (L) pg. 455
+
+    // Set up internal reference generator
+    while(REFCTL0 & REFGENBUSY);// If ref generator busy, WAIT      (L) pg. 431, pg. 429
+    REFCTL0 |= REFVSEL_0;       // Select ref = 1.5V                (L) pg. 431
+    REFCTL0 |= REFON;           // Turn on internal reference       (L) pg. 431
+    __delay_cycles(400);        // Delay for ref to settle
+}
+
+void TurnOnAccelerometer()
+{
+    // Configure P2.7 to output high to power the accelerometer
+    P2DIR  |=  BIT7;            // P2.7 in Output mode  (M) pg. 74
+    P2SEL1 &= ~BIT7;
+    P2SEL0 &= ~BIT7;
+    P2OUT  |=  BIT7;            // P2.7 output high
+}
+
 void TimerB1Setup_UpCount_125kHz(unsigned short upCountTarget)
 {
     // Setup Timer B in the "up count" mode
@@ -204,6 +241,20 @@ void TimerB1_PWM(int channel, unsigned int dutyCycleCounter)
 // --------------------
 // -- Misc Functions --
 // --------------------
+
+void ADC_SampleFromAnalogChannel(int channel)
+{
+    // Need ADC10ENC = 0 so we can change channel           (L) pg. 455
+    ADC10CTL0 &= ~ADC10ENC; // Disable conversion           (L) pg. 450
+
+    // Clear the old analog channel selection               (L) pg. 455
+    ADC10MCTL0 &= ADC10INCH_0;
+    
+    // Feed and start the ADC
+    ADC10MCTL0 |= channel;  // ADC input ch             (L) pg. 455
+    ADC10CTL0 |= ADC10ENC;  // Enable ADC conversion    (L) pg. 450
+    ADC10CTL0 |= ADC10SC;   // Start conversion         (L) pg. 450
+}
 
 void DelayMillis_8Mhz(unsigned int millis)
 {

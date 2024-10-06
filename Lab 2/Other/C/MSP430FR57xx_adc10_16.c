@@ -109,7 +109,7 @@ int main(void)
     __no_operation();
 	
 	// Temperature in Celsius
-    // The temperature (Temp, ¡ãC)=
+    // The temperature (Temp, ï¿½ï¿½C)=
     IntDegC = (temp - CALADC10_15V_30C) *  (85-30)/(CALADC10_15V_85C-CALADC10_15V_30C) +30;
 
     // Temperature in Fahrenheit
