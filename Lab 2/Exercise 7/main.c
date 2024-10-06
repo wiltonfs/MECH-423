@@ -14,9 +14,9 @@ typedef enum NEXT_VALUE {
     Zc
 } NEXT_VALUE;
 
-volatile unsigned char xAccel = 0;
-volatile unsigned char yAccel = 0;
-volatile unsigned char zAccel = 0;
+volatile unsigned char xAccel = 'X';
+volatile unsigned char yAccel = 'Y';
+volatile unsigned char zAccel = 'Z';
 
 volatile NEXT_VALUE nextTx  = START;
 volatile NEXT_VALUE nextADC = START;
@@ -50,14 +50,14 @@ int main(void)
     ADC10IE |= ADC10IE0;        // Enable interrupt     (L) pg. 458
 
     // Begin the first ADC conversion
-    ADC10MCTL0 |= ADC10INCH_12; // Start with A12 (x)   (L) pg. 455
+    ADC10MCTL0 = ADC10INCH_12; // Start with A12 (x)   (L) pg. 455
     ADC10CTL0 |= ADC10ENC;      // Enable conversion    (L) pg. 450
     ADC10CTL0 |= ADC10SC;       // Start ADC conversion (L) pg. 450
 
     // Set up a timer interrupt to trigger an interrupt every 40 ms (25Hz)
     // I changed to every 10 ms (100Hz) and just transmit one part of the data packet
     TimerB1Setup_UpCount_125kHz(1250); // 125000 / x = 100
-    //TB1CCTL0 |= CCIE;            // Enable interrupt         (L) pg. 375
+    TB1CCTL0 |= CCIE;            // Enable interrupt         (L) pg. 375
     __enable_interrupt();        // Enable global interrupts
 
 
@@ -73,37 +73,39 @@ int main(void)
 
 // Using the timer interrupt, transmit the result using the UART with 255 as the start byte
 // The data packet should look like 255, X-axis, Y-axis, Z-axis
-#pragma vector = TIMER0_B1_VECTOR
-__interrupt void TIMER0_B1_ISR(void)
+#pragma vector = TIMER1_B0_VECTOR
+__interrupt void TIMER_B1_ISR(void)
 {
     TurnOnLED(BIT1); // Reached this ISR
 
+    unsigned char outChar = 255;
+
     // Send the data packet through the UART
-    while (!(UCA0IFG & UCTXIFG)); // Hold until the "finish last transmission" flag is up
     switch (nextTx) {
         case START:
-            UCA0TXBUF = 255; // Write to transmit buffer
-            nextTx++;
             break;
         case Xc:
-            // Handle X case
-            UCA0TXBUF = xAccel; // Write to transmit buffer
-            nextTx++;
+            outChar = xAccel;
             break;
         case Yc:
-            // Handle Y case
-            UCA0TXBUF = yAccel; // Write to transmit buffer
-            nextTx++;
+            outChar = yAccel;
             break;
         case Zc:
-            // Handle Z case
-            UCA0TXBUF = zAccel; // Write to transmit buffer
-            nextTx = START;
+            outChar = zAccel;
             break;
         default:
             // Handle unexpected case
             break;
     }
+
+    // Increment next transmission
+    if (nextTx >= Zc)
+        nextTx = START;
+    else
+        nextTx++;
+
+    while (!(UCA0IFG & UCTXIFG)); // Hold until the "finish last transmission" flag is up
+    UCA0TXBUF = outChar; // Write to transmit buffer
 }
 
 // When the ADC has finished converting, save the value and begin the next one

@@ -1,0 +1,42 @@
+Available Timers:
+Timer0_A3 - TA0CTL
+Timer1_A3 - TA1CTL
+Timer0_B3 - TB0CTL
+Timer1_B3 - TB1CTL - One I use in my Lib currently
+Timer2_B3 - TB2CTL
+
+Timer Interrupt Vectors:
+TIMER2_B1_VECTOR - Timer2_B3 CC1-2
+TIMER2_B0_VECTOR - Timer2_B3 CC0
+
+TIMER1_B1_VECTOR - Timer1_B3 CC1-2
+TIMER1_B0_VECTOR - Timer1_B3 CC0
+
+TIMER1_A1_VECTOR - Timer1_A3 CC1-2
+TIMER1_A0_VECTOR - Timer1_A3 CC0
+
+TIMER0_A1_VECTOR - Timer0_A5 CC1-4
+TIMER0_A0_VECTOR - Timer0_A5 CC0
+
+TIMER0_B1_VECTOR - Timer0_B3 CC1-2
+TIMER0_B0_VECTOR - Timer0_B3 CC0
+
+
+From a really good ChatGPT answer:
+
+For the control register naming:
+TimerX_Yn
+X - Timer module number (0, 1, 2)
+Y - Timer family (A, B)
+n - How many CCRs the timer has
+
+For the interrupt vectors:
+Each timer has two interrupt vectors, one for the CCR0 and one for the other CCRs
+
+
+ChatGPT says:
+Timer A family is better suited for basic tasks, more efficient
+Timer B family is better for complex, more power consumption
+
+
+

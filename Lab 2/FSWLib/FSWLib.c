@@ -180,7 +180,7 @@ void TimerB1Setup_UpCount_125kHz(unsigned short upCountTarget)
     TB1CTL |= (BIT4);           // Up mode                  (L) pg. 372
     TB1CTL |= TBSSEL__SMCLK;    // Clock source select      (L) pg. 372
     TB1CTL |= (BIT7 | BIT6);    // 1/8 divider (125 kHz)    (L) pg. 372
-    TB1CCR0  = upCountTarget;   // What we count to         (L) pg. 377
+    TB1CCR0 = upCountTarget;    // What we count to         (L) pg. 377
     // 65535 = ~1.9 Hz
     // 249 = 496 Hz
     // 247 = 500 Hz
