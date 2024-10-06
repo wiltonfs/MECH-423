@@ -28,7 +28,7 @@ int main(void)
     SetupLEDPins(ALL_LEDs);
     TurnOffLED(ALL_LEDs);
 
-    TimerB1Setup_UpCount_500Hz();
+    TimerB1Setup_UpCount_125kHz(247);
     TimerB1_PWM(1, 125);         // 50% duty cycle
     TimerB1_PWM(2, 62);          // 25% duty cycle
 
