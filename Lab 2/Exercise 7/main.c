@@ -43,14 +43,14 @@ int main(void)
 
     // Set up the ADC
     // Set up its interrupt to trigger when conversion is complete
-    ADC10CTL0 |= ADC10ON;       // ADC on               (L) pg. 449
     ADC10CTL0 &= ~ADC10ENC;     // Disable conversion   (L) pg. 450
+    ADC10CTL0 |= ADC10ON;       // ADC on               (L) pg. 449
     ADC10CTL1 |= ADC10SSEL_3;   // SMCLK source         (L) pg. 452
     ADC10CTL2 |= ADC10RES;      // 10-bit conversion    (L) pg. 453
     ADC10IE |= ADC10IE0;        // Enable interrupt     (L) pg. 458
 
     // Begin the first ADC conversion
-    ADC10MCTL0 = ADC10INCH_12; // Start with A12 (x)   (L) pg. 455
+    ADC10MCTL0 = ADC10INCH_12;  // Start with A12 (x)   (L) pg. 455
     ADC10CTL0 |= ADC10ENC;      // Enable conversion    (L) pg. 450
     ADC10CTL0 |= ADC10SC;       // Start ADC conversion (L) pg. 450
 
@@ -64,8 +64,17 @@ int main(void)
     while(1)
     {
         // Heart beat to display general program progression
-        DelayMillis_8Mhz(100);
+        ADC10CTL0 |= ADC10SC;       // Start ADC conversion (L) pg. 450
+        DelayMillis_8Mhz(500);
+        ADC10CTL0 |= ADC10ENC;      // Enable conversion    (L) pg. 450
+        DelayMillis_8Mhz(500);
         ToggleLED(BIT0);
+
+        if (ADC10IFG)
+        {
+            // Conversion complete
+            TurnOnLED(BIT3);
+        }
     }
 
 	return 0;
@@ -152,12 +161,4 @@ __interrupt void ADC_ISR(void)
     ADC10CTL0 |= ADC10ENC;      // Re-enable conversion     (L) pg. 450
     ADC10CTL0 |= ADC10SC;       // Start ADC conversion     (L) pg. 450
 
-}
-
-#pragma vector = PORT1_VECTOR  // Change to the appropriate vector for your device
-__interrupt void UNHANDLED_ISR(void)
-{
-    // Handle unexpected interrupts
-    TurnOnLED(BIT7); // Indicate that an unexpected interrupt occurred
-    DelayMillis_8Mhz(1); // Don't lose the ISR
 }
