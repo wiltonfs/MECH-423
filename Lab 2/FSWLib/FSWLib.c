@@ -3,16 +3,23 @@
 // (M) = MSPE430 Datasheet [124 pages]
 // (S) = MSP-EXP430FR5739 User Guide [28 pages]
 
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~ Function Declarations ~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~ Handy Definitions ~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+// ----------------------
+// -- bool Definitions --
+// ----------------------
 
-// --------------------------
-// -- LED Output Functions --
-// --------------------------
+#define true 1
+#define false 0
+typedef short bool;
+
+// ---------------------
+// -- LED Definitions --
+// ---------------------
 
 #define LED1 BIT0
 #define LED2 BIT1
@@ -23,6 +30,28 @@
 #define LED7 BIT6
 #define LED8 BIT7
 #define ALL_LEDs 255
+
+// ------------------------
+// -- System Definitions --
+// ------------------------
+
+#define UART_READY_TO_TX (UCA0IFG & UCTXIFG)
+#define NTC_PIN 4
+#define xAccel_PIN 12
+#define yAccel_PIN 13
+#define zAccel_PIN 14
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~ Function Declarations ~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+// --------------------------
+// -- LED Output Functions --
+// --------------------------
 
 void SetupLEDPins(unsigned char selectionMask);
 // Ex - Setup LED 1:            SetupLEDPins(0b00000001);
@@ -50,12 +79,6 @@ void ToggleLED(unsigned char selectionMask);
 // ----------------------------
 // -- System Setup Functions --
 // ----------------------------
-
-#define UART_READY_TO_TX (UCA0IFG & UCTXIFG)
-#define NTC_PIN 4
-#define xAccel_PIN 12
-#define yAccel_PIN 13
-#define zAccel_PIN 14
 
 void StandardClockSetup_8Mhz_1Mhz();
 // Setup Master Clock (MCLK) to 8Mhz
