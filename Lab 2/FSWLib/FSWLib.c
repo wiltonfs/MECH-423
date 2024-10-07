@@ -14,6 +14,14 @@
 // -- LED Output Functions --
 // --------------------------
 
+#define LED1 BIT0
+#define LED2 BIT1
+#define LED3 BIT2
+#define LED4 BIT3
+#define LED5 BIT4
+#define LED6 BIT5
+#define LED7 BIT6
+#define LED8 BIT7
 #define ALL_LEDs 255
 
 void SetupLEDPins(unsigned char selectionMask);
@@ -43,6 +51,12 @@ void ToggleLED(unsigned char selectionMask);
 // -- System Setup Functions --
 // ----------------------------
 
+#define UART_READY_TO_TX (UCA0IFG & UCTXIFG)
+#define NTC_PIN 4
+#define xAccel_PIN 12
+#define yAccel_PIN 13
+#define zAccel_PIN 14
+
 void StandardClockSetup_8Mhz_1Mhz();
 // Setup Master Clock (MCLK) to 8Mhz
 // Setup Subsystem Master Clock (SMCLK) to 1Mhz
@@ -66,8 +80,8 @@ void TimerB1Setup_UpCount_125kHz(unsigned short upCountTarget);
 // upCountTarget of 100 = ~1.25kHz interrupt
 
 void TimerB1_PWM(int channel, unsigned int dutyCycleCounter);
-// [Requires StandardClockSetup_8Mhz_1Mhz() and TimerB1Setup_UpCount_500Hz()]
-// Setup TB1.channel to produce a square wave with a duty cycle of dutyCycleCounter/500
+// [Requires StandardClockSetup_8Mhz_1Mhz() and TimerB1Setup_UpCount_125kHz()]
+// Setup TB1.channel to produce a square wave, duty cycle = dutyCycleCounter/upCountTarget
 
 // --------------------
 // -- Misc Functions --
