@@ -1,7 +1,14 @@
 #include <msp430.h> 
+// Standard functions for programming the MSP430 board in MECH 423
+// Felix Wilton
+// Sept, Oct 2024
 // (L) = MSP430 Fammily User Guide [576 pages]
 // (M) = MSPE430 Datasheet [124 pages]
 // (S) = MSP-EXP430FR5739 User Guide [28 pages]
+
+// Inclusion guard
+#ifndef FSWLIB_INCLUDED
+#define FSWLIB_INCLUDED
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,6 +82,10 @@ void ToggleLED(unsigned char selectionMask);
 // [Make sure it has been setup with SetupLEDPins();]
 // Ex - Toggle LED 1:           ToggleLED(0b00000001);
 // Ex - Toggle LED 2, 4, 6, 8:  ToggleLED(0b10101010);
+
+void BoolToLED(bool value, unsigned char selectionMask);
+// [Make sure it has been setup with SetupLEDPins();]
+// Ex - Display the value of UART_READY_TO_TX on LED1:  BoolToLED(UART_READY_TO_TX, LED1);
 
 // ----------------------------
 // -- System Setup Functions --
@@ -173,6 +184,12 @@ void ToggleLED(unsigned char selectionMask)
 {
     PJOUT ^= (selectionMask & (BIT0 | BIT1 | BIT2 | BIT3));
     P3OUT ^= (selectionMask & (BIT4 | BIT5 | BIT6 | BIT7));
+}
+
+void BoolToLED(bool value, unsigned char selectionMask)
+{
+    if (value) { TurnOnLED(selectionMask);}
+    else {TurnOffLED(selectionMask);}
 }
 
 // ----------------------------
@@ -320,3 +337,10 @@ void DelaySeconds_1Mhz(unsigned int seconds)
     }
 }
 
+
+
+
+
+
+// End inclusion guard
+#endif // FSWLIB_INCLUDED

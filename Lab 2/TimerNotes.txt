@@ -40,3 +40,10 @@ Timer B family is better for complex, more power consumption
 
 
 
+EX:
+Timer1_B3 - TB1CTL
+TIMER1_B1_VECTOR - For CC1-2
+TIMER1_B0_VECTOR - For CC0
+
+
+
