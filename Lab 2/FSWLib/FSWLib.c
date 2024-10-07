@@ -284,11 +284,21 @@ void TimerB1_PWM(int channel, unsigned int dutyCycleCounter)
     {
         TB1CCTL1 = OUTMOD_7;        // Reset/Set mode           (L) pg. 365, 366, and 375
         TB1CCR1 = dutyCycleCounter;
+
+        // Output TB1.1 on P3.4         (M) pg. 81
+        P3DIR  |=  (BIT4);
+        P3SEL1 &= ~(BIT4);
+        P3SEL0 |=  (BIT4);
     }
     else
     {
         TB1CCTL2 = OUTMOD_7;        // Reset/Set mode           (L) pg. 365, 366, and 375
         TB1CCR2 = dutyCycleCounter;
+
+        // Output TB1.2 on P3.5         (M) pg. 81
+        P3DIR  |=  (BIT5);
+        P3SEL1 &= ~(BIT5);
+        P3SEL0 |=  (BIT5);
     }
 }
 
