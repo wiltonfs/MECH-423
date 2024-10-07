@@ -9,8 +9,8 @@
 
 volatile int currentTemperature = 100;
 
-#define ROOM_TEMP 164
-#define MAX_TEMP 155
+#define ROOM_TEMP 169
+//#define MAX_TEMP 155
 //const int tempStep = (ROOM_TEMP - MAX_TEMP) / 7;
 const int tempStep = 2;
 
