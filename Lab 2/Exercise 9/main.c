@@ -7,7 +7,7 @@
 // Oct 6 2024
 // (L) = MSP430 Family User Guide [576 pages]
 // (M) = MSPE430 Datasheet [124 pages]
-// (S) = MSP-EXP430FR5739 User Guide [28 pages]#include <msp430.h>
+// (S) = MSP-EXP430FR5739 User Guide [28 pages]
 
 const unsigned char POP_VALUE = 13;                             // Value to watch for (carriage return) to pop values back through UART
 const unsigned char EMPTY_BUFFER_ERROR[] = "Empty buffer!";     // Error message for pop on a empty buffer
