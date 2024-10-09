@@ -329,6 +329,15 @@ void DelayMillis_8Mhz(unsigned int millis)
     }
 }
 
+void DelayMillis_1Mhz(unsigned int millis)
+{
+    // Assumes 1Mhz clock cycle
+    while(millis-- > 0)
+    {
+        __delay_cycles(1000);
+    }
+}
+
 void DelaySeconds_8Mhz(unsigned int seconds)
 {
     // Assumes 8Mhz clock cycle
