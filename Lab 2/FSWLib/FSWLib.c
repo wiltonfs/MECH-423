@@ -121,6 +121,12 @@ void TimerB1_PWM(int channel, unsigned int dutyCycleCounter);
 // -- Misc Functions --
 // --------------------
 
+void UART_TX_Char_BLOCKING(unsigned char c);
+// Transmits a char through uart. Blocks until complete!
+
+void UART_TX_String_BLOCKING(const unsigned char *str);
+// Transmits a string through uart. Blocks until complete!
+
 void ADC_SampleFromAnalogChannel(int channel);
 // [Requires StandardADCSetup()]
 // Point the ADC at the given channel and start a conversion
@@ -305,6 +311,22 @@ void TimerB1_PWM(int channel, unsigned int dutyCycleCounter)
 // --------------------
 // -- Misc Functions --
 // --------------------
+
+void UART_TX_Char_BLOCKING(unsigned char c)
+{
+    // Transmits a char through uart. Blocks until complete!
+    while(!UART_READY_TO_TX);
+    UCA0TXBUF = c; // Write to transmit buffer
+}
+
+void UART_TX_String_BLOCKING(const unsigned char *str)
+{
+    // Transmits a string through uart. Blocks until complete!
+    while (*str != '\0') { // Continue until we reach the null terminator
+        UART_TX_Char_BLOCKING(*str);
+        str++; // Move to the next character in the string
+    }
+}
 
 void ADC_SampleFromAnalogChannel(int channel)
 {

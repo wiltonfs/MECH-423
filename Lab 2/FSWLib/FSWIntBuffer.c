@@ -1,18 +1,18 @@
-// Char buffer (queue) functions for MECH 423
+// Int buffer (queue) functions for MECH 423
 // Felix Wilton
 // Oct 2024
 
 // Inclusion guard
-#ifndef FSWCHARBUFFER_INCLUDED
-#define FSWCHARBUFFER_INCLUDED
+#ifndef FSWINTBUFFER_INCLUDED
+#define FSWINTBUFFER_INCLUDED
 
 
 
 
 
-
-typedef unsigned char CharBufferValue;
-#define BUFFER_SIZE 50
+// Change here if you want signed ints
+typedef unsigned int IntBufferValue;
+#define INTBUFFER_SIZE 10
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -21,32 +21,32 @@ typedef unsigned char CharBufferValue;
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 typedef struct {
-    volatile CharBufferValue buffer[BUFFER_SIZE];
+    volatile IntBufferValue buffer[INTBUFFER_SIZE];
     volatile unsigned int head;  // Points to the next position to add
     volatile unsigned int tail;  // Points to the next position to pop
     volatile unsigned int count; // Keeps track of how many elements are in the buffer
-} CircularCharBuffer;
+} CircularIntBuffer;
 
-bool addValue(CircularCharBuffer *cb, CharBufferValue value);
+bool IB_addValue(CircularIntBuffer *ib, IntBufferValue value);
 // Adds a value to the circular buffer. 
 // Returns true if successful, false otherwise.
 
-bool addStringValue(CircularCharBuffer *cb, const unsigned char *str);
+bool IB_addStringValue(CircularIntBuffer *ib, const unsigned char *str);
 // Adds a series of values to the circular buffer. 
 // Returns true if successful, false otherwise.
 
-CharBufferValue popValue(CircularCharBuffer *cb);
+IntBufferValue IB_popValue(CircularIntBuffer *ib);
 // Pops the oldest value in the buffer.
 // Returns 0 if buffer is empty.
 
-bool popValueSAFE(CircularCharBuffer *cb, CharBufferValue *valueOut);
+bool IB_popValueSAFE(CircularIntBuffer *ib, IntBufferValue *valueOut);
 // Pops the oldest value in the buffer into the valueOut parameter. 
 // Returns true if successful, false otherwise.
 
-bool isEmpty(CircularCharBuffer *cb);
+bool IB_isEmpty(CircularIntBuffer *ib);
 // Returns true if the buffer is empty, false otherwise.
 
-bool isFull(CircularCharBuffer *cb);
+bool IB_isFull(CircularIntBuffer *ib);
 // Returns true if the buffer is full, false otherwise.
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,53 +56,53 @@ bool isFull(CircularCharBuffer *cb);
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 // Adds a value to the circular buffer. Returns true if successful, false otherwise
-bool addValue(CircularCharBuffer *cb, CharBufferValue value) {
-    if (cb->count == BUFFER_SIZE) {
+bool IB_addValue(CircularIntBuffer *ib, IntBufferValue value) {
+    if (IB_isFull(ib)) {
         // Buffer is full, cannot add more values
         return false;
     }
-    cb->buffer[cb->head] = value;               // Add value to the head
-    cb->head = (cb->head + 1) % BUFFER_SIZE;    // Increment head with wrap-around
-    cb->count++;                                // Increment count
+    ib->buffer[ib->head] = value;               // Add value to the head
+    ib->head = (ib->head + 1) % INTBUFFER_SIZE;    // Increment head with wrap-around
+    ib->count++;                                // Increment count
     return true;
 }
 
-bool addStringValue(CircularCharBuffer *cb, const unsigned char *str) {
+bool IB_addStringValue(CircularIntBuffer *ib, const unsigned char *str) {
     while (*str != '\0') { // Continue until we reach the null terminator
-        if (!addValue(cb, *str)) {
-            // If the buffer is full, return false
+        if (!IB_addValue(ib, *str)) {
+            // If the buffer gets full, return false
             return false;
         }
         str++; // Move to the next character in the string
     }
-    return true; // Successfully added all characters
+    return true; // successfully added all characters
 }
 
-CharBufferValue popValue(CircularCharBuffer *cb) {
-    if (isEmpty(cb)) {
+IntBufferValue IB_popValue(CircularIntBuffer *ib) {
+    if (IB_isEmpty(ib)) {
         return 0;
     }
-    CharBufferValue out = cb->buffer[cb->tail];     // Get value from the tail
-    cb->tail = (cb->tail + 1) % BUFFER_SIZE;        // Increment tail with wrap-around
-    cb->count--;                                    // Decrement count
+    IntBufferValue out = ib->buffer[ib->tail];     // Get value from the tail
+    ib->tail = (ib->tail + 1) % INTBUFFER_SIZE;        // Increment tail with wrap-around
+    ib->count--;                                    // Decrement count
     return out;
 }
 
-bool popValueSAFE(CircularCharBuffer *cb, CharBufferValue *valueOut) {
-    if (isEmpty(cb)) {
+bool IB_popValueSAFE(CircularIntBuffer *ib, IntBufferValue *valueOut) {
+    if (IB_isEmpty(ib)) {
         // Buffer is empty, cannot pop any values
         return false;
     }
-    *valueOut = popValue(cb);   // Get the out value
+    *valueOut = IB_popValue(ib);    // Pop value
     return true;
 }
 
-bool isEmpty(CircularCharBuffer *cb) {
-    return cb->count == 0;
+bool IB_isEmpty(CircularIntBuffer *ib) {
+    return ib->count == 0;
 }
 
-bool isFull(CircularCharBuffer *cb) {
-    return cb->count == BUFFER_SIZE;
+bool IB_isFull(CircularIntBuffer *ib) {
+    return ib->count == INTBUFFER_SIZE;
 }
 
 
@@ -116,4 +116,4 @@ bool isFull(CircularCharBuffer *cb) {
 
 
 // Inclusion guard
-#endif  // FSWCHARBUFFER_INCLUDED
+#endif  // FSWINTBUFFER_INCLUDED
