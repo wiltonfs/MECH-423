@@ -42,6 +42,8 @@ typedef short bool;
 // -- System Definitions --
 // ------------------------
 
+#define SWITCH_1 BIT0
+#define SWITCH_2 BIT1
 #define UART_READY_TO_TX (UCA0IFG & UCTXIFG)
 #define NTC_PIN 4
 #define xAccel_PIN 12
@@ -105,7 +107,10 @@ void StandardADCSetup();
 // Also sets up the internal reference generator at 1.5V
 
 void TurnOnAccelerometer();
-// Power P2.7 to power the accelerometer
+// Power P2.7 to power the accelerometer or NTC
+
+void EnableSwitches(unsigned char selectionMask);
+// Enable switches with the selection mask
 
 void TimerB1Setup_UpCount_125kHz(unsigned short upCountTarget);
 // [Requires StandardClockSetup_8Mhz_1Mhz()]
@@ -268,6 +273,26 @@ void TurnOnAccelerometer()
     P2SEL1 &= ~BIT7;
     P2SEL0 &= ~BIT7;
     P2OUT  |=  BIT7;            // P2.7 output high
+}
+
+void EnableSwitches(unsigned char selectionMask)
+{
+    // Make sure only BIT0 and BIT1 are passed in
+    selectionMask &= BIT0 | BIT1;
+
+    // S1 and S2 are connected to P4.0 and P4.1         (S) pg. 17
+
+    // Configure P4.0 and P4.1 as a digital input       (M) pg. 83 and 84
+	P4DIR &=  ~(selectionMask);
+    P4SEL1 &= ~(selectionMask);
+    P4SEL0 &= ~(selectionMask);
+
+    // (S) pg. 17: see the switches bridge to GND, so we need to pullup.
+    P4OUT |= (selectionMask);   // Pullup               (L) pg. 314
+    P4REN |= (selectionMask);   // Enable resistors     (L) pg. 315
+    
+    // Interrupt from a rising edge (user lets go of the button)
+    P4IES &= ~(selectionMask); // Rising edge detection (L) pg. 316
 }
 
 void TimerB1Setup_UpCount_125kHz(unsigned short upCountTarget)
