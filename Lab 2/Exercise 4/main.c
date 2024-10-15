@@ -1,12 +1,9 @@
 #include <msp430.h> 
+#include "../FSWLib/FSWLib.c"
 // Exercise 4
 // Felix Wilton
-
-/**
- * main.c
- */
-
-// (L) = MSP430 Fammily User Guide [576 pages]
+// Sep 26 2024
+// (L) = MSP430 Family User Guide [576 pages]
 // (M) = MSPE430 Datasheet [124 pages]
 // (S) = MSP-EXP430FR5739 User Guide [28 pages]
 

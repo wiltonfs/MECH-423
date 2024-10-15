@@ -1,4 +1,10 @@
 #include <msp430.h> 
+// Exercise 1
+// Felix Wilton
+// Sep 25 2024
+// (L) = MSP430 Family User Guide [576 pages]
+// (M) = MSPE430 Datasheet [124 pages]
+// (S) = MSP-EXP430FR5739 User Guide [28 pages]
 
 
 /**
