@@ -10,8 +10,8 @@
 
 
 
-
-typedef unsigned char IntStackValue;
+// Change here if you want signed ints
+typedef unsigned int IntStackValue;
 #define INTSTACK_SIZE 15
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
