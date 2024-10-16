@@ -19,9 +19,13 @@ int main(void)
     SetupLEDPins(ALL_LEDs);
     TurnOffLED(ALL_LEDs);
 
+    TimerB1Setup_UpCount_125kHz(198);
+    TB1CTL &= ~(BIT7 | BIT6);    // 1 divider (1 MHz)    (L) pg. 372
+    TimerB1_PWM(1, 20); // P3.4
+
     while(1)
     {
-        DelayMillis_8Mhz(375);
+        DelayMillis_8Mhz(500);
 
         // Heart beat to display general program progression
         // If this stops, you are stuck in an interrupt
