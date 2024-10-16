@@ -13,7 +13,6 @@
  */
 volatile unsigned char xAccel = 'X';
 
-
 int main(void)
 {
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
@@ -39,7 +38,7 @@ int main(void)
 
     while(1)
     {
-        DelayMillis_8Mhz(375);
+        DelayMillis_8Mhz(100);
 
         // Heart beat to display general program progression
         // If this stops, you are stuck in an interrupt
