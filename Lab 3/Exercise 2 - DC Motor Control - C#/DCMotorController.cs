@@ -31,8 +31,8 @@ namespace DCMotorController
         const int THRESHOLD_SPEED = 3;
 
         // Input and output Serial queues
-        Queue<byte> outgoingQueue = new Queue<byte>();
-        Queue<int> incomingQueue = new Queue<int>();
+        ConcurrentQueue<byte> outgoingQueue = new ConcurrentQueue<byte>();
+        ConcurrentQueue<int> incomingQueue = new ConcurrentQueue<int>();
 
         // ---------------------------------
         // ----- Constructors and Load -----
@@ -74,10 +74,12 @@ namespace DCMotorController
         }
         private void txTimer_Tick(object sender, EventArgs e)
         {
-            if (serialPort1.IsOpen && serialPort1.BytesToWrite == 0)
+            if (serialPort1.IsOpen && serialPort1.BytesToWrite == 0 && outgoingQueue.Count() > 0)
             {
-                byte tx = outgoingQueue.Dequeue();
-                serialPort1.Write(new byte[] { tx }, 0, 1);
+                byte tx = 0;
+                bool succ = outgoingQueue.TryDequeue(out tx);
+                if (succ)
+                    serialPort1.Write(new byte[] { tx }, 0, 1);
             }
         }
         // ----- Motor Control Inputs -----
@@ -145,7 +147,7 @@ namespace DCMotorController
             COMM_BYTE COM = COMM_BYTE.DCM_BRAKE;
             if (speed > THRESHOLD_SPEED)
                 COM = COMM_BYTE.DCM_CW;
-            if (speed < THRESHOLD_SPEED)
+            if (speed < -THRESHOLD_SPEED)
                 COM = COMM_BYTE.DCM_CCW;
 
             byte D1 = MostSignificant(SpeedToPWM(speed));
@@ -160,8 +162,8 @@ namespace DCMotorController
                 return 0;
             speed = Math.Abs(speed);
 
-            uint offset = 5;
-            uint bias = 1;
+            uint offset = 0;
+            uint bias = 1300;
             uint PWM = ((uint)speed * bias + offset);
             return PWM;
         }
