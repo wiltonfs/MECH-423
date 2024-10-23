@@ -1,4 +1,5 @@
 #include <msp430.h> 
+#include "../MotorLib/Com.c"
 #include "../../Lab 2/FSWLib/FSWLib.c"
 
 // Lab 3 - Exercise 2
@@ -8,53 +9,10 @@
 // (M) = MSPE430 Datasheet [124 pages]
 // (S) = MSP-EXP430FR5739 User Guide [28 pages]
 
-// ------------------------------------------
-// ----- Messaging Protocol Definitions -----
-// ------------------------------------------
-
-// Clockwise rotation direction for DC motor
-#define DCM_0 8
-#define DCM_CW 8
-
-// Counter-clockwise rotation direction for DC motor
-#define DCM_1 9
-#define DCM_CCW 9
-
-// Brake command for DC motor
-#define DCM_3 10
-#define DCM_BRAKE 10
-
-
-
-typedef enum NEXT_VALUE {
-    START_BYTE,
-    COM_BYTE,
-    D1_BYTE,
-    D2_BYTE,
-    ESCP_BYTE
-} NEXT_VALUE;
-
-typedef struct {
-    volatile unsigned char comm;
-    volatile unsigned char d1;
-    volatile unsigned char d2;
-    volatile unsigned char esc;
-    volatile unsigned int combined;
-} MessagePacket;
-
-MessagePacket IncomingPacket = { .comm = 0, .d1 = 0, .d2 = 0, .esc = 0, .combined = 0};
-volatile NEXT_VALUE ExpectedRead = START_BYTE;
+MessagePacket IncomingPacket = EMTPY_MESSAGE_PACKET;
+volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
 void ProcessCompletePacket() {
-    // Handle the escape byte
-    if (IncomingPacket.esc & BIT0)
-        IncomingPacket.d1 = 255;
-    if (IncomingPacket.esc & BIT1)
-        IncomingPacket.d2 = 255;
-
-    // Combine the data bytes
-    IncomingPacket.combined = (IncomingPacket.d1 << 8) | IncomingPacket.d2;
-
     // Handle the command byte
     if (IncomingPacket.comm == DCM_CW) {
 
@@ -83,41 +41,6 @@ void ProcessCompletePacket() {
         // Turn off LED3
         TurnOffLED(LED3);
     }
-}
-
-void ReceiveStateMachine(volatile unsigned char RxByte) {
-
-    if (RxByte == 255)
-    {
-        ExpectedRead = COM_BYTE;
-        return;
-    }
-
-    switch(ExpectedRead) {
-    case START_BYTE:
-        break;
-    case COM_BYTE:
-        IncomingPacket.comm = RxByte;
-        break;
-    case D1_BYTE:
-        IncomingPacket.d1 = RxByte;
-        break;
-    case D2_BYTE:
-        IncomingPacket.d2 = RxByte;
-        break;
-    case ESCP_BYTE:
-        IncomingPacket.esc = RxByte;
-        ProcessCompletePacket();
-        break;
-    default:
-        break;
-    }
-
-    // Increment next read
-    if (ExpectedRead >= ESCP_BYTE)
-        ExpectedRead = START_BYTE;
-    else
-        ExpectedRead++;
 }
 
 /**
@@ -185,7 +108,11 @@ __interrupt void uart_ISR(void) {
 
         volatile unsigned char RxByte = UCA0RXBUF; // Read from the receive buffer
 
-        ReceiveStateMachine(RxByte);
+        if (COM_MessagePacketAssembly_StateMachine(&IncomingPacket, &NextRead, RxByte))
+        {
+            // returns True if the packet is now complete
+            ProcessCompletePacket();
+        }
 
         return;
 
