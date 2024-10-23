@@ -35,13 +35,12 @@
             this.serialPort1 = new System.IO.Ports.SerialPort(this.components);
             this.dataTimer = new System.Windows.Forms.Timer(this.components);
             this.label4 = new System.Windows.Forms.Label();
-            this.orientationLabel = new System.Windows.Forms.Label();
+            this.boardConnectedLabel = new System.Windows.Forms.Label();
             this.visualTimer = new System.Windows.Forms.Timer(this.components);
             this.outQueueDisplay = new System.Windows.Forms.Label();
             this.postStringVisual = new System.Windows.Forms.Label();
             this.preStringVisual = new System.Windows.Forms.Label();
             this.DC1_SpeedInput = new System.Windows.Forms.TrackBar();
-            this.DC1_SendButton = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -98,14 +97,14 @@
             this.label4.Text = "DC Motor Speed:";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // orientationLabel
+            // boardConnectedLabel
             // 
-            this.orientationLabel.AutoSize = true;
-            this.orientationLabel.Location = new System.Drawing.Point(14, 37);
-            this.orientationLabel.Name = "orientationLabel";
-            this.orientationLabel.Size = new System.Drawing.Size(96, 13);
-            this.orientationLabel.TabIndex = 18;
-            this.orientationLabel.Text = "No board detected";
+            this.boardConnectedLabel.AutoSize = true;
+            this.boardConnectedLabel.Location = new System.Drawing.Point(14, 37);
+            this.boardConnectedLabel.Name = "boardConnectedLabel";
+            this.boardConnectedLabel.Size = new System.Drawing.Size(96, 13);
+            this.boardConnectedLabel.TabIndex = 18;
+            this.boardConnectedLabel.Text = "No board detected";
             // 
             // visualTimer
             // 
@@ -141,21 +140,12 @@
             // DC1_SpeedInput
             // 
             this.DC1_SpeedInput.Location = new System.Drawing.Point(17, 114);
-            this.DC1_SpeedInput.Maximum = 5;
-            this.DC1_SpeedInput.Minimum = -5;
+            this.DC1_SpeedInput.Maximum = 50;
+            this.DC1_SpeedInput.Minimum = -50;
             this.DC1_SpeedInput.Name = "DC1_SpeedInput";
             this.DC1_SpeedInput.Size = new System.Drawing.Size(394, 45);
             this.DC1_SpeedInput.TabIndex = 35;
-            // 
-            // DC1_SendButton
-            // 
-            this.DC1_SendButton.Location = new System.Drawing.Point(418, 114);
-            this.DC1_SendButton.Name = "DC1_SendButton";
-            this.DC1_SendButton.Size = new System.Drawing.Size(115, 23);
-            this.DC1_SendButton.TabIndex = 36;
-            this.DC1_SendButton.Text = "Send Command";
-            this.DC1_SendButton.UseVisualStyleBackColor = true;
-            this.DC1_SendButton.Click += new System.EventHandler(this.DC1_SendButton_Click);
+            this.DC1_SpeedInput.MouseUp += new System.Windows.Forms.MouseEventHandler(this.DC1_SpeedInput_MouseUp);
             // 
             // label1
             // 
@@ -201,12 +191,11 @@
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.DC1_SendButton);
             this.Controls.Add(this.DC1_SpeedInput);
             this.Controls.Add(this.preStringVisual);
             this.Controls.Add(this.postStringVisual);
             this.Controls.Add(this.outQueueDisplay);
-            this.Controls.Add(this.orientationLabel);
+            this.Controls.Add(this.boardConnectedLabel);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.disconnectButton);
             this.Controls.Add(this.refreshButton);
@@ -228,13 +217,12 @@
         private System.IO.Ports.SerialPort serialPort1;
         private System.Windows.Forms.Timer dataTimer;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label orientationLabel;
+        private System.Windows.Forms.Label boardConnectedLabel;
         private System.Windows.Forms.Timer visualTimer;
         private System.Windows.Forms.Label outQueueDisplay;
         private System.Windows.Forms.Label postStringVisual;
         private System.Windows.Forms.Label preStringVisual;
         private System.Windows.Forms.TrackBar DC1_SpeedInput;
-        private System.Windows.Forms.Button DC1_SendButton;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
