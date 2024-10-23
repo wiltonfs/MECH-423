@@ -1,0 +1,61 @@
+# Start Byte
+255 - signals MSP that a transmission is coming
+
+# Command Byte
+## Debug commands
+0   - DEBUG_0 - reserved
+1   - DEBUG_1 - reserved
+2   - DEBUG_2 - reserved
+3   - DEBUG_3 - reserved
+4   - DEBUG_4 - reserved
+5   - DEBUG_5 - reserved
+6   - DEBUG_6 - reserved
+7   - DEBUG_7 - reserved
+## DC Motor commands
+8   - DCM_0 - CW rotation, PWM period in D1 and D2
+9   - DCM_1 - CCW rotation, PWM period in D1 and D2
+10  - DCM_2 - brake command
+11  - DCM_3 - reserved
+12  - DCM_4 - reserved
+13  - DCM_5 - reserved
+14  - DCM_6 - reserved
+15  - DCM_7 - reserved
+## Stepper Motor commands
+16  - STP_0 - reserved
+17  - STP_1 - reserved
+18  - STP_2 - reserved
+19  - STP_3 - reserved
+20  - STP_4 - reserved
+21  - STP_5 - reserved
+22  - STP_6 - reserved
+23  - STP_7 - reserved
+## Encoder commands
+24  - ENC_0 - reserved
+25  - ENC_1 - reserved
+26  - ENC_2 - reserved
+27  - ENC_3 - reserved
+28  - ENC_4 - reserved
+29  - ENC_5 - reserved
+30  - ENC_6 - reserved
+31  - ENC_7 - reserved
+## Gantry commands
+32  - GAN_0 - reserved
+33  - GAN_1 - reserved
+34  - GAN_2 - reserved
+35  - GAN_3 - reserved
+36  - GAN_4 - reserved
+37  - GAN_5 - reserved
+38  - GAN_6 - reserved
+39  - GAN_7 - reserved
+
+# Data Byte 1
+[0, 254] Usually most significant byte of a 16 byte value
+
+# Data Byte 2
+[0, 254] Usually least significant byte of a 16 byte value
+
+# Escape Byte
+Flags bytes that should be 255
+xxxxxxx1 - Command Byte
+xxxxxx1x - Data Byte 1
+xxxxx1xx - Data Byte 2
