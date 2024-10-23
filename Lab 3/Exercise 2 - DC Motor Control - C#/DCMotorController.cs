@@ -18,34 +18,39 @@ namespace DCMotorController
 {
     enum COMM_BYTE
     {
-        STOP_DC_1, CW_DC_1, CCW_DC_1
+        DCM_CW, DCM_CCW, DCM_BRAKE
     }
 
     public partial class DCMotorController : Form
     {
-        Queue<byte> outgoingQueue = new Queue<byte>();
-        Queue<int> incomingQueue = new Queue<int>();
+        // --------------------------
+        // ----- Members & Data -----
+        // --------------------------
 
+        // Speed must exceed this to send a non-brake command to the motor
+        const int THRESHOLD_SPEED = 3;
+
+        // Input and output Serial queues
+        ConcurrentQueue<byte> outgoingQueue = new ConcurrentQueue<byte>();
+        ConcurrentQueue<int> incomingQueue = new ConcurrentQueue<int>();
+
+        // ---------------------------------
+        // ----- Constructors and Load -----
+        // ---------------------------------
         public DCMotorController()
         {
             InitializeComponent();
-            refreshComboBox();
-        }
-
-        void refreshComboBox()
-        {
-            // Refresh the combo box with the available COM ports
-            serialComboBox.Items.Clear();
-            serialComboBox.Items.AddRange(System.IO.Ports.SerialPort.GetPortNames());
-            if (serialComboBox.Items.Count == 0)
-                serialComboBox.Text = "No COM ports!";
-            else
-                serialComboBox.SelectedIndex = 0;
+            refreshSerialConnectionsComboBox();
         }
 
         private void DcMotorController_Load(object sender, EventArgs e)
         {}
 
+        // ---------------------
+        // ----- UI Events -----
+        // ---------------------
+
+        // ----- Connecting to board -----
         private void serialComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (!serialPort1.IsOpen)
@@ -54,11 +59,38 @@ namespace DCMotorController
                 serialPort1.Open();
             }
         }
-
         private void disconnectButton_Click(object sender, EventArgs e)
         {
             serialPort1.Close();
         }
+        private void refreshButton_Click(object sender, EventArgs e)
+        {
+            refreshSerialConnectionsComboBox();
+        }
+        // ----- Timers -----
+        private void visualTimer_Tick(object sender, EventArgs e)
+        {
+            RefreshVisuals();
+        }
+        private void txTimer_Tick(object sender, EventArgs e)
+        {
+            if (serialPort1.IsOpen && serialPort1.BytesToWrite == 0 && outgoingQueue.Count() > 0)
+            {
+                byte tx = 0;
+                bool succ = outgoingQueue.TryDequeue(out tx);
+                if (succ)
+                    serialPort1.Write(new byte[] { tx }, 0, 1);
+            }
+        }
+        // ----- Motor Control Inputs -----
+        private void DC1_SpeedInput_MouseUp(object sender, MouseEventArgs e)
+        {
+            SendDCMotorCommand(DC1_SpeedInput.Value);
+        }
+
+        // -------------------------
+        // ----- Serial Events -----
+        // -------------------------
 
         private void serialPort1_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
         {
@@ -74,12 +106,13 @@ namespace DCMotorController
             }
         }
 
-        private void refreshButton_Click(object sender, EventArgs e)
-        {
-            refreshComboBox();
-        }
+        // ------------------------
+        // ----- UI Functions -----
+        // ------------------------
+
         private void RefreshVisuals()
         {
+            // Display the queue of outgoing values
             string queue = "Out queue: ";
             foreach (byte b in outgoingQueue)
             {
@@ -87,15 +120,35 @@ namespace DCMotorController
             }
             outQueueDisplay.Text = queue;
 
+            if (!serialPort1.IsOpen)
+            { boardConnectedLabel.Text = "No board detected"; }
+            else
+            { boardConnectedLabel.Text = "Board connected"; }
+                
+
         }
+        void refreshSerialConnectionsComboBox()
+        {
+            // Refresh the combo box with the available COM ports
+            serialComboBox.Items.Clear();
+            serialComboBox.Items.AddRange(System.IO.Ports.SerialPort.GetPortNames());
+            if (serialComboBox.Items.Count == 0)
+                serialComboBox.Text = "No COM ports!";
+            else
+                serialComboBox.SelectedIndex = 0;
+        }
+
+        // ------------------------------
+        // ----- DC Motor Functions -----
+        // ------------------------------
 
         private void SendDCMotorCommand(int speed)
         {
-            COMM_BYTE COM = COMM_BYTE.STOP_DC_1;
-            if (speed > 0)
-                COM = COMM_BYTE.CW_DC_1;
-            if (speed < 0)
-                COM = COMM_BYTE.CCW_DC_1;
+            COMM_BYTE COM = COMM_BYTE.DCM_BRAKE;
+            if (speed > THRESHOLD_SPEED)
+                COM = COMM_BYTE.DCM_CW;
+            if (speed < -THRESHOLD_SPEED)
+                COM = COMM_BYTE.DCM_CCW;
 
             byte D1 = MostSignificant(SpeedToPWM(speed));
             byte D2 = LeastSignificant(SpeedToPWM(speed));
@@ -103,12 +156,27 @@ namespace DCMotorController
             QueueOutgoing(COM, D1, D2);
         }
 
+        private uint SpeedToPWM(int speed)
+        {
+            if (Math.Abs(speed) <= THRESHOLD_SPEED)
+                return 0;
+            speed = Math.Abs(speed);
+
+            uint offset = 0;
+            uint bias = 1300;
+            uint PWM = ((uint)speed * bias + offset);
+            return PWM;
+        }
+
+        // -------------------------------------------------
+        // ----- Serial Functions & Messaging Protocol -----
+        // -------------------------------------------------
         private void QueueOutgoing(COMM_BYTE COMMenum, byte D1, byte D2)
         {
             byte COMM = CommandByteToByte(COMMenum);
 
             byte ESC = 0;
-            
+
             if (COMM > 254)
             {
                 COMM = 254; ESC += 1;
@@ -133,25 +201,12 @@ namespace DCMotorController
         {
             switch (COMenum)
             {
-                case COMM_BYTE.STOP_DC_1: return 0;
-                case COMM_BYTE.CW_DC_1: return 1;
-                case COMM_BYTE.CCW_DC_1: return 2;
+                case COMM_BYTE.DCM_CW:      return 8;
+                case COMM_BYTE.DCM_CCW:     return 9;
+                case COMM_BYTE.DCM_BRAKE:   return 10;
                 default: return 0;
             }
         }
-
-        private uint SpeedToPWM(int speed)
-        {
-            if (speed == 0)
-                return 0;
-            speed = Math.Abs(speed);
-
-            uint offset = 5;
-            uint bias = 1;
-            uint PWM = ((uint)speed*bias + offset);
-            return PWM;
-        }
-
         private byte MostSignificant(uint value)
         {
             return (byte)((value >> 8) & 0xFF);
@@ -160,30 +215,6 @@ namespace DCMotorController
         private byte LeastSignificant(uint value)
         {
             return (byte)(value & 0xFF);
-        }
-
-        public static int Clamp(int value, int min, int max)
-        {
-            return (value < min) ? min : (value > max) ? max : value;
-        }
-
-        private void DC1_SendButton_Click(object sender, EventArgs e)
-        {
-            SendDCMotorCommand(DC1_SpeedInput.Value);
-        }
-
-        private void visualTimer_Tick(object sender, EventArgs e)
-        {
-            RefreshVisuals();
-        }
-
-        private void txTimer_Tick(object sender, EventArgs e)
-        {
-            if (serialPort1.IsOpen && serialPort1.BytesToWrite == 0)
-            {
-                byte tx = outgoingQueue.Dequeue();
-                serialPort1.Write(new byte[] { tx }, 0, 1);
-            }
         }
     }
 }
