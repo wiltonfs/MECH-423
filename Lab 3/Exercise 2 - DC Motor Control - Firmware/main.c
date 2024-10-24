@@ -9,7 +9,7 @@
 // (M) = MSPE430 Datasheet [124 pages]
 // (S) = MSP-EXP430FR5739 User Guide [28 pages]
 
-MessagePacket IncomingPacket = EMTPY_MESSAGE_PACKET;
+MessagePacket IncomingPacket = EMPTY_MESSAGE_PACKET;
 volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
 void ProcessCompletePacket() {
@@ -104,7 +104,7 @@ __interrupt void uart_ISR(void) {
         // --- Handle RX interrupt (data received) ---
         // -------------------------------------------
         // Turn on LED8 for debug visual
-        TurnOnLED(LED8);
+        ToggleLED(LED8);
 
         volatile unsigned char RxByte = UCA0RXBUF; // Read from the receive buffer
 

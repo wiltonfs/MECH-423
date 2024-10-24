@@ -37,20 +37,20 @@ typedef struct {
     volatile unsigned int combined;
 } MessagePacket;
 
-#define EMTPY_MESSAGE_PACKET { .comm = 0, .d1 = 0, .d2 = 0, .esc = 0, .combined = 0}
+#define EMPTY_MESSAGE_PACKET { .comm = 0, .d1 = 0, .d2 = 0, .esc = 0, .combined = 0}
 
 // ------------------------------
 // -- Command Byte Definitions --
 // ------------------------------
 
-#define ENC_0 0
-#define ENC_1 (ENC_0 + 1)
-#define ENC_2 (ENC_0 + 2)
-#define ENC_3 (ENC_0 + 3)
-#define ENC_4 (ENC_0 + 4)
-#define ENC_5 (ENC_0 + 5)
-#define ENC_6 (ENC_0 + 6)
-#define ENC_7 (ENC_0 + 7)
+#define DEBUG_0 0
+#define DEBUG_1 (DEBUG_0 + 1)
+#define DEBUG_2 (DEBUG_0 + 2)
+#define DEBUG_3 (DEBUG_0 + 3)
+#define DEBUG_4 (DEBUG_0 + 4)
+#define DEBUG_5 (DEBUG_0 + 5)
+#define DEBUG_6 (DEBUG_0 + 6)
+#define DEBUG_7 (DEBUG_0 + 7)
 
 #define DCM_0 8             // Clockwise DC motor
 #define DCM_1 (DCM_0 + 1)   // Counterclockwise DC motor
@@ -175,9 +175,9 @@ bool COM_MessagePacketAssembly_StateMachine(MessagePacket *MP, volatile PACKET_F
 
     // Increment the expected next read
     if (*ExpectedNextReadTracker >= ESCP_BYTE)
-        *ExpectedNextReadTracker = START_BYTE;
+        (*ExpectedNextReadTracker) = START_BYTE;
     else
-        *ExpectedNextReadTracker++;
+        (*ExpectedNextReadTracker)++;
 
     return completedPacket; // Only true if just received the escape byte
 }
