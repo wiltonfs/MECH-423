@@ -9,52 +9,10 @@
 // (M) = MSPE430 Datasheet [124 pages]
 // (S) = MSP-EXP430FR5739 User Guide [28 pages]
 
-// ------------------------------------------
-// ----- Messaging Protocol Definitions -----
-// ------------------------------------------
-
-// Clockwise rotation direction for DC motor
-#define DCM_0 8
-#define DCM_CW 8
-
-// Counter-clockwise rotation direction for DC motor
-#define DCM_1 9
-#define DCM_CCW 9
-
-// Brake command for DC motor
-#define DCM_3 10
-#define DCM_BRAKE 10
-
-void StandardUART1Setup_9600_8();
-
-typedef enum NEXT_VALUE {
-    START_BYTE,
-    COM_BYTE,
-    D1_BYTE,
-    D2_BYTE,
-    ESCP_BYTE
-} NEXT_VALUE;
-
-typedef struct {
-    volatile unsigned char comm;
-    volatile unsigned char d1;
-    volatile unsigned char d2;
-    volatile unsigned char esc;
-    volatile unsigned int combined;
-} MessagePacket;
-
-MessagePacket IncomingPacket = { .comm = 0, .d1 = 0, .d2 = 0, .esc = 0, .combined = 0};
-volatile NEXT_VALUE ExpectedRead = START_BYTE;
+MessagePacket IncomingPacket = EMPTY_MESSAGE_PACKET;
+volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
 void ProcessCompletePacket() {
-    // Handle the escape byte
-    if (IncomingPacket.esc & BIT0)
-        IncomingPacket.d1 = 255;
-    if (IncomingPacket.esc & BIT1)
-        IncomingPacket.d2 = 255;
-
-    // Combine the data bytes
-    IncomingPacket.combined = (IncomingPacket.d1 << 8) | IncomingPacket.d2;
 
     // Modify the square wave duty cycle
     TimerB1_PWM(1, IncomingPacket.combined);
@@ -76,7 +34,6 @@ void ProcessCompletePacket() {
 
         // Stop spin command to motor driver
         P3OUT &= ~(BIT6 + BIT7);
-
     }
 }
 
