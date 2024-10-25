@@ -85,7 +85,7 @@ namespace DCMotorController
         // ----- Motor Control Inputs -----
         private void DC1_SpeedInput_MouseUp(object sender, MouseEventArgs e)
         {
-            SendDCMotorCommand(DC1_SpeedInput.Value);
+            //SendDCMotorCommand(DC1_SpeedInput.Value);
         }
 
         // -------------------------
@@ -215,6 +215,11 @@ namespace DCMotorController
         private byte LeastSignificant(uint value)
         {
             return (byte)(value & 0xFF);
+        }
+
+        private void DC1_SpeedInput_Scroll(object sender, EventArgs e)
+        {
+            SendDCMotorCommand(DC1_SpeedInput.Value);
         }
     }
 }

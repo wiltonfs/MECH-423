@@ -24,7 +24,7 @@
 #define DCM_3 10
 #define DCM_BRAKE 10
 
-
+void StandardUART1Setup_9600_8();
 
 typedef enum NEXT_VALUE {
     START_BYTE,
@@ -55,33 +55,27 @@ void ProcessCompletePacket() {
     // Combine the data bytes
     IncomingPacket.combined = (IncomingPacket.d1 << 8) | IncomingPacket.d2;
 
+    // Modify the square wave duty cycle
+    TimerB1_PWM(1, IncomingPacket.combined);
+
     // Handle the command byte
     if (IncomingPacket.comm == DCM_CW) {
 
-        // Modify the square wave duty cycle
-        TimerB1_PWM(1, IncomingPacket.combined);
-
-        // Turn on LED3
-        TurnOnLED(LED3);
-        // Turn off LED2
-        TurnOffLED(LED2);
+        // CW spin command to motor driver
+        P3OUT |= BIT6;
+        P3OUT &= ~BIT7;
 
     } else if (IncomingPacket.comm == DCM_CCW) {
 
-        // Modify the square wave duty cycle
-        TimerB1_PWM(1, IncomingPacket.combined);
-
-        // Turn on LED2
-        TurnOnLED(LED2);
-        // Turn off LED3
-        TurnOffLED(LED3);
+        // CCW spin command to motor driver
+        P3OUT &= ~BIT6;
+        P3OUT |= BIT7;
 
     } else if (IncomingPacket.comm == DCM_BRAKE) {
 
-        // Turn off LED2
-        TurnOffLED(LED2);
-        // Turn off LED3
-        TurnOffLED(LED3);
+        // Stop spin command to motor driver
+        P3OUT &= ~(BIT6 + BIT7);
+
     }
 }
 
@@ -140,6 +134,14 @@ int main(void)
     SetupLEDPins(ALL_LEDs);
     TurnOffLED(ALL_LEDs);
 
+    //initializing relevant pins for  outputs (P3.6 & P3.7) - this is arbitrary assignment. Can be any I/O pins
+    P3SEL0 &= ~(BIT6 + BIT7);
+    P3SEL1 &= ~(BIT6 + BIT7);
+    P3DIR |= BIT6 + BIT7;
+
+    //Stop command to motor driver
+    P3OUT &= ~(BIT6 + BIT7);
+
     StandardClockSetup_8Mhz_1Mhz();
 
     // Set-up auxillary clock to run at 8 million Hz
@@ -155,8 +157,35 @@ int main(void)
 
     TimerB1_PWM(1, 32767);         // 50% duty cycle, P3.4 output
 
-    StandardUART0Setup_9600_8();
-    UCA0IE |= UCRXIE;           // Enable RX interrupt
+    //StandardUART1Setup_9600_8();
+
+    // Set the clock source and configure UART
+    UCA1CTLW0 |= UCSWRST;        // Put eUSCI in reset  (L) pg. 495
+    UCA1CTLW0 |= UCSSEL__SMCLK;  // SMCLK as source     (L) pg. 495
+    UCA1CTLW0 &= ~(BIT9 | BITA); // UART mode           (L) pg. 495
+    // Put target baud and BRCLK into equations         (L) pg. 487
+    // Or check handy table for common settings         (L) pg. 490
+    // For 1MHz clock and 9600 baud:
+    // UCOS16 = 1
+    // UCBRx = 6
+    // UCBRFx = 8
+    // UCBRSx = 0x20
+    UCA1BRW = 6;                // Prescaler control    (L) pg. 516
+    UCA1MCTLW = 0x2081;         // Assemble settings    (L) pg. 497
+    // Set the other settings. 8 data bits, no parity, 1 stop bit. These are default but set anyway.
+    UCA1CTLW0 &= ~UC7BIT;        // 8 data bits         (L) pg. 495
+    UCA1CTLW0 &= ~UCPEN;         // Disable Parity      (L) pg. 495
+    UCA1CTLW0 &= ~UCSPB;         // 1 Stop bit          (L) pg. 495
+
+    // Configure pins P2.5 and P2.6 for UART as Receive and Transmit
+    // P2.5 TXD, P2.6 RXD
+    P2SEL0 &= ~(BIT5 | BIT6);       // (M) pg. 74
+    P2SEL1 |=  (BIT5 | BIT6);       // (M) pg. 74
+
+    // Start UART
+    UCA1CTLW0 &= ~UCSWRST;       // Undo reset on eUSCI (L) pg. 495
+
+    UCA1IE |= UCRXIE;           // Enable RX interrupt
     //UCA0IE |= UCTXIE;         // Enable TX interrupt
     __enable_interrupt();       // Enable global interrupts
 
@@ -167,15 +196,14 @@ int main(void)
             // Heart beat to display general program progression
             // If this stops, you are stuck in an interrupt
             ToggleLED(LED1);
-
         }
 
     return 0;
 }
 
-#pragma vector = USCI_A0_VECTOR
+#pragma vector = USCI_A1_VECTOR
 __interrupt void uart_ISR(void) {
-    if (UCA0IV == USCI_UART_UCRXIFG)    // Receive buffer full. (L) pg. 504
+    if (UCA1IV == USCI_UART_UCRXIFG)    // Receive buffer full. (L) pg. 504
     {
         // -------------------------------------------
         // --- Handle RX interrupt (data received) ---
@@ -183,14 +211,14 @@ __interrupt void uart_ISR(void) {
         // Turn on LED8 for debug visual
         TurnOnLED(LED8);
 
-        volatile unsigned char RxByte = UCA0RXBUF; // Read from the receive buffer
+        volatile unsigned char RxByte = UCA1RXBUF; // Read from the receive buffer
 
         ReceiveStateMachine(RxByte);
 
         return;
 
     }
-    else if (UCA0IV == USCI_UART_UCTXIFG || UCA0IV == USCI_UART_UCTXCPTIFG)     // Transmit buffer empty OR Transmit complete. (L) pg. 504
+    else if (UCA1IV == USCI_UART_UCTXIFG || UCA1IV == USCI_UART_UCTXCPTIFG)     // Transmit buffer empty OR Transmit complete. (L) pg. 504
     {
         // ---------------------------------------------------
         // --- Handle TX interrupt (transmission complete) ---
@@ -200,8 +228,37 @@ __interrupt void uart_ISR(void) {
 
         return;
     }
-    else if (UCA0IV == USCI_UART_UCSTTIFG)  // Start bit received. (L) pg. 504
+    else if (UCA1IV == USCI_UART_UCSTTIFG)  // Start bit received. (L) pg. 504
     {
         return;
     }
+}
+
+void StandardUART1Setup_9600_8()
+{
+    // Set the clock source and configure UART
+    UCA1CTLW0 |= UCSWRST;        // Put eUSCI in reset  (L) pg. 495
+    UCA1CTLW0 |= UCSSEL__SMCLK;  // SMCLK as source     (L) pg. 495
+    UCA1CTLW0 &= ~(BIT9 | BITA); // UART mode           (L) pg. 495
+    // Put target baud and BRCLK into equations         (L) pg. 487
+    // Or check handy table for common settings         (L) pg. 490
+    // For 1MHz clock and 9600 baud:
+    // UCOS16 = 1
+    // UCBRx = 6
+    // UCBRFx = 8
+    // UCBRSx = 0x20
+    UCA1BRW = 6;                // Prescaler control    (L) pg. 516
+    UCA1MCTLW = 0x2081;         // Assemble settings    (L) pg. 497
+    // Set the other settings. 8 data bits, no parity, 1 stop bit. These are default but set anyway.
+    UCA1CTLW0 &= ~UC7BIT;        // 8 data bits         (L) pg. 495
+    UCA1CTLW0 &= ~UCPEN;         // Disable Parity      (L) pg. 495
+    UCA1CTLW0 &= ~UCSPB;         // 1 Stop bit          (L) pg. 495
+
+    // Configure pins P2.5 and P2.6 for UART as Receive and Transmit
+    // P2.5 TXD, P2.6 RXD
+    P2SEL0 &= ~(BIT5 | BIT6);       // (M) pg. 74
+    P2SEL1 |=  (BIT5 | BIT6);       // (M) pg. 74
+
+    // Start UART
+    UCA1CTLW0 &= ~UCSWRST;       // Undo reset on eUSCI (L) pg. 495
 }
