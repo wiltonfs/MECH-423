@@ -18,7 +18,9 @@ namespace DCMotorController
 {
     enum COMM_BYTE
     {
-        DCM_CW, DCM_CCW, DCM_BRAKE
+        DCM_CW, DCM_CCW, DCM_BRAKE,
+
+        STP_SINGLE_CW, STP_SINGLE_CCW, STP_CONT_CW, STP_CONT_CCW, STP_STOP
     }
 
     public partial class DCMotorController : Form
@@ -29,6 +31,10 @@ namespace DCMotorController
 
         // Speed must exceed this to send a non-brake command to the motor
         const int THRESHOLD_SPEED = 3;
+
+        // Last transmitted speed values for the DC and Stepper
+        int Stepper_LastSpeedValue = 0;
+        int DC_LastSpeedValue = 0;
 
         // Input and output Serial queues
         ConcurrentQueue<byte> outgoingQueue = new ConcurrentQueue<byte>();
@@ -72,6 +78,20 @@ namespace DCMotorController
         {
             RefreshVisuals();
         }
+        private void inputsTimer_Tick(object sender, EventArgs e)
+        {
+            if (DC1_SpeedInput.Value != DC_LastSpeedValue)
+            {
+                DC_LastSpeedValue = DC1_SpeedInput.Value;
+                SendDCMotorCommand(DC1_SpeedInput.Value);
+            }
+
+            if (Stepper_SpeedInput.Value != Stepper_LastSpeedValue)
+            {
+                Stepper_LastSpeedValue = Stepper_SpeedInput.Value;
+                SendStepperMotorCommand(Stepper_SpeedInput.Value);
+            }
+        }
         private void txTimer_Tick(object sender, EventArgs e)
         {
             if (serialPort1.IsOpen && serialPort1.BytesToWrite == 0 && outgoingQueue.Count() > 0)
@@ -83,9 +103,14 @@ namespace DCMotorController
             }
         }
         // ----- Motor Control Inputs -----
-        private void DC1_SpeedInput_MouseUp(object sender, MouseEventArgs e)
+        private void StepCW_Button_Click(object sender, EventArgs e)
         {
-            //SendDCMotorCommand(DC1_SpeedInput.Value);
+            QueueOutgoing(COMM_BYTE.STP_SINGLE_CW, 0, 1);
+        }
+
+        private void StepCCW_Button_Click(object sender, EventArgs e)
+        {
+            QueueOutgoing(COMM_BYTE.STP_SINGLE_CCW, 0, 1);
         }
 
         // -------------------------
@@ -156,6 +181,20 @@ namespace DCMotorController
             QueueOutgoing(COM, D1, D2);
         }
 
+        private void SendStepperMotorCommand(int speed)
+        {
+            COMM_BYTE COM = COMM_BYTE.STP_STOP;
+            if (speed > THRESHOLD_SPEED)
+                COM = COMM_BYTE.STP_CONT_CW;
+            if (speed < -THRESHOLD_SPEED)
+                COM = COMM_BYTE.STP_CONT_CCW;
+
+            byte D1 = MostSignificant(SpeedToPWM(speed));
+            byte D2 = LeastSignificant(SpeedToPWM(speed));
+
+            QueueOutgoing(COM, D1, D2);
+        }
+
         private uint SpeedToPWM(int speed)
         {
             if (Math.Abs(speed) <= THRESHOLD_SPEED)
@@ -201,10 +240,18 @@ namespace DCMotorController
         {
             switch (COMenum)
             {
-                case COMM_BYTE.DCM_CW:      return 8;
-                case COMM_BYTE.DCM_CCW:     return 9;
-                case COMM_BYTE.DCM_BRAKE:   return 10;
-                default: return 0;
+                case COMM_BYTE.DCM_CW:              return 8;
+                case COMM_BYTE.DCM_CCW:             return 9;
+                case COMM_BYTE.DCM_BRAKE:           return 10;
+                case COMM_BYTE.STP_SINGLE_CW:       return 16;
+                case COMM_BYTE.STP_SINGLE_CCW:      return 17;
+                case COMM_BYTE.STP_CONT_CW:         return 18;
+                case COMM_BYTE.STP_CONT_CCW:        return 19;
+                case COMM_BYTE.STP_STOP:            return 20;
+                default: 
+                    // If we get here, there is a COMM_BYTE that hasn't been implemented in this switch statement
+                    throw new NotImplementedException();
+                    return 255;
             }
         }
         private byte MostSignificant(uint value)
@@ -217,9 +264,5 @@ namespace DCMotorController
             return (byte)(value & 0xFF);
         }
 
-        private void DC1_SpeedInput_Scroll(object sender, EventArgs e)
-        {
-            SendDCMotorCommand(DC1_SpeedInput.Value);
-        }
     }
 }
