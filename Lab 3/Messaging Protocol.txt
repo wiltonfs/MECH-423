@@ -21,11 +21,11 @@
 14  - DCM_6 - reserved
 15  - DCM_7 - reserved
 ## Stepper Motor commands
-16  - STP_0 - reserved
-17  - STP_1 - reserved
-18  - STP_2 - reserved
-19  - STP_3 - reserved
-20  - STP_4 - reserved
+16  - STP_0 - Single step, clockwise direction
+17  - STP_1 - Single step, counterclockwise direction
+18  - STP_2 - Continuous stepping, clockwise direction. TODO: Speed is somehow communicated in D1 and D2
+19  - STP_3 - Continuous stepping, counterclockwise direction. TODO: Speed is somehow communicated in D1 and D2
+20  - STP_4 - Stop stepping
 21  - STP_5 - reserved
 22  - STP_6 - reserved
 23  - STP_7 - reserved

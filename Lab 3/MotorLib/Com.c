@@ -64,14 +64,19 @@ typedef struct {
 #define DCM_CCW     DCM_1
 #define DCM_BRAKE   DCM_2
 
-#define STP_0 16
-#define STP_1 (STP_0 + 1)
-#define STP_2 (STP_0 + 2)
-#define STP_3 (STP_0 + 3)
-#define STP_4 (STP_0 + 4)
+#define STP_0 16            // Single step, clockwise direction
+#define STP_1 (STP_0 + 1)   // Single step, counterclockwise direction
+#define STP_2 (STP_0 + 2)   // Continuous stepping, clockwise direction
+#define STP_3 (STP_0 + 3)   // Continuous stepping, counterclockwise direction
+#define STP_4 (STP_0 + 4)   // Stop stepping
 #define STP_5 (STP_0 + 5)
 #define STP_6 (STP_0 + 6)
 #define STP_7 (STP_0 + 7)
+#define STP_SINGLE_CW      STP_0
+#define STP_SINGLE_CCW     STP_1
+#define STP_CONT_CW        STP_2
+#define STP_CONT_CCW       STP_3
+#define STP_STOP           STP_4
 
 #define ENC_0 24
 #define ENC_1 (ENC_0 + 1)
