@@ -69,7 +69,7 @@ int main(void)
 
     // Set-up auxillary clock to run at 8 million Hz
     CSCTL0 = CSKEY;                         // Set the clock password.  (L) pg. 80
-    CSCTL2 |= SELA__DCOCLK;                 // Set ACLK to run on DCO. (L) pg. 82
+
 
     TimerB1Setup_UpCount_125kHz(65535);
 
