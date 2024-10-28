@@ -1,5 +1,5 @@
 #include <msp430.h> 
-#include "../../Lab 2/FSWLib/FSWLib.c"
+#include "General.c"
 // Definitions for the messaging protocol we developed in MECH 423, Lab 3
 // Felix Wilton & Lazar Stanojevic
 // Oct 2024
