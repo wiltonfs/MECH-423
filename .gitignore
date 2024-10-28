@@ -3,6 +3,21 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# Code composer stuff
+# Ignore build artifacts
+/Debug/
+/Release/
+
+# Ignore generated configuration folders
+/.config/
+/.launches/
+/targetConfigs/ (optional if auto-generated and unchanged)
+
+# Ignore generated support files
+.xdchelp
+
+
+
 # User-specific files
 *.rsuser
 *.suo
