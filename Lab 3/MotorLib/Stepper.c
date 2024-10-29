@@ -27,8 +27,13 @@ typedef enum STEPPER_STATE {
     xx_B2,
     A1_B2
 } STEPPER_STATE;
+// 65535 = ~121 Hz
+// 8191 = ~1 kHz
+// 245 = 32 kHz
+#define STEPPER_UPCOUNT_TARGET 8191
+// STEPPER_UPCOUNT_TARGET / 4
+#define MAX_STEPPER_PHASE_DUTY (STEPPER_UPCOUNT_TARGET >> 2)
 
-#define MAX_STEPPER_PHASE_DUTY 16383
 #define STEPPER_A1 TB0CCR2
 #define STEPPER_A2 TB0CCR1
 #define STEPPER_B1 TB1CCR2
@@ -40,7 +45,15 @@ typedef enum STEPPER_STATE {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+void SetupStepperTimers();
+// Sets up Timer B0 and Timer B1 to control the stepper motor
+// A1 = TB0.2, A2 = TB0.1, B1 = TB1.2, B2 = TB1.1
 
+void IncrementHalfStep(STEPPER_STATE *currentState, bool directionCW);
+// Increments the stepper motor half step in the given direction
+
+void UpdatePinsBasedOnStepperState(STEPPER_STATE *currentState);
+// Sets the PWM to the 4 output pins depending on the current state of the stepper motor
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -50,14 +63,6 @@ typedef enum STEPPER_STATE {
 
 void SetupStepperTimers()
 {
-    unsigned short upCountTarget = 65535;
-    // Frequency between the pulses to the stepper
-    // 65535 = ~1.9 Hz
-    // 249 = 496 Hz
-    // 247 = 500 Hz
-    // 245 = 504 Hz
-    // 10  = ~12.5 kHz
-    
     // A1 = TIMERB0.2 = P1.5
     // A2 = TIMERB0.1 = P1.4
     // B1 = TIMERB1.2 = P3.5
@@ -66,15 +71,15 @@ void SetupStepperTimers()
     // Setup Timer B0 in the "up count" mode
     TB0CTL |= TBCLR;            // Clear Timer B            (L) pg.372
     TB0CTL |= (BIT4);           // Up mode                  (L) pg. 372
-    TB0CTL |= TBSSEL__SMCLK;    // Clock source select      (L) pg. 372
-    TB0CTL |= (BIT7 | BIT6);    // 1/8 divider (125 kHz)    (L) pg. 372
-    TB0CCR0 = upCountTarget;    // What we count to         (L) pg. 377
+    TB0CTL |= TBSSEL__ACLK;    // Clock source select      (L) pg. 372
+    //TB0CTL |= (BIT7 | BIT6);    // 1/8 divider (125 kHz)    (L) pg. 372
+    TB0CCR0 = STEPPER_UPCOUNT_TARGET;    // What we count to         (L) pg. 377
     // Setup Timer B1 in the "up count" mode
     TB1CTL |= TBCLR;            // Clear Timer B            (L) pg.372
     TB1CTL |= (BIT4);           // Up mode                  (L) pg. 372
-    TB1CTL |= TBSSEL__SMCLK;    // Clock source select      (L) pg. 372
-    TB1CTL |= (BIT7 | BIT6);    // 1/8 divider (125 kHz)    (L) pg. 372
-    TB1CCR0 = upCountTarget;    // What we count to         (L) pg. 377
+    TB1CTL |= TBSSEL__ACLK;    // Clock source select      (L) pg. 372
+    //TB1CTL |= (BIT7 | BIT6);    // 1/8 divider (125 kHz)    (L) pg. 372
+    TB1CCR0 = STEPPER_UPCOUNT_TARGET;    // What we count to         (L) pg. 377
 
     // Reset/Set mode           (L) pg. 365, 366, and 375
     TB1CCTL1 = OUTMOD_7;
@@ -93,7 +98,7 @@ void SetupStepperTimers()
     // Zero duty cycle to start with
     STEPPER_A1 = MAX_STEPPER_PHASE_DUTY;
     STEPPER_A2 = 0;
-    STEPPER_B1 = MAX_STEPPER_PHASE_DUTY + MAX_STEPPER_PHASE_DUTY;
+    STEPPER_B1 = 0;
     STEPPER_B2 = 0;
 }
 

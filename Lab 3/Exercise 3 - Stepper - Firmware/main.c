@@ -45,7 +45,7 @@ int main(void)
 
     while(1)
     {
-        DelayMillis_8Mhz(500);
+        DelayMillis_8Mhz(100);
     }
 
     return 0;
