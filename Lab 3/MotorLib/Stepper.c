@@ -61,6 +61,11 @@ void UpdatePinsBasedOnStepperState(STEPPER_STATE *currentState);
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+unsigned int DataIntToDelay_HectoMicros_8Mhz(unsigned int data)
+{
+    return 500 / data;
+}
+
 void SetupStepperTimers()
 {
     // A1 = TIMERB0.2 = P1.5

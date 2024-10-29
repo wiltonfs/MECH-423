@@ -189,8 +189,8 @@ namespace DCMotorController
             if (speed < -THRESHOLD_SPEED)
                 COM = COMM_BYTE.STP_CONT_CCW;
 
-            byte D1 = MostSignificant(SpeedToPWM(speed));
-            byte D2 = LeastSignificant(SpeedToPWM(speed));
+            byte D1 = MostSignificant((uint) Math.Abs(speed));
+            byte D2 = LeastSignificant((uint)Math.Abs(speed));
 
             QueueOutgoing(COM, D1, D2);
         }

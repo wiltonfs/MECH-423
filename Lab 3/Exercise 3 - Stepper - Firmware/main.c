@@ -40,7 +40,7 @@ void ProcessCompletePacket() {
         StepperContinous = false;
     }
 
-    StepperContinous_Delay = 513 - (IncomingPacket.combined >> 7);
+    StepperContinous_Delay = IncomingPacket.combined;
 }
 
 /**
@@ -61,7 +61,7 @@ int main(void)
 
     while(1)
     {
-        DelayMicros_8Mhz(StepperContinous_Delay);
+        DelayHectoMicros_8Mhz(DataIntToDelay_HectoMicros_8Mhz(StepperContinous_Delay));
         if (StepperContinous)
             IncrementHalfStep(&stepper_state, StepperContinous_DirectionCW);
     }

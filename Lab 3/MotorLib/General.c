@@ -186,12 +186,12 @@ void UART_TX_String_BLOCKING(const unsigned char *str)
     }
 }
 
-void DelayMicros_8Mhz(unsigned int micros)
+void DelayHectoMicros_8Mhz(unsigned int hectomicros)
 {
     // Assumes 8Mhz clock cycle
-    while(micros-- > 0)
+    while(hectomicros-- > 0)
     {
-        __delay_cycles(8);
+        __delay_cycles(800);
     }
 }
 
