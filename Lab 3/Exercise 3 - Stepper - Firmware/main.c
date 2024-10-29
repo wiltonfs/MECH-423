@@ -17,7 +17,7 @@ STEPPER_STATE stepper_state = A1_xx;
 
 bool StepperContinous = false;              // If continous spinning
 bool StepperContinous_DirectionCW = true;   // What direction spinning
-int StepperContinous_Delay = 1;       // Delay (turns into speed)
+int StepperContinous_Speed = 1;       // Speed (turns into delay)
 
 void ProcessCompletePacket() {
     // Handle the command byte
@@ -31,16 +31,16 @@ void ProcessCompletePacket() {
         // Continuous stepping counter-clockwise
         StepperContinous = true;
         StepperContinous_DirectionCW = true;
+        StepperContinous_Speed = IncomingPacket.combined;
     } else if (IncomingPacket.comm == STP_CONT_CCW) {
         // Continuous stepping counter-clockwise
         StepperContinous = true;
         StepperContinous_DirectionCW = false;
+        StepperContinous_Speed = IncomingPacket.combined;
     } else if (IncomingPacket.comm == STP_STOP) {
         // Stop motion
         StepperContinous = false;
     }
-
-    StepperContinous_Delay = IncomingPacket.combined;
 }
 
 /**
@@ -61,7 +61,7 @@ int main(void)
 
     while(1)
     {
-        DelayHectoMicros_8Mhz(DataIntToDelay_HectoMicros_8Mhz(StepperContinous_Delay));
+        DelayHectoMicros_8Mhz(SpeedToDelay_HectoMicros(StepperContinous_Speed));
         if (StepperContinous)
             IncrementHalfStep(&stepper_state, StepperContinous_DirectionCW);
     }

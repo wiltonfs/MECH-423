@@ -23,8 +23,8 @@
 ## Stepper Motor commands
 16  - STP_0 - Single step, clockwise direction
 17  - STP_1 - Single step, counterclockwise direction
-18  - STP_2 - Continuous stepping, clockwise direction. TODO: Speed is somehow communicated in D1 and D2
-19  - STP_3 - Continuous stepping, counterclockwise direction. TODO: Speed is somehow communicated in D1 and D2
+18  - STP_2 - Continuous stepping, clockwise direction. Speed is sent in D1 and D2, with 50 = max speed.
+19  - STP_3 - Continuous stepping, counterclockwise direction. Speed is sent in D1 and D2, with 50 = max speed.
 20  - STP_4 - Stop stepping
 21  - STP_5 - reserved
 22  - STP_6 - reserved

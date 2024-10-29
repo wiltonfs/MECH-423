@@ -55,15 +55,24 @@ void IncrementHalfStep(STEPPER_STATE *currentState, bool directionCW);
 void UpdatePinsBasedOnStepperState(STEPPER_STATE *currentState);
 // Sets the PWM to the 4 output pins depending on the current state of the stepper motor
 
+unsigned int SpeedToDelay_HectoMicros(unsigned int speed);
+// Converts a speed value to a delay in hecto-microseconds
+// Speed is in the range [1, 50]
+// 1 hecto-microsecond = 100 microseconds = 0.1 milliseconds
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~ Function Definitions ~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-unsigned int DataIntToDelay_HectoMicros_8Mhz(unsigned int data)
+unsigned int SpeedToDelay_HectoMicros(unsigned int speed)
 {
-    return 500 / data;
+    if (speed > 50)
+        return 10;
+    if (speed < 1)
+        return 500;
+    return 500 / speed;
 }
 
 void SetupStepperTimers()
