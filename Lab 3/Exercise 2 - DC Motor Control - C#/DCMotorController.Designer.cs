@@ -52,6 +52,8 @@
             this.label8 = new System.Windows.Forms.Label();
             this.StepCW_Button = new System.Windows.Forms.Button();
             this.StepCCW_Button = new System.Windows.Forms.Button();
+            this.label9 = new System.Windows.Forms.Label();
+            this.queueHistoryDisplay = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.DC1_SpeedInput)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Stepper_SpeedInput)).BeginInit();
             this.SuspendLayout();
@@ -123,11 +125,11 @@
             // outQueueDisplay
             // 
             this.outQueueDisplay.AutoSize = true;
-            this.outQueueDisplay.Location = new System.Drawing.Point(13, 385);
+            this.outQueueDisplay.Location = new System.Drawing.Point(13, 339);
             this.outQueueDisplay.Name = "outQueueDisplay";
-            this.outQueueDisplay.Size = new System.Drawing.Size(146, 13);
+            this.outQueueDisplay.Size = new System.Drawing.Size(184, 13);
             this.outQueueDisplay.TabIndex = 23;
-            this.outQueueDisplay.Text = "Out Queue: 255 255 255 255";
+            this.outQueueDisplay.Text = "Queue pending TX: 255 255 255 255";
             this.outQueueDisplay.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // postStringVisual
@@ -260,11 +262,32 @@
             this.StepCCW_Button.UseVisualStyleBackColor = true;
             this.StepCCW_Button.Click += new System.EventHandler(this.StepCCW_Button_Click);
             // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Location = new System.Drawing.Point(14, 367);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(77, 13);
+            this.label9.TabIndex = 47;
+            this.label9.Text = "Queue History:";
+            this.label9.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
+            // queueHistoryDisplay
+            // 
+            this.queueHistoryDisplay.Location = new System.Drawing.Point(16, 384);
+            this.queueHistoryDisplay.Multiline = true;
+            this.queueHistoryDisplay.Name = "queueHistoryDisplay";
+            this.queueHistoryDisplay.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.queueHistoryDisplay.Size = new System.Drawing.Size(772, 54);
+            this.queueHistoryDisplay.TabIndex = 48;
+            // 
             // DCMotorController
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.queueHistoryDisplay);
+            this.Controls.Add(this.label9);
             this.Controls.Add(this.StepCCW_Button);
             this.Controls.Add(this.StepCW_Button);
             this.Controls.Add(this.label5);
@@ -319,6 +342,8 @@
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Button StepCW_Button;
         private System.Windows.Forms.Button StepCCW_Button;
+        private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.TextBox queueHistoryDisplay;
     }
 }
 

@@ -13,6 +13,7 @@ using System.Runtime.Remoting.Lifetime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace DCMotorController
 {
@@ -138,7 +139,7 @@ namespace DCMotorController
         private void RefreshVisuals()
         {
             // Display the queue of outgoing values
-            string queue = "Out queue: ";
+            string queue = "Queue pending TX: ";
             foreach (byte b in outgoingQueue)
             {
                 queue += b + " ";
@@ -234,6 +235,9 @@ namespace DCMotorController
             outgoingQueue.Enqueue(D1);
             outgoingQueue.Enqueue(D2);
             outgoingQueue.Enqueue(ESC);
+
+            string packet = $"[{COMMenum}, {DataBytesToInt(D1, D2)}] = [255 {COMM} {D1} {D2} {ESC}]\t\t";
+            queueHistoryDisplay.Text += packet;
         }
 
         private byte CommandByteToByte(COMM_BYTE COMenum)
@@ -262,6 +266,11 @@ namespace DCMotorController
         private byte LeastSignificant(uint value)
         {
             return (byte)(value & 0xFF);
+        }
+
+        private uint DataBytesToInt(byte D1, byte D2)
+        {
+            return (uint)((D1 << 8) | (D2 & 0xFF));
         }
 
     }
