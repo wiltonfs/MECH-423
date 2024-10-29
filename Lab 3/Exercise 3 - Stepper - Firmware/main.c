@@ -15,16 +15,32 @@ volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
 STEPPER_STATE stepper_state = A1_xx;
 
+bool StepperContinous = false;              // If continous spinning
+bool StepperContinous_DirectionCW = true;   // What direction spinning
+int StepperContinous_Delay = 1;       // Delay (turns into speed)
+
 void ProcessCompletePacket() {
     // Handle the command byte
     if (IncomingPacket.comm == STP_SINGLE_CW) {
         // Single step clockwise
         IncrementHalfStep(&stepper_state, true);
-
     } else if (IncomingPacket.comm == STP_SINGLE_CCW) {
         // Single step counter-clockwise
         IncrementHalfStep(&stepper_state, false);
+    } else if (IncomingPacket.comm == STP_CONT_CW) {
+        // Continuous stepping counter-clockwise
+        StepperContinous = true;
+        StepperContinous_DirectionCW = true;
+    } else if (IncomingPacket.comm == STP_CONT_CCW) {
+        // Continuous stepping counter-clockwise
+        StepperContinous = true;
+        StepperContinous_DirectionCW = false;
+    } else if (IncomingPacket.comm == STP_STOP) {
+        // Stop motion
+        StepperContinous = false;
     }
+
+    StepperContinous_Delay = 513 - (IncomingPacket.combined >> 7);
 }
 
 /**
@@ -45,7 +61,9 @@ int main(void)
 
     while(1)
     {
-        DelayMillis_8Mhz(100);
+        DelayMicros_8Mhz(StepperContinous_Delay);
+        if (StepperContinous)
+            IncrementHalfStep(&stepper_state, StepperContinous_DirectionCW);
     }
 
     return 0;

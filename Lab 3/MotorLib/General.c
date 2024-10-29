@@ -186,6 +186,15 @@ void UART_TX_String_BLOCKING(const unsigned char *str)
     }
 }
 
+void DelayMicros_8Mhz(unsigned int micros)
+{
+    // Assumes 8Mhz clock cycle
+    while(micros-- > 0)
+    {
+        __delay_cycles(8);
+    }
+}
+
 void DelayMillis_8Mhz(unsigned int millis)
 {
     // Assumes 8Mhz clock cycle
