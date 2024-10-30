@@ -30,7 +30,7 @@
 22  - STP_6 - reserved
 23  - STP_7 - reserved
 ## Encoder commands
-24  - ENC_0 - reserved
+24  - ENC_0 - Communicates a rotational delta. D1 is cw counts, D2 is ccw counts.
 25  - ENC_1 - reserved
 26  - ENC_2 - reserved
 27  - ENC_3 - reserved
