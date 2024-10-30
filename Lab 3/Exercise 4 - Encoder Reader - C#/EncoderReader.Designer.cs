@@ -52,6 +52,7 @@
             this.rxHistoryDisplay = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.velocityLabelRPM = new System.Windows.Forms.Label();
+            this.rxTimer = new System.Windows.Forms.Timer(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.DC1_SpeedInput)).BeginInit();
             this.SuspendLayout();
             // 
@@ -258,6 +259,12 @@
             this.velocityLabelRPM.Text = "Encoder Velocity (RPM):";
             this.velocityLabelRPM.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
+            // rxTimer
+            // 
+            this.rxTimer.Enabled = true;
+            this.rxTimer.Interval = 5;
+            this.rxTimer.Tick += new System.EventHandler(this.rxTimer_Tick);
+            // 
             // EncoderReader
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -316,6 +323,7 @@
         private System.Windows.Forms.TextBox rxHistoryDisplay;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label velocityLabelRPM;
+        private System.Windows.Forms.Timer rxTimer;
     }
 }
 

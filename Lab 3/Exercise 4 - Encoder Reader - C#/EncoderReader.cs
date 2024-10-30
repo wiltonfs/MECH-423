@@ -17,11 +17,28 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace DCMotorController
 {
+    enum PACKET_FRAGMENT
+    {
+        START_BYTE,
+        COM_BYTE,
+        D1_BYTE,
+        D2_BYTE,
+        ESCP_BYTE
+    }
+    struct MessagePacket {
+        public byte comm;
+        public byte d1;
+        public byte d2;
+        public byte esc;
+        public uint combined;
+    }
     enum COMM_BYTE
     {
-        DCM_CW, DCM_CCW, DCM_BRAKE,
+        DCM_CW = 8, DCM_CCW = 9, DCM_BRAKE = 10,
 
-        STP_SINGLE_CW, STP_SINGLE_CCW, STP_CONT_CW, STP_CONT_CCW, STP_STOP
+        STP_SINGLE_CW = 16, STP_SINGLE_CCW = 17, STP_CONT_CW = 18, STP_CONT_CCW = 19, STP_STOP = 20,
+
+        ENC_ROT_DELTA = 24,
     }
 
     public partial class EncoderReader : Form
@@ -39,6 +56,14 @@ namespace DCMotorController
         // Input and output Serial queues
         ConcurrentQueue<byte> outgoingQueue = new ConcurrentQueue<byte>();
         ConcurrentQueue<int> incomingQueue = new ConcurrentQueue<int>();
+        PACKET_FRAGMENT expectedNextRx = PACKET_FRAGMENT.START_BYTE;
+        MessagePacket mostRecentPacket = new MessagePacket();
+
+        // Encoder data
+        const float COUNTS_PER_CYCLE = 236;
+        int EncoderPosition = 0;    // CW Counts
+        float EncoderVelocity = 0;  // CW Counts per second
+        Stopwatch VelocityStopwatch = Stopwatch.StartNew();
 
         // ---------------------------------
         // ----- Constructors and Load -----
@@ -97,6 +122,19 @@ namespace DCMotorController
             }
         }
 
+        private void rxTimer_Tick(object sender, EventArgs e)
+        {
+            
+            if (!incomingQueue.IsEmpty)
+            {
+                int result = 0;
+                while(incomingQueue.TryDequeue(out result))
+                {
+                    RxStateMachine((byte)result);
+                }
+            }
+        }
+
         // -------------------------
         // ----- Serial Events -----
         // -------------------------
@@ -133,7 +171,10 @@ namespace DCMotorController
             { boardConnectedLabel.Text = "No board detected"; }
             else
             { boardConnectedLabel.Text = "Board connected"; }
-                
+
+            positionLabel.Text = $"Encoder position: \t\t{EncoderPosition}";
+            velocityLabelHz.Text = $"Encoder velocity (Hz): \t\t{EncoderVelocity / COUNTS_PER_CYCLE}";
+            velocityLabelRPM.Text = $"Encoder velocity (RPM): \t\t{EncoderVelocity / COUNTS_PER_CYCLE * 60f}";
 
         }
         void refreshSerialConnectionsComboBox()
@@ -209,8 +250,72 @@ namespace DCMotorController
             txHistoryDisplay.Text += packet;
         }
 
+        private void RxStateMachine(byte nextReceive)
+        {
+            if (nextReceive == 255)
+            {
+                expectedNextRx = PACKET_FRAGMENT.COM_BYTE;
+                return;
+            }
+
+            if (expectedNextRx == PACKET_FRAGMENT.COM_BYTE) {
+                mostRecentPacket.comm = nextReceive;
+            } else if (expectedNextRx == PACKET_FRAGMENT.D1_BYTE) {
+                mostRecentPacket.d1 = nextReceive;
+            } else if (expectedNextRx == PACKET_FRAGMENT.D2_BYTE) {
+                mostRecentPacket.d2 = nextReceive;
+            } else if (expectedNextRx == PACKET_FRAGMENT.ESCP_BYTE) {
+                mostRecentPacket.esc = nextReceive;
+                // Finished transmission
+                rxHistoryDisplay.Text += $"[255 {mostRecentPacket.comm} {mostRecentPacket.d1} {mostRecentPacket.d2} {mostRecentPacket.esc}] = ";
+                FormatCompletePacket(mostRecentPacket);
+                rxHistoryDisplay.Text += $"[{(COMM_BYTE)mostRecentPacket.comm}, {mostRecentPacket.combined}]\t\t";
+                UseCompletePacket(mostRecentPacket);
+            }
+
+            // Increment expected next read
+            if (expectedNextRx == PACKET_FRAGMENT.ESCP_BYTE)
+            {
+                expectedNextRx = PACKET_FRAGMENT.START_BYTE;
+            } else { expectedNextRx++; }
+            
+            
+        }
+
+        void FormatCompletePacket(MessagePacket MP)
+        {
+            // Handle the escape byte
+            if ((MP.esc & 0x1) > 0)
+                MP.comm = 255;
+            if ((MP.esc & 0x2) > 0)
+                MP.d1 = 255;
+            if ((MP.esc & 0x4) > 0)
+                MP.d2 = 255;
+
+            // Combine data 1 and 2
+            MP.combined = DataBytesToInt(MP.d1, MP.d2);
+    }
+        void UseCompletePacket(MessagePacket MP)
+        {
+            // Use the command byte to use the rx
+            COMM_BYTE comm = (COMM_BYTE)MP.comm;
+
+            if (comm == COMM_BYTE.ENC_ROT_DELTA)
+            {
+                VelocityStopwatch.Stop();
+
+                int LastPosition = EncoderPosition;
+                EncoderPosition += MP.d1 - MP.d2;
+
+                EncoderVelocity = 1000f * ((float)(EncoderPosition - LastPosition)) / ((float)VelocityStopwatch.ElapsedMilliseconds);
+
+                VelocityStopwatch = Stopwatch.StartNew();
+            }
+        }
+
         private byte CommandByteToByte(COMM_BYTE COMenum)
         {
+            return (byte)COMenum;
             switch (COMenum)
             {
                 case COMM_BYTE.DCM_CW:              return 8;
@@ -241,6 +346,5 @@ namespace DCMotorController
         {
             return (uint)((D1 << 8) | (D2 & 0xFF));
         }
-
     }
 }

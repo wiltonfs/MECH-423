@@ -78,7 +78,7 @@ typedef struct {
 #define STP_CONT_CCW       STP_3
 #define STP_STOP           STP_4
 
-#define ENC_0 24
+#define ENC_0 24            // Communicates a rotational delta. D1 is CW counts, D2 is CCW counts.
 #define ENC_1 (ENC_0 + 1)
 #define ENC_2 (ENC_0 + 2)
 #define ENC_3 (ENC_0 + 3)
@@ -86,6 +86,7 @@ typedef struct {
 #define ENC_5 (ENC_0 + 5)
 #define ENC_6 (ENC_0 + 6)
 #define ENC_7 (ENC_0 + 7)
+#define ENC_ROT_DELTA       ENC_0
 
 #define GAN_0 32
 #define GAN_1 (GAN_0 + 1)

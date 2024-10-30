@@ -46,11 +46,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DCMotorController.cs">
+    <Compile Include="EncoderReader.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="DCMotorController.Designer.cs">
-      <DependentUpon>DCMotorController.cs</DependentUpon>
+    <Compile Include="EncoderReader.Designer.cs">
+      <DependentUpon>EncoderReader.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -63,8 +63,8 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <EmbeddedResource Include="DCMotorController.resx">
-      <DependentUpon>DCMotorController.cs</DependentUpon>
+    <EmbeddedResource Include="EncoderReader.resx">
+      <DependentUpon>EncoderReader.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
