@@ -29,6 +29,10 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.serialComboBox = new System.Windows.Forms.ComboBox();
             this.refreshButton = new System.Windows.Forms.Button();
             this.disconnectButton = new System.Windows.Forms.Button();
@@ -53,7 +57,11 @@
             this.label5 = new System.Windows.Forms.Label();
             this.velocityLabelRPM = new System.Windows.Forms.Label();
             this.rxTimer = new System.Windows.Forms.Timer(this.components);
+            this.positionChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.velocityChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
             ((System.ComponentModel.ISupportInitialize)(this.DC1_SpeedInput)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.positionChart)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.velocityChart)).BeginInit();
             this.SuspendLayout();
             // 
             // serialComboBox
@@ -265,11 +273,39 @@
             this.rxTimer.Interval = 5;
             this.rxTimer.Tick += new System.EventHandler(this.rxTimer_Tick);
             // 
+            // positionChart
+            // 
+            chartArea1.Name = "ChartArea1";
+            this.positionChart.ChartAreas.Add(chartArea1);
+            this.positionChart.Location = new System.Drawing.Point(430, 10);
+            this.positionChart.Name = "positionChart";
+            series1.ChartArea = "ChartArea1";
+            series1.Name = "Series1";
+            this.positionChart.Series.Add(series1);
+            this.positionChart.Size = new System.Drawing.Size(358, 160);
+            this.positionChart.TabIndex = 52;
+            this.positionChart.Text = "chart1";
+            // 
+            // velocityChart
+            // 
+            chartArea2.Name = "ChartArea1";
+            this.velocityChart.ChartAreas.Add(chartArea2);
+            this.velocityChart.Location = new System.Drawing.Point(430, 182);
+            this.velocityChart.Name = "velocityChart";
+            series2.ChartArea = "ChartArea1";
+            series2.Name = "Series1";
+            this.velocityChart.Series.Add(series2);
+            this.velocityChart.Size = new System.Drawing.Size(358, 170);
+            this.velocityChart.TabIndex = 53;
+            this.velocityChart.Text = "chart1";
+            // 
             // EncoderReader
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.velocityChart);
+            this.Controls.Add(this.positionChart);
             this.Controls.Add(this.velocityLabelRPM);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.rxHistoryDisplay);
@@ -293,6 +329,8 @@
             this.Text = "DC Motor Controller";
             this.Load += new System.EventHandler(this.DcMotorController_Load);
             ((System.ComponentModel.ISupportInitialize)(this.DC1_SpeedInput)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.positionChart)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.velocityChart)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -324,6 +362,8 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label velocityLabelRPM;
         private System.Windows.Forms.Timer rxTimer;
+        private System.Windows.Forms.DataVisualization.Charting.Chart positionChart;
+        private System.Windows.Forms.DataVisualization.Charting.Chart velocityChart;
     }
 }
 

@@ -13,6 +13,7 @@ using System.Runtime.Remoting.Lifetime;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.DataVisualization.Charting;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace DCMotorController
@@ -38,7 +39,7 @@ namespace DCMotorController
 
         STP_SINGLE_CW = 16, STP_SINGLE_CCW = 17, STP_CONT_CW = 18, STP_CONT_CCW = 19, STP_STOP = 20,
 
-        ENC_ROT_DELTA = 24,
+        ENC_ROT_DELTA_CW = 24, ENC_ROT_DELTA_CCW = 25
     }
 
     public partial class EncoderReader : Form
@@ -61,9 +62,15 @@ namespace DCMotorController
 
         // Encoder data
         const float COUNTS_PER_CYCLE = 236;
+        const float SECONDS_PER_TX = 0.2f;
         int EncoderPosition = 0;    // CW Counts
         float EncoderVelocity = 0;  // CW Counts per second
         Stopwatch VelocityStopwatch = Stopwatch.StartNew();
+
+        // Encoder plotting data
+        int PLOT_HISTORY_SIZE = 100;
+        Queue<int> EncoderPositions = new Queue<int>();
+        Queue<float> EncoderVelocities = new Queue<float>();
 
         // ---------------------------------
         // ----- Constructors and Load -----
@@ -159,13 +166,7 @@ namespace DCMotorController
 
         private void RefreshVisuals()
         {
-            // Display the queue of outgoing values
-            string queue = "Queue pending TX: ";
-            foreach (byte b in outgoingQueue)
-            {
-                queue += b + " ";
-            }
-            outQueueDisplay.Text = queue;
+            outQueueDisplay.Text = $"Bytes pending TX: {outgoingQueue.Count}";
 
             if (!serialPort1.IsOpen)
             { boardConnectedLabel.Text = "No board detected"; }
@@ -176,6 +177,8 @@ namespace DCMotorController
             velocityLabelHz.Text = $"Encoder velocity (Hz): \t\t{EncoderVelocity / COUNTS_PER_CYCLE}";
             velocityLabelRPM.Text = $"Encoder velocity (RPM): \t\t{EncoderVelocity / COUNTS_PER_CYCLE * 60f}";
 
+            UpdatePositionChart();
+            UpdateVelocityChart();
         }
         void refreshSerialConnectionsComboBox()
         {
@@ -294,23 +297,38 @@ namespace DCMotorController
 
             // Combine data 1 and 2
             MP.combined = DataBytesToInt(MP.d1, MP.d2);
-    }
+        }
         void UseCompletePacket(MessagePacket MP)
         {
             // Use the command byte to use the rx
             COMM_BYTE comm = (COMM_BYTE)MP.comm;
 
-            if (comm == COMM_BYTE.ENC_ROT_DELTA)
-            {
-                VelocityStopwatch.Stop();
-
-                int LastPosition = EncoderPosition;
-                EncoderPosition += MP.d1 - MP.d2;
-
-                EncoderVelocity = 1000f * ((float)(EncoderPosition - LastPosition)) / ((float)VelocityStopwatch.ElapsedMilliseconds);
-
-                VelocityStopwatch = Stopwatch.StartNew();
+            if (comm == COMM_BYTE.ENC_ROT_DELTA_CW) {
+                UpdateEncoderPositionAndVelocity((int)MP.combined);
+            } else if (comm == COMM_BYTE.ENC_ROT_DELTA_CCW) {
+                UpdateEncoderPositionAndVelocity(-1 * (int)MP.combined);
             }
+        }
+
+        void UpdateEncoderPositionAndVelocity(int EncoderPositionDelta)
+        {
+            VelocityStopwatch.Stop();
+
+
+            EncoderPosition += EncoderPositionDelta;
+            EncoderVelocity = (((float)EncoderPositionDelta)) / (SECONDS_PER_TX);
+
+            EncoderPositions.Enqueue(EncoderPosition);
+            EncoderVelocities.Enqueue(EncoderVelocity);
+
+            if (EncoderVelocities.Count > PLOT_HISTORY_SIZE)
+            {
+                EncoderPositions.Dequeue();
+                EncoderVelocities.Dequeue();
+            }
+
+
+            VelocityStopwatch = Stopwatch.StartNew();
         }
 
         private byte CommandByteToByte(COMM_BYTE COMenum)
@@ -345,6 +363,67 @@ namespace DCMotorController
         private uint DataBytesToInt(byte D1, byte D2)
         {
             return (uint)((D1 << 8) | (D2 & 0xFF));
+        }
+
+        // --------------------
+        // ----- Plotting -----
+        // --------------------
+        private void UpdatePositionChart()
+        {
+            int[] poss = { 1, 1, 3, 3, 4, 4, 3, 5, 7, 4, 1, 1, 5, 10};
+            EncoderPositions = new Queue<int>(poss);
+
+            // Initialize Chart
+            positionChart.Series.Clear();
+            positionChart.ChartAreas.Clear();
+            positionChart.ChartAreas.Add("MainArea");
+
+            // Position Series
+            var positionSeries = positionChart.Series.Add("Position");
+            positionSeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+            positionSeries.Color = Color.Blue;
+
+            float time = 0f;
+            foreach (int pos in EncoderPositions)
+            {
+                time += SECONDS_PER_TX;
+                positionSeries.Points.AddXY(time, pos);
+            }
+
+            positionChart.ChartAreas["MainArea"].AxisX.Title = "Time [s]";
+            positionChart.ChartAreas["MainArea"].AxisY.Title = "Position [counts]";
+
+            positionChart.ChartAreas[0].AxisX.LabelStyle.Enabled = false;
+            positionChart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
+        }
+
+        private void UpdateVelocityChart()
+        {
+            float[] vels = { -2, 3, 3, 19, -20, 0, 0.5f, -9, 3, 4, 5, 3, 12, 14 };
+            EncoderVelocities = new Queue<float>(vels);
+
+            // Initialize Chart
+            velocityChart.Series.Clear();
+            velocityChart.ChartAreas.Clear();
+            velocityChart.ChartAreas.Add("MainArea");
+
+            // Velocity Series
+            var velocitySeries = velocityChart.Series.Add("Velocity");
+            velocitySeries.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+            velocitySeries.Color = Color.Red;
+
+            float time = 0f;
+            foreach (int vel in EncoderVelocities)
+            {
+                time += SECONDS_PER_TX;
+                velocitySeries.Points.AddXY(time, vel / COUNTS_PER_CYCLE);
+            }
+
+            velocityChart.ChartAreas["MainArea"].AxisX.Title = "Time [s]";
+            velocityChart.ChartAreas["MainArea"].AxisY.Title = "Velocity [Hz]";
+
+            velocityChart.ChartAreas[0].AxisX.LabelStyle.Enabled = false;
+            velocityChart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
         }
     }
 }
