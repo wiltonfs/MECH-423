@@ -1,0 +1,18 @@
+At max speed, servicing roughly every 250ms, we tx 246 counts. Max speed ~1count/ms
+About 244 counts for a revolution, so max speed is ~4 Hz
+
+For good control, we probably want to get encoder data at 5 Hz. So max encoder count should be ~200. So should be able to fit in one data byte, use the other byte for millis.
+
+# Timer Distribution
+For encoder velocity timing, we would like a timer overflowing at max 5 Hz
+
+Encoder:
+A0
+A1
+
+DC Motor:
+TB2 - overflow at 123Hz
+
+Stepper:
+TB0 - low overflow, around 1Hz?
+TB1 - low overflow, around 1Hz?

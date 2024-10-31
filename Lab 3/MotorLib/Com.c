@@ -78,15 +78,16 @@ typedef struct {
 #define STP_CONT_CCW       STP_3
 #define STP_STOP           STP_4
 
-#define ENC_0 24            // Communicates a rotational delta. D1 is CW counts, D2 is CCW counts.
-#define ENC_1 (ENC_0 + 1)
+#define ENC_0 24            // Communicates a CW rotational delta. D1 and D2 combine to be an int of counts.
+#define ENC_1 (ENC_0 + 1)   // Communicates a CCW rotational delta. D1 and D2 combine to be an int of counts.
 #define ENC_2 (ENC_0 + 2)
 #define ENC_3 (ENC_0 + 3)
 #define ENC_4 (ENC_0 + 4)
 #define ENC_5 (ENC_0 + 5)
 #define ENC_6 (ENC_0 + 6)
 #define ENC_7 (ENC_0 + 7)
-#define ENC_ROT_DELTA       ENC_0
+#define ENC_ROT_DELTA_CW        ENC_0
+#define ENC_ROT_DELTA_CCW       ENC_1
 
 #define GAN_0 32
 #define GAN_1 (GAN_0 + 1)
@@ -111,12 +112,16 @@ typedef struct {
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~ Receiving ~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 bool COM_MessagePacketAssembly_StateMachine(MessagePacket *MP, volatile PACKET_FRAGMENT *ExpectedNextReadTracker, volatile unsigned char RxByte);
 // Requires the address of a target message packet and the address of a PACKET_FRAGMENT that tracks the next expected fragment to read
 // Puts the new byte into the right fragment of the message packet, and increments the expected next read
 // Returns true if the Message Packet is now complete
 
-void COM_HandleEscapeByte(MessagePacket *MP);
+void COM_ApplyEscapeByte(MessagePacket *MP);
 // Requires the address of a target message packet
 // Processes the escape byte to set COMM, D1, and D2 to 255 if needed
 
@@ -124,13 +129,39 @@ void COM_CombineDataBytes(MessagePacket *MP);
 // Requires the address of a target message packet
 // Combines D1 (byte) and D2 (byte) into combined (uint)
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~ Transmitting ~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+void COM_UART1_TransmitMessagePacket_BLOCKING(MessagePacket *MP);
+// Requires the address of a target message packet
+// Transmits a complete message packet, blocks until complete
+
+bool COM_UART1_TransmitMessagePacketFragment(MessagePacket *MP, volatile PACKET_FRAGMENT *ExpectedNextTransmit);
+// Requires the address of a target message packet and the address of a PACKET_FRAGMENT that tracks the next expected fragment to transmit
+// Returns true if just transmitted the start byte (255)
+
+void COM_CalculateEscapeByte(MessagePacket *MP);
+// Requires the address of a target message packet
+// Processes the COMM, D1, and D2 to 254 and sets the escape byte if any are 255
+
+void COM_SeperateDataBytes(MessagePacket *MP);
+// Requires the address of a target message packet
+// Seperates the combined field into d1 and d2
+
+
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~ Function Definitions ~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-void COM_HandleEscapeByte(MessagePacket *MP)
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~ Receiving ~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+void COM_ApplyEscapeByte(MessagePacket *MP)
 {
     // Use the escape byte to flag values up to 255
     if (MP->esc & ESC_COMMAND)
@@ -171,7 +202,7 @@ bool COM_MessagePacketAssembly_StateMachine(MessagePacket *MP, volatile PACKET_F
         break;
     case ESCP_BYTE:
         MP->esc = RxByte;
-        COM_HandleEscapeByte(MP);
+        COM_ApplyEscapeByte(MP);
         COM_CombineDataBytes(MP);
         completedPacket = true;
         break;
@@ -186,6 +217,81 @@ bool COM_MessagePacketAssembly_StateMachine(MessagePacket *MP, volatile PACKET_F
         (*ExpectedNextReadTracker)++;
 
     return completedPacket; // Only true if just received the escape byte
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~ Transmitting ~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+void COM_UART1_TransmitMessagePacket_BLOCKING(MessagePacket *MP)
+{
+    COM_CalculateEscapeByte(MP);
+    UART_TX_Char_BLOCKING(255);
+    UART_TX_Char_BLOCKING(MP->comm);
+    UART_TX_Char_BLOCKING(MP->d1);
+    UART_TX_Char_BLOCKING(MP->d2);
+    UART_TX_Char_BLOCKING(MP->esc);
+}
+
+bool COM_UART1_TransmitMessagePacketFragment(MessagePacket *MP, volatile PACKET_FRAGMENT *ExpectedNextTransmit)
+{
+    bool newPacket = false;
+
+    switch(*ExpectedNextTransmit) {
+    case START_BYTE:
+        UART_TX_Char_BLOCKING(255);
+        newPacket = true;
+        break;
+    case COM_BYTE:
+        UART_TX_Char_BLOCKING(MP->comm);
+        break;
+    case D1_BYTE:
+        UART_TX_Char_BLOCKING(MP->d1);
+        break;
+    case D2_BYTE:
+        UART_TX_Char_BLOCKING(MP->d2);
+        break;
+    case ESCP_BYTE:
+        COM_CalculateEscapeByte(MP);
+        UART_TX_Char_BLOCKING(MP->esc);
+        break;
+    default:
+        break;
+    }
+
+    // Increment the expected next transmit
+    if (*ExpectedNextTransmit >= ESCP_BYTE)
+        (*ExpectedNextTransmit) = START_BYTE;
+    else
+        (*ExpectedNextTransmit)++;
+
+    return newPacket; // Only true if just transmitted the start byte
+}
+
+void COM_CalculateEscapeByte(MessagePacket *MP)
+{
+    MP->esc = 0;
+    if (MP->comm == 255)
+    {
+        MP->comm = 254;
+        MP->esc += BIT0;
+    }
+    if (MP->d1 == 255)
+    {
+        MP->d1 = 254;
+        MP->esc += BIT1;
+    }
+    if (MP->d2 == 255)
+    {
+        MP->d2 = 254;
+        MP->esc += BIT2;
+    }
+}
+
+void COM_SeperateDataBytes(MessagePacket *MP)
+{
+    MP->d1 = (char)((MP->combined & 0xFF00) >> 8);
+    MP->d2 = (char)(MP->combined & 0xFF);
 }
 
 
