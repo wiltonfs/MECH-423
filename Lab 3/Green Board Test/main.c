@@ -37,6 +37,23 @@ void ClearEncoderCounts(void)
     TA0CTL |= TACLR;            // Clear Timer A0                (L) pg. 349
 }
 
+void DCMotor_TimerB2Setup(){
+
+    int upCountTarget = 65535;
+
+    //initialize pins 2.1 to primary mode (TB2.1)
+    P2SEL0 |= BIT1;
+    P2SEL1 &= ~BIT1;
+    P2DIR |= BIT1;
+
+    // Setup Timer B in the "up count" mode
+    TB2CTL |= TBCLR;             // Clear Timer B            (L) pg.372
+    TB2CTL |= (BIT4);            // Up mode                  (L) pg. 372
+    TB2CTL |= TBSSEL__ACLK;      // Clock source select      (L) pg. 372
+    TB2CTL |= ~(BIT7 | BIT6);    // No divider               (L) pg. 372
+    TB2CCR0 = upCountTarget;     // What we count to         (L) pg. 377
+}
+
 int main(void)
 {
 	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
@@ -55,6 +72,11 @@ int main(void)
     // Turn the LEDs off
     P3OUT &= ~(BIT6 | BIT7);
     P1OUT &= ~BIT6;
+
+    //DC Motor set-up
+    DCMotor_TimerB2Setup();
+
+    TimerB2_PWM(1, 32767);         // 50% duty cycle, P3.4 output
 
     while(1)
     {
