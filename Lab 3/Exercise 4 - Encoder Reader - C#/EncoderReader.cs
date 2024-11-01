@@ -371,7 +371,7 @@ namespace DCMotorController
         private void UpdatePositionChart()
         {
             int[] poss = { 1, 1, 3, 3, 4, 4, 3, 5, 7, 4, 1, 1, 5, 10};
-            EncoderPositions = new Queue<int>(poss);
+            //EncoderPositions = new Queue<int>(poss);
 
             // Initialize Chart
             positionChart.Series.Clear();
@@ -400,7 +400,7 @@ namespace DCMotorController
         private void UpdateVelocityChart()
         {
             float[] vels = { -2, 3, 3, 19, -20, 0, 0.5f, -9, 3, 4, 5, 3, 12, 14 };
-            EncoderVelocities = new Queue<float>(vels);
+            //EncoderVelocities = new Queue<float>(vels);
 
             // Initialize Chart
             velocityChart.Series.Clear();

@@ -2,11 +2,13 @@
 #include "../MotorLib/General.c"
 #include "../MotorLib/Com.c"
 
-/**
- * main.c
- */
-unsigned int CWsteps = 0;
-unsigned int CCWsteps = 0;
+// Lab 3 - Exercise 4
+// Felix Wilton & Lazar Stanojevic
+// Oct 31 2024
+
+
+//unsigned int CWsteps = 0;
+//unsigned int CCWsteps = 0;
 #define CW_STEPS_SOURCE TA1R
 #define CCW_STEPS_SOURCE TA0R
 
@@ -46,8 +48,6 @@ void ClearEncoderCounts(void)
 
 void DCMotor_Setup(){
 
-    int upCountTarget = 65535;
-
     //initialize pins 2.1 to primary mode (TB2.1)
     P2SEL0 |= BIT1;
     P2SEL1 &= ~BIT1;
@@ -58,7 +58,7 @@ void DCMotor_Setup(){
     TB2CTL |= (BIT4);            // Up mode                  (L) pg. 372
     TB2CTL |= TBSSEL__ACLK;      // Clock source select      (L) pg. 372
     TB2CTL |= ~(BIT7 | BIT6);    // No divider               (L) pg. 372
-    TB2CCR0 = upCountTarget;     // What we count to         (L) pg. 377
+    TB2CCR0 = 65535;     // What we count to         (L) pg. 377
 
     //Set up pins P3.6 and P3.7 to output rotation direction
     P3DIR |= (BIT6 | BIT7);
@@ -69,7 +69,7 @@ void DCMotor_Setup(){
     P3OUT &= ~(BIT6 | BIT7);
 }
 
-void DCMotor_PWM(int dutyCycleCounter){
+void DCMotor_PWM(unsigned int dutyCycleCounter){
 
     TB2CCTL1 = OUTMOD_7;        // Reset/Set mode           (L) pg. 365, 366, and 375
     TB2CCR1 = dutyCycleCounter;
@@ -115,8 +115,6 @@ void ProcessCompletePacket() {
 
 void EncoderVelocityTimerSetup(){
 
-    int upCountTarget = 5000;
-
     //Uses to TB1.1 to trigger every ~40ms to compile data packet, then every ~200ms a full packet is sent.
 
     //initialize pins 3.4 to primary mode (TB1.1)
@@ -129,12 +127,15 @@ void EncoderVelocityTimerSetup(){
     TB1CTL |= (BIT4);            // Up mode                  (L) pg. 372
     TB1CTL |= TBSSEL__SMCLK;      // Clock source select     (L) pg. 372
     TB1CTL |= (BIT7 | BIT6);    // 1/8 divider (125 kHz)     (L) pg. 372
-    TB1CCR0 = upCountTarget;     // What we count to         (L) pg. 377
+    TB1CCR0 = 5000;     // What we count to         (L) pg. 377
 
     //upCountTarget = 5000 -> T = 40.0 ms
 
     //Enable timer interrupt
-    TA0CCTL1 |= CCIE;
+    //TB1CCTL1 |= CCIE;
+
+    TB1CCTL1 = OUTMOD_7;        // Reset/Set mode           (L) pg. 365, 366, and 375
+    TB1CCR1 = 2500;
 }
 
 
@@ -144,7 +145,7 @@ int main(void)
     StandardClockSetup_8Mhz_1Mhz();
 
     StandardUART1Setup_9600_8();
-    UCA1IE |= UCRXIE;           // Enable RX interrupt
+    //UCA1IE |= UCRXIE;           // Enable RX interrupt
 
     EncoderTimerSetup();
 
@@ -163,7 +164,8 @@ int main(void)
     // Turn the LEDs off
     P1OUT &= ~BIT6;
 
-    __enable_interrupt();        // Enable global interrupts
+    //__enable_interrupt();        // Enable global interrupts
+    _EINT();
 
     while(1)
     {
