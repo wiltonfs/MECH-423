@@ -31,10 +31,12 @@ namespace DCMotorController
         public byte d1;
         public byte d2;
         public byte esc;
-        public uint combined;
+        public ushort combined;
     }
     enum COMM_BYTE
     {
+        DEBUG_ECHO_REQUEST = 0, DEBUG_ECHO_RESPONSE = 1, DEBUG_UNHANDLED_COMM = 7,
+
         DCM_CW = 8, DCM_CCW = 9, DCM_BRAKE = 10,
 
         STP_SINGLE_CW = 16, STP_SINGLE_CCW = 17, STP_CONT_CW = 18, STP_CONT_CCW = 19, STP_STOP = 20,
@@ -55,6 +57,7 @@ namespace DCMotorController
         int DC_LastSpeedValue = 0;
 
         // Input and output Serial queues
+        int totalBytesRXd = 0;
         ConcurrentQueue<byte> outgoingQueue = new ConcurrentQueue<byte>();
         ConcurrentQueue<int> incomingQueue = new ConcurrentQueue<int>();
         PACKET_FRAGMENT expectedNextRx = PACKET_FRAGMENT.START_BYTE;
@@ -65,10 +68,9 @@ namespace DCMotorController
         const float SECONDS_PER_TX = 0.2f;
         int EncoderPosition = 0;    // CW Counts
         float EncoderVelocity = 0;  // CW Counts per second
-        Stopwatch VelocityStopwatch = Stopwatch.StartNew();
 
         // Encoder plotting data
-        int PLOT_HISTORY_SIZE = 100;
+        int PLOT_HISTORY_SIZE = 500;
         Queue<int> EncoderPositions = new Queue<int>();
         Queue<float> EncoderVelocities = new Queue<float>();
 
@@ -131,7 +133,6 @@ namespace DCMotorController
 
         private void rxTimer_Tick(object sender, EventArgs e)
         {
-            
             if (!incomingQueue.IsEmpty)
             {
                 int result = 0;
@@ -155,6 +156,7 @@ namespace DCMotorController
             {
                 newByte = serialPort1.ReadByte();
                 incomingQueue.Enqueue(newByte);
+                totalBytesRXd++;
 
                 bytesToRead = serialPort1.BytesToRead;
             }
@@ -167,6 +169,7 @@ namespace DCMotorController
         private void RefreshVisuals()
         {
             outQueueDisplay.Text = $"Bytes pending TX: {outgoingQueue.Count}";
+            totalRXdDisplay.Text = $"Total bytes RXd: {totalBytesRXd}";
 
             if (!serialPort1.IsOpen)
             { boardConnectedLabel.Text = "No board detected"; }
@@ -226,7 +229,7 @@ namespace DCMotorController
         // -------------------------------------------------
         private void QueueOutgoing(COMM_BYTE COMMenum, byte D1, byte D2)
         {
-            byte COMM = CommandByteToByte(COMMenum);
+            byte COMM = (byte)COMMenum;
 
             byte ESC = 0;
 
@@ -249,7 +252,7 @@ namespace DCMotorController
             outgoingQueue.Enqueue(D2);
             outgoingQueue.Enqueue(ESC);
 
-            string packet = $"[{COMMenum}, {DataBytesToInt(D1, D2)}] = [255 {COMM} {D1} {D2} {ESC}]\t\t";
+            string packet = $"[{COMMenum}, {DataBytesToUShort(D1, D2)}] = [255 {COMM} {D1} {D2} {ESC}]\t\t";
             txHistoryDisplay.Text += packet;
         }
 
@@ -296,7 +299,7 @@ namespace DCMotorController
                 MP.d2 = 255;
 
             // Combine data 1 and 2
-            MP.combined = DataBytesToInt(MP.d1, MP.d2);
+            MP.combined = DataBytesToUShort(MP.d1, MP.d2);
         }
         void UseCompletePacket(MessagePacket MP)
         {
@@ -312,9 +315,6 @@ namespace DCMotorController
 
         void UpdateEncoderPositionAndVelocity(int EncoderPositionDelta)
         {
-            VelocityStopwatch.Stop();
-
-
             EncoderPosition += EncoderPositionDelta;
             EncoderVelocity = (((float)EncoderPositionDelta)) / (SECONDS_PER_TX);
 
@@ -326,33 +326,11 @@ namespace DCMotorController
                 EncoderPositions.Dequeue();
                 EncoderVelocities.Dequeue();
             }
-
-
-            VelocityStopwatch = Stopwatch.StartNew();
         }
 
-        private byte CommandByteToByte(COMM_BYTE COMenum)
-        {
-            return (byte)COMenum;
-            switch (COMenum)
-            {
-                case COMM_BYTE.DCM_CW:              return 8;
-                case COMM_BYTE.DCM_CCW:             return 9;
-                case COMM_BYTE.DCM_BRAKE:           return 10;
-                case COMM_BYTE.STP_SINGLE_CW:       return 16;
-                case COMM_BYTE.STP_SINGLE_CCW:      return 17;
-                case COMM_BYTE.STP_CONT_CW:         return 18;
-                case COMM_BYTE.STP_CONT_CCW:        return 19;
-                case COMM_BYTE.STP_STOP:            return 20;
-                default: 
-                    // If we get here, there is a COMM_BYTE that hasn't been implemented in this switch statement
-                    throw new NotImplementedException();
-                    return 255;
-            }
-        }
         private byte MostSignificant(uint value)
         {
-            return (byte)((value >> 8) & 0xFF);
+            return (byte)((value & 0xFF00) >> 8);
         }
 
         private byte LeastSignificant(uint value)
@@ -360,9 +338,9 @@ namespace DCMotorController
             return (byte)(value & 0xFF);
         }
 
-        private uint DataBytesToInt(byte D1, byte D2)
+        private ushort DataBytesToUShort(byte D1, byte D2)
         {
-            return (uint)((D1 << 8) | (D2 & 0xFF));
+            return (ushort)((D1 << 8) | (D2 & 0xFF));
         }
 
         // --------------------

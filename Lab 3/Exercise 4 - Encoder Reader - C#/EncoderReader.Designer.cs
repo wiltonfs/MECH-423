@@ -59,6 +59,7 @@
             this.rxTimer = new System.Windows.Forms.Timer(this.components);
             this.positionChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.velocityChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.totalRXdDisplay = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.DC1_SpeedInput)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.positionChart)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.velocityChart)).BeginInit();
@@ -133,9 +134,9 @@
             this.outQueueDisplay.AutoSize = true;
             this.outQueueDisplay.Location = new System.Drawing.Point(13, 339);
             this.outQueueDisplay.Name = "outQueueDisplay";
-            this.outQueueDisplay.Size = new System.Drawing.Size(184, 13);
+            this.outQueueDisplay.Size = new System.Drawing.Size(109, 13);
             this.outQueueDisplay.TabIndex = 23;
-            this.outQueueDisplay.Text = "Queue pending TX: 255 255 255 255";
+            this.outQueueDisplay.Text = "Bytes pending TX: 12";
             this.outQueueDisplay.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // postStringVisual
@@ -299,11 +300,22 @@
             this.velocityChart.TabIndex = 53;
             this.velocityChart.Text = "chart1";
             // 
+            // totalRXdDisplay
+            // 
+            this.totalRXdDisplay.AutoSize = true;
+            this.totalRXdDisplay.Location = new System.Drawing.Point(11, 324);
+            this.totalRXdDisplay.Name = "totalRXdDisplay";
+            this.totalRXdDisplay.Size = new System.Drawing.Size(107, 13);
+            this.totalRXdDisplay.TabIndex = 54;
+            this.totalRXdDisplay.Text = "Total bytes RXd: 100";
+            this.totalRXdDisplay.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
             // EncoderReader
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.totalRXdDisplay);
             this.Controls.Add(this.velocityChart);
             this.Controls.Add(this.positionChart);
             this.Controls.Add(this.velocityLabelRPM);
@@ -364,6 +376,7 @@
         private System.Windows.Forms.Timer rxTimer;
         private System.Windows.Forms.DataVisualization.Charting.Chart positionChart;
         private System.Windows.Forms.DataVisualization.Charting.Chart velocityChart;
+        private System.Windows.Forms.Label totalRXdDisplay;
     }
 }
 
