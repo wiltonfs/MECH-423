@@ -136,6 +136,8 @@ void COM_CombineDataBytes(MessagePacket *MP);
 // ~~~~~~~~~~~~ Transmitting ~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+void COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(unsigned char comm, unsigned char d1, unsigned char d2);
+
 void COM_UART1_TransmitMessagePacket_BLOCKING(MessagePacket *MP);
 // Requires the address of a target message packet
 // Transmits a complete message packet, blocks until complete
@@ -225,6 +227,15 @@ bool COM_MessagePacketAssembly_StateMachine(MessagePacket *MP, volatile PACKET_F
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~ Transmitting ~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+void COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(unsigned char comm, unsigned char d1, unsigned char d2)
+{
+    MessagePacket MP = EMPTY_MESSAGE_PACKET;
+    MP.comm = comm;
+    MP.d1 = d1;
+    MP.d2 = d2;
+    COM_UART1_TransmitMessagePacket_BLOCKING(&MP);
+}
 
 void COM_UART1_TransmitMessagePacket_BLOCKING(MessagePacket *MP)
 {

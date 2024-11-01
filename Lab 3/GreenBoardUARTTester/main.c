@@ -2,6 +2,22 @@
 #include "../MotorLib/General.c"
 #include "../MotorLib/Com.c"
 
+MessagePacket IncomingPacket = EMPTY_MESSAGE_PACKET;
+volatile PACKET_FRAGMENT NextRead = START_BYTE;
+
+MessagePacket OutgoingPacket = EMPTY_MESSAGE_PACKET;
+
+void ProcessCompletePacket()
+{
+    if (IncomingPacket.comm == DEBUG_ECHO_REQUEST) {
+        COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(DEBUG_ECHO_RESPONSE, IncomingPacket.d1, IncomingPacket.d2);
+        return;
+    }
+
+
+    // Unhandled COMM byte, notify of that
+    COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(DEBUG_UNHANDLED_COMM, IncomingPacket.comm, 0);
+}
 
 /**
  * main.c
@@ -25,7 +41,10 @@ __interrupt void uart_ISR(void)
     {
         volatile unsigned char RxByte = UCA1RXBUF; // Read from the receive buffer
 
-        // Echo + 1
-        UART_TX_Char_BLOCKING(RxByte + 1);
+        if (COM_MessagePacketAssembly_StateMachine(&IncomingPacket, &NextRead, RxByte))
+        {
+            // returns True if the packet is now complete
+            ProcessCompletePacket();
+        }
     }
 }
