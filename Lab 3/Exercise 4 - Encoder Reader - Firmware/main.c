@@ -75,19 +75,17 @@ void DCMotor_PWM(unsigned int dutyCycleCounter){
     TB2CCR1 = dutyCycleCounter;
 }
 
-void DCMotor_Command(int CMD){
+void DCMotor_Command(char CMD){
 
-    if(CMD == CW_SPIN){
+    if(CMD == CW_SPIN) {
         // CW spin command to motor driver
         P3OUT |= BIT6;
         P3OUT &= ~BIT7;
-    }
-    else if(CMD == CCW_SPIN){
+    } else if(CMD == CCW_SPIN){
         // CCW spin command to motor driver
         P3OUT &= ~BIT6;
         P3OUT |= BIT7;
-    }
-    else if(CMD == BRAKE){
+    } else if(CMD == BRAKE){
         // Stop spin command to motor driver
         P3OUT &= ~(BIT6 + BIT7);
     }
@@ -96,20 +94,20 @@ void DCMotor_Command(int CMD){
 void ProcessCompletePacket() {
 
     // Modify the square wave duty cycle
-    TimerB1_PWM(1, IncomingPacket.combined);
+    DCMotor_PWM(IncomingPacket.combined);
 
     // Handle the command byte
     if (IncomingPacket.comm == DCM_CW) {
 
-        DCMotor_Command(CW_SPIN);
+        //DCMotor_Command(CW_SPIN);
 
     } else if (IncomingPacket.comm == DCM_CCW) {
 
-        DCMotor_Command(CCW_SPIN);
+        //DCMotor_Command(CCW_SPIN);
 
     } else if (IncomingPacket.comm == DCM_BRAKE) {
 
-        DCMotor_Command(BRAKE);
+        //DCMotor_Command(BRAKE);
     }
 }
 
@@ -132,7 +130,7 @@ void EncoderVelocityTimerSetup(){
     //upCountTarget = 5000 -> T = 40.0 ms
 
     //Enable timer interrupt
-    //TB1CCTL1 |= CCIE;
+    TB1CCTL1 |= CCIE;
 
     TB1CCTL1 = OUTMOD_7;        // Reset/Set mode           (L) pg. 365, 366, and 375
     TB1CCR1 = 2500;
@@ -145,13 +143,14 @@ int main(void)
     StandardClockSetup_8Mhz_1Mhz();
 
     StandardUART1Setup_9600_8();
-    //UCA1IE |= UCRXIE;           // Enable RX interrupt
+    UCA1IE |= UCRXIE;           // Enable RX interrupt
 
     EncoderTimerSetup();
 
     //DC Motor set-up
     DCMotor_Setup();
-    DCMotor_PWM(0);         // 0% duty cycle, P2.1 output
+    DCMotor_PWM(32000);         // 50% duty cycle, P2.1 output
+    DCMotor_Command(CW_SPIN);
 
     //Set-up timer for transmitting at 40ms (200ms for full packet)
     EncoderVelocityTimerSetup();
@@ -199,30 +198,14 @@ int main(void)
 
 #pragma vector = TIMER1_B0_VECTOR
 __interrupt void transmission_timer_ISR(void){
-
     //transmit the data packet
-    if (COM_UART1_TransmitMessagePacketFragment(&txPacket, &nextTx))
-        {
-            // Build the next packet
-            if (CW_STEPS_SOURCE > CCW_STEPS_SOURCE)
-            {
-                txPacket.comm = ENC_ROT_DELTA_CW;
-                txPacket.combined = CW_STEPS_SOURCE - CCW_STEPS_SOURCE;
-            } else {
-                txPacket.comm = ENC_ROT_DELTA_CCW;
-                txPacket.combined = CCW_STEPS_SOURCE - CW_STEPS_SOURCE;
-            }
-
-            // Clear the steps counter
-            ClearEncoderCounts();
-
-            COM_SeperateDataBytes(&txPacket);
-        }
+    UART_TX_Char_BLOCKING(244);
 }
 
 
 #pragma vector = USCI_A1_VECTOR
-__interrupt void uart_ISR(void) {
+__interrupt void uart_ISR(void)
+{
     if (UCA1IV == USCI_UART_UCRXIFG)    // Receive buffer full. (L) pg. 504
     {
         volatile unsigned char RxByte = UCA1RXBUF; // Read from the receive buffer
