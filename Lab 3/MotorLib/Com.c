@@ -266,7 +266,6 @@ bool COM_UART1_TransmitMessagePacketFragment(MessagePacket *MP, volatile PACKET_
         UART_TX_Char_BLOCKING(MP->d2);
         break;
     case ESCP_BYTE:
-        COM_CalculateEscapeByte(MP);
         UART_TX_Char_BLOCKING(MP->esc);
         break;
     default:

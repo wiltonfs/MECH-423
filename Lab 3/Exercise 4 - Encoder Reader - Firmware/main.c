@@ -110,6 +110,26 @@ int main(void)
 __interrupt void transmission_timer_ISR(void){
     // Toggle ISR visual
     P1OUT ^= VEL_IE_LED;
+
+    if (COM_UART1_TransmitMessagePacketFragment(&txPacket, &nextTx))
+    {
+        // Just sent 255, so build the next packet
+        if (ENCODER_GetNetSteps_CW() > 0)
+        {
+            txPacket.comm = ENC_ROT_DELTA_CW;
+            txPacket.combined = ENCODER_GetNetSteps_CW();
+        } else {
+            txPacket.comm = ENC_ROT_DELTA_CCW;
+            txPacket.combined = ENCODER_GetNetSteps_CCW();
+        }
+
+        // Clear the steps counter
+        ENCODER_ClearEncoderCounts();
+
+        // Split "combined" into d1 and d2, calculate the escape byte
+        COM_SeperateDataBytes(&txPacket);
+        COM_CalculateEscapeByte(&txPacket);
+    }
 }
 
 
