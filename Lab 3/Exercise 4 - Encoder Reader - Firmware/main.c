@@ -57,7 +57,7 @@ void DCMotor_Setup(){
     TB2CTL |= TBCLR;             // Clear Timer B            (L) pg.372
     TB2CTL |= (BIT4);            // Up mode                  (L) pg. 372
     TB2CTL |= TBSSEL__ACLK;      // Clock source select      (L) pg. 372
-    TB2CTL |= ~(BIT7 | BIT6);    // No divider               (L) pg. 372
+    TB2CTL &= ~(BIT7 | BIT6);    // No divider               (L) pg. 372
     TB2CCR0 = 65535;     // What we count to         (L) pg. 377
 
     //Set up pins P3.6 and P3.7 to output rotation direction
