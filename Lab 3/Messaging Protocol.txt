@@ -3,14 +3,14 @@
 
 # Command Byte
 ## Debug commands
-0   - DEBUG_0 - reserved
-1   - DEBUG_1 - reserved
+0   - DEBUG_0 - Requests an Echo of the values in D1 and D2
+1   - DEBUG_1 - Responding to an Echo request
 2   - DEBUG_2 - reserved
 3   - DEBUG_3 - reserved
 4   - DEBUG_4 - reserved
 5   - DEBUG_5 - reserved
 6   - DEBUG_6 - reserved
-7   - DEBUG_7 - reserved
+7   - DEBUG_7 - Indicates having received an unhandled command byte
 ## DC Motor commands
 8   - DCM_0 - CW rotation, PWM period in D1 and D2
 9   - DCM_1 - CCW rotation, PWM period in D1 and D2

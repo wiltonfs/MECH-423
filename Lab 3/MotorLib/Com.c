@@ -51,6 +51,9 @@ typedef struct {
 #define DEBUG_5 (DEBUG_0 + 5)
 #define DEBUG_6 (DEBUG_0 + 6)
 #define DEBUG_7 (DEBUG_0 + 7)
+#define DEBUG_ECHO_REQUEST      DEBUG_0
+#define DEBUG_ECHO_RESPONSE     DEBUG_1
+#define DEBUG_UNHANDLED_COMM    DEBUG_7
 
 #define DCM_0 8             // Clockwise DC motor
 #define DCM_1 (DCM_0 + 1)   // Counterclockwise DC motor
@@ -290,8 +293,8 @@ void COM_CalculateEscapeByte(MessagePacket *MP)
 
 void COM_SeperateDataBytes(MessagePacket *MP)
 {
-    MP->d1 = (char)((MP->combined & 0xFF00) >> 8);
-    MP->d2 = (char)(MP->combined & 0xFF);
+    MP->d1 = (unsigned char)((MP->combined & 0xFF00) >> 8);
+    MP->d2 = (unsigned char)(MP->combined & 0xFF);
 }
 
 
