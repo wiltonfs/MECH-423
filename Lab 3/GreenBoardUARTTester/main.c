@@ -5,8 +5,6 @@
 MessagePacket IncomingPacket = EMPTY_MESSAGE_PACKET;
 volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
-MessagePacket OutgoingPacket = EMPTY_MESSAGE_PACKET;
-
 void ProcessCompletePacket()
 {
     if (IncomingPacket.comm == DEBUG_ECHO_REQUEST) {
@@ -30,6 +28,9 @@ int main(void)
 	StandardUART1Setup_9600_8();
 	UCA1IE |= UCRXIE;           // Enable RX interrupt
 	__enable_interrupt();       // Enable global interrupts
+
+	while(1)
+	{}
 
 	return 0;
 }
