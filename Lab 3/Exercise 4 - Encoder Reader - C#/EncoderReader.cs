@@ -65,7 +65,7 @@ namespace DCMotorController
 
         // Encoder data
         const float COUNTS_PER_CYCLE = 236;
-        const float SECONDS_PER_TX = 0.2f;
+        const float SECONDS_PER_TX = 0.2025f;
         int EncoderPosition = 0;    // CW Counts
         float EncoderVelocity = 0;  // CW Counts per second
 
@@ -274,7 +274,7 @@ namespace DCMotorController
                 mostRecentPacket.esc = nextReceive;
                 // Finished transmission
                 rxHistoryDisplay.Text += $"[255 {mostRecentPacket.comm} {mostRecentPacket.d1} {mostRecentPacket.d2} {mostRecentPacket.esc}] = ";
-                FormatCompletePacket(mostRecentPacket);
+                FormatCompletePacket(ref mostRecentPacket);
                 rxHistoryDisplay.Text += $"[{(COMM_BYTE)mostRecentPacket.comm}, {mostRecentPacket.combined}]\t\t";
                 UseCompletePacket(mostRecentPacket);
             }
@@ -288,7 +288,7 @@ namespace DCMotorController
             
         }
 
-        void FormatCompletePacket(MessagePacket MP)
+        void FormatCompletePacket(ref MessagePacket MP)
         {
             // Handle the escape byte
             if ((MP.esc & 0x1) > 0)
@@ -307,9 +307,9 @@ namespace DCMotorController
             COMM_BYTE comm = (COMM_BYTE)MP.comm;
 
             if (comm == COMM_BYTE.ENC_ROT_DELTA_CW) {
-                UpdateEncoderPositionAndVelocity((int)MP.combined);
-            } else if (comm == COMM_BYTE.ENC_ROT_DELTA_CCW) {
                 UpdateEncoderPositionAndVelocity(-1 * (int)MP.combined);
+            } else if (comm == COMM_BYTE.ENC_ROT_DELTA_CCW) {
+                UpdateEncoderPositionAndVelocity((int)MP.combined);
             }
         }
 
@@ -340,7 +340,8 @@ namespace DCMotorController
 
         private ushort DataBytesToUShort(byte D1, byte D2)
         {
-            return (ushort)((D1 << 8) | (D2 & 0xFF));
+            //return (ushort)D2;
+            return (ushort)(((ushort)D1 << 8) | (ushort)D2);
         }
 
         // --------------------
