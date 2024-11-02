@@ -28,7 +28,7 @@
 
 void ENCODER_SetupEncoder();
 // Sets up the pins and timers for the encoder.
-// P1.1 - CW pulses, P1.2 - CCW pulses.
+// P1.1 - CCW pulses, P1.2 - CW pulses.
 // Uses Timer A0 and Timer A1
 
 void ENCODER_ClearEncoderCounts();

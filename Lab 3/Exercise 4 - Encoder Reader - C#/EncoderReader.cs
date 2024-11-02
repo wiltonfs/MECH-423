@@ -307,9 +307,9 @@ namespace DCMotorController
             COMM_BYTE comm = (COMM_BYTE)MP.comm;
 
             if (comm == COMM_BYTE.ENC_ROT_DELTA_CW) {
-                UpdateEncoderPositionAndVelocity(-1 * (int)MP.combined);
-            } else if (comm == COMM_BYTE.ENC_ROT_DELTA_CCW) {
                 UpdateEncoderPositionAndVelocity((int)MP.combined);
+            } else if (comm == COMM_BYTE.ENC_ROT_DELTA_CCW) {
+                UpdateEncoderPositionAndVelocity(-1 * (int)MP.combined);
             }
         }
 
@@ -340,7 +340,6 @@ namespace DCMotorController
 
         private ushort DataBytesToUShort(byte D1, byte D2)
         {
-            //return (ushort)D2;
             return (ushort)(((ushort)D1 << 8) | (ushort)D2);
         }
 

@@ -15,8 +15,8 @@
 //      P2.1 - PWM speed control
 //      Timer B2
 // Encoder:
-//      P1.1 - CW step pulse
-//      P1.2 - CCW step pulse
+//      P1.1 - CCW step pulse
+//      P1.2 - CW step pulse
 //      Timer A0 - CW counter
 //      Timer A1 - CCW counter
 //      Timer B1 - High accuracy TX timer
