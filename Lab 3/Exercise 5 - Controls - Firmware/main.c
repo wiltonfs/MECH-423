@@ -2,7 +2,6 @@
 #include "../MotorLib/General.c"
 #include "../MotorLib/Com.c"
 #include "../MotorLib/DC.c"
-#include "../MotorLib/Stepper.c"
 #include "../MotorLib/Encoder.c"
 
 // Lab 3 - Exercise 5
@@ -30,6 +29,41 @@
 MessagePacket IncomingPacket = EMPTY_MESSAGE_PACKET;
 volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
+int targetPosition = 0;
+int currentPosition = 0;
+const int errorThreshold = 3;
+
+void ZeroSystem()
+{
+    DC_Brake();
+    targetPosition = 0;
+    currentPosition = 0;
+}
+
+void ControlDCMotor()
+{
+    if (ENCODER_GetNetSteps_CW() > 0) {
+        currentPosition += ENCODER_GetNetSteps_CW();
+    } else {
+        currentPosition -= ENCODER_GetNetSteps_CCW();
+    }
+    // Clear the steps counter
+    ENCODER_ClearEncoderCounts();
+
+    int error = targetPosition - currentPosition;
+
+    // TODO: Calculate PWM using the error and 32 bit multiplier
+    unsigned int PWM = 16000;
+
+    if (error > errorThreshold) {
+        DC_Spin(PWM, CLOCKWISE);
+    } else if (error < -errorThreshold) {
+        DC_Spin(PWM, COUNTERCLOCKWISE);
+    } else {
+        DC_Brake();
+    }
+}
+
 void ProcessCompletePacket() {
     if (IncomingPacket.comm == DEBUG_ECHO_REQUEST) {
         COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(DEBUG_ECHO_RESPONSE, IncomingPacket.d1, IncomingPacket.d2);
@@ -44,6 +78,8 @@ void ProcessCompletePacket() {
         DC_Brake();
         return;
     }
+
+    // TODO: Add Commands for re-setting zero and updating target position
 
 
     // Unhandled COMM byte, notify of that
@@ -63,10 +99,13 @@ int main(void)
 
     //DC Motor set-up
     DC_SetupDCMotor();
-    DC_Spin(32000, CLOCKWISE);  // 50% duty cycle, P2.1 output
+    //DC_Spin(32000, CLOCKWISE);  // 50% duty cycle, P2.1 output
 
     //Encoder set-up
     ENCODER_SetupEncoder();
+
+    //Zero the system
+    ZeroSystem();
 
     // Set up Debug LEDs    (M) pg. 73
     P1DIR  |=   (HEARTBEAT_LED | VEL_IE_LED);
@@ -79,7 +118,8 @@ int main(void)
 
     while(1)
     {
-        DelayMillis_8Mhz(200);
+        DelayMillis_8Mhz(1);
+        ControlDCMotor();
 
         // Heartbeat
         P1OUT ^= HEARTBEAT_LED;
