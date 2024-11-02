@@ -27,15 +27,18 @@ namespace DCMotorController
         D2_BYTE,
         ESCP_BYTE
     }
-    struct MessagePacket {
+    struct MessagePacket
+    {
         public byte comm;
         public byte d1;
         public byte d2;
         public byte esc;
-        public uint combined;
+        public ushort combined;
     }
     enum COMM_BYTE
     {
+        DEBUG_ECHO_REQUEST = 0, DEBUG_ECHO_RESPONSE = 1, DEBUG_UNHANDLED_COMM = 7,
+
         DCM_CW = 8, DCM_CCW = 9, DCM_BRAKE = 10,
 
         STP_SINGLE_CW = 16, STP_SINGLE_CCW = 17, STP_CONT_CW = 18, STP_CONT_CCW = 19, STP_STOP = 20,
@@ -57,6 +60,7 @@ namespace DCMotorController
         uint DC_LastPWMValue = 0;
 
         // Input and output Serial queues
+        int totalBytesRXd = 0;
         ConcurrentQueue<byte> outgoingQueue = new ConcurrentQueue<byte>();
         ConcurrentQueue<int> incomingQueue = new ConcurrentQueue<int>();
         PACKET_FRAGMENT expectedNextRx = PACKET_FRAGMENT.START_BYTE;
@@ -64,7 +68,7 @@ namespace DCMotorController
 
         // Encoder data
         const float COUNTS_PER_CYCLE = 236;
-        const float SECONDS_PER_TX = 0.2f;
+        const float SECONDS_PER_TX = 0.2025f;
         int EncoderPosition = 0;    // CW Counts
         float EncoderVelocity = 0;  // CW Counts per second
 
@@ -174,6 +178,7 @@ namespace DCMotorController
             {
                 newByte = serialPort1.ReadByte();
                 incomingQueue.Enqueue(newByte);
+                totalBytesRXd++;
 
                 bytesToRead = serialPort1.BytesToRead;
             }
@@ -186,6 +191,7 @@ namespace DCMotorController
         private void RefreshVisuals()
         {
             outQueueDisplay.Text = $"Bytes pending TX: {outgoingQueue.Count}";
+            totalRXdDisplay.Text = $"Total bytes RXd: {totalBytesRXd}";
 
             if (!serialPort1.IsOpen)
             { boardConnectedLabel.Text = "No board detected"; }
@@ -270,7 +276,7 @@ namespace DCMotorController
             outgoingQueue.Enqueue(D2);
             outgoingQueue.Enqueue(ESC);
 
-            string packet = $"[{COMMenum}, {DataBytesToInt(D1, D2)}] = [255 {COMM} {D1} {D2} {ESC}]\t\t";
+            string packet = $"[{COMMenum}, {DataBytesToUShort(D1, D2)}] = [255 {COMM} {D1} {D2} {ESC}]\t\t";
             txHistoryDisplay.Text += packet;
         }
 
@@ -292,7 +298,7 @@ namespace DCMotorController
                 mostRecentPacket.esc = nextReceive;
                 // Finished transmission
                 rxHistoryDisplay.Text += $"[255 {mostRecentPacket.comm} {mostRecentPacket.d1} {mostRecentPacket.d2} {mostRecentPacket.esc}] = ";
-                FormatCompletePacket(mostRecentPacket);
+                FormatCompletePacket(ref mostRecentPacket);
                 rxHistoryDisplay.Text += $"[{(COMM_BYTE)mostRecentPacket.comm}, {mostRecentPacket.combined}]\t\t";
                 UseCompletePacket(mostRecentPacket);
             }
@@ -306,7 +312,7 @@ namespace DCMotorController
             
         }
 
-        void FormatCompletePacket(MessagePacket MP)
+        void FormatCompletePacket(ref MessagePacket MP)
         {
             // Handle the escape byte
             if ((MP.esc & 0x1) > 0)
@@ -317,7 +323,7 @@ namespace DCMotorController
                 MP.d2 = 255;
 
             // Combine data 1 and 2
-            MP.combined = DataBytesToInt(MP.d1, MP.d2);
+            MP.combined = DataBytesToUShort(MP.d1, MP.d2);
         }
         void UseCompletePacket(MessagePacket MP)
         {
@@ -356,9 +362,9 @@ namespace DCMotorController
             return (byte)(value & 0xFF);
         }
 
-        private uint DataBytesToInt(byte D1, byte D2)
+        private ushort DataBytesToUShort(byte D1, byte D2)
         {
-            return (uint)((D1 << 8) | (D2 & 0xFF));
+            return (ushort)(((ushort)D1 << 8) | (ushort)D2);
         }
 
         // --------------------

@@ -29,10 +29,10 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea7 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Series series7 = new System.Windows.Forms.DataVisualization.Charting.Series();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea8 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Series series8 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.serialComboBox = new System.Windows.Forms.ComboBox();
             this.refreshButton = new System.Windows.Forms.Button();
             this.disconnectButton = new System.Windows.Forms.Button();
@@ -62,6 +62,7 @@
             this.StopMotorButton = new System.Windows.Forms.Button();
             this.StepInputButton = new System.Windows.Forms.Button();
             this.StepInputTextbox = new System.Windows.Forms.TextBox();
+            this.totalRXdDisplay = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.DC1_SpeedInput)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.positionChart)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.velocityChart)).BeginInit();
@@ -134,11 +135,11 @@
             // outQueueDisplay
             // 
             this.outQueueDisplay.AutoSize = true;
-            this.outQueueDisplay.Location = new System.Drawing.Point(13, 339);
+            this.outQueueDisplay.Location = new System.Drawing.Point(13, 346);
             this.outQueueDisplay.Name = "outQueueDisplay";
-            this.outQueueDisplay.Size = new System.Drawing.Size(184, 13);
+            this.outQueueDisplay.Size = new System.Drawing.Size(109, 13);
             this.outQueueDisplay.TabIndex = 23;
-            this.outQueueDisplay.Text = "Queue pending TX: 255 255 255 255";
+            this.outQueueDisplay.Text = "Bytes pending TX: 12";
             this.outQueueDisplay.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // postStringVisual
@@ -278,26 +279,26 @@
             // 
             // positionChart
             // 
-            chartArea7.Name = "ChartArea1";
-            this.positionChart.ChartAreas.Add(chartArea7);
+            chartArea1.Name = "ChartArea1";
+            this.positionChart.ChartAreas.Add(chartArea1);
             this.positionChart.Location = new System.Drawing.Point(430, 10);
             this.positionChart.Name = "positionChart";
-            series7.ChartArea = "ChartArea1";
-            series7.Name = "Series1";
-            this.positionChart.Series.Add(series7);
+            series1.ChartArea = "ChartArea1";
+            series1.Name = "Series1";
+            this.positionChart.Series.Add(series1);
             this.positionChart.Size = new System.Drawing.Size(358, 160);
             this.positionChart.TabIndex = 52;
             this.positionChart.Text = "chart1";
             // 
             // velocityChart
             // 
-            chartArea8.Name = "ChartArea1";
-            this.velocityChart.ChartAreas.Add(chartArea8);
+            chartArea2.Name = "ChartArea1";
+            this.velocityChart.ChartAreas.Add(chartArea2);
             this.velocityChart.Location = new System.Drawing.Point(430, 182);
             this.velocityChart.Name = "velocityChart";
-            series8.ChartArea = "ChartArea1";
-            series8.Name = "Series1";
-            this.velocityChart.Series.Add(series8);
+            series2.ChartArea = "ChartArea1";
+            series2.Name = "Series1";
+            this.velocityChart.Series.Add(series2);
             this.velocityChart.Size = new System.Drawing.Size(358, 170);
             this.velocityChart.TabIndex = 53;
             this.velocityChart.Text = "chart1";
@@ -329,11 +330,22 @@
             this.StepInputTextbox.Size = new System.Drawing.Size(100, 20);
             this.StepInputTextbox.TabIndex = 56;
             // 
+            // totalRXdDisplay
+            // 
+            this.totalRXdDisplay.AutoSize = true;
+            this.totalRXdDisplay.Location = new System.Drawing.Point(14, 333);
+            this.totalRXdDisplay.Name = "totalRXdDisplay";
+            this.totalRXdDisplay.Size = new System.Drawing.Size(107, 13);
+            this.totalRXdDisplay.TabIndex = 57;
+            this.totalRXdDisplay.Text = "Total bytes RXd: 100";
+            this.totalRXdDisplay.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
             // Controls
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.totalRXdDisplay);
             this.Controls.Add(this.StepInputTextbox);
             this.Controls.Add(this.StepInputButton);
             this.Controls.Add(this.StopMotorButton);
@@ -400,6 +412,7 @@
         private System.Windows.Forms.Button StopMotorButton;
         private System.Windows.Forms.Button StepInputButton;
         private System.Windows.Forms.TextBox StepInputTextbox;
+        private System.Windows.Forms.Label totalRXdDisplay;
     }
 }
 
