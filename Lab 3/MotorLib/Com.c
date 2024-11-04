@@ -108,8 +108,8 @@ typedef struct {
 #define GAN_DELTA_NEG_DC    GAN_3
 #define GAN_DELTA_POS_STP   GAN_4
 #define GAN_DELTA_NEG_STP   GAN_5
-#define GAN_SET_DC_SPEED    GAN_6
-#define GAN_SET_STP_DELAY   GAN_7
+#define GAN_SET_MAX_PWM_DC  GAN_6
+#define GAN_SET_DELAY_STP   GAN_7
 #define GAN_ZERO_SETPOINT   GAN_8
 #define GAN_REACH_SETPOINT  GAN_9
 

@@ -29,36 +29,45 @@
 MessagePacket IncomingPacket = EMPTY_MESSAGE_PACKET;
 volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
-int targetPosition = 0;
-int currentPosition = 0;
-const int errorThreshold = 3;
+unsigned int DC_maxPWM = 16000;
+long DC_targetPosition = 0;     // measured in steps
+long DC_currentPosition = 0;    // measured in steps
+const int DC_errorThreshold = 3;
 
-void ZeroSystem()
+bool isGantryRunning = false;
+
+void ZeroGantry_DC()
 {
     DC_Brake();
-    targetPosition = 0;
-    currentPosition = 0;
+    DC_targetPosition = 0;
+    DC_currentPosition = 0;
 }
 
-void ControlDCMotor()
+void ControlGantry_DC()
 {
-    if (ENCODER_GetNetSteps_CW() > 0) {
-        currentPosition += ENCODER_GetNetSteps_CW();
-    } else {
-        currentPosition -= ENCODER_GetNetSteps_CCW();
+    if (!isGantryRunning) {
+        DC_Brake();
+        return;
     }
-    // Clear the steps counter
+
+    // Update current DC motor position
+    if (ENCODER_GetNetSteps_CW() > 0) {
+        DC_currentPosition += ENCODER_GetNetSteps_CW();
+    } else {
+        DC_currentPosition -= ENCODER_GetNetSteps_CCW();
+    }
+    // Clear the DC steps counter
     ENCODER_ClearEncoderCounts();
 
-    int error = targetPosition - currentPosition;
+    long DC_error = DC_targetPosition - DC_currentPosition;
 
     // TODO: Calculate PWM using the error and 32 bit multiplier
-    unsigned int PWM = 16000;
+    unsigned int DC_PWM = DC_maxPWM;
 
-    if (error > errorThreshold) {
-        DC_Spin(PWM, CLOCKWISE);
-    } else if (error < -errorThreshold) {
-        DC_Spin(PWM, COUNTERCLOCKWISE);
+    if (DC_error > DC_errorThreshold) {
+        DC_Spin(DC_PWM, CLOCKWISE);
+    } else if (DC_error < -DC_errorThreshold) {
+        DC_Spin(DC_PWM, COUNTERCLOCKWISE);
     } else {
         DC_Brake();
     }
@@ -68,18 +77,26 @@ void ProcessCompletePacket() {
     if (IncomingPacket.comm == DEBUG_ECHO_REQUEST) {
         COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(DEBUG_ECHO_RESPONSE, IncomingPacket.d1, IncomingPacket.d2);
         return;
-    } else if (IncomingPacket.comm == DCM_CW) {
-        DC_Spin(IncomingPacket.combined, CLOCKWISE);
+    } else if (IncomingPacket.comm == GAN_RESUME) {
+        isGantryRunning = true;
         return;
-    } else if (IncomingPacket.comm == DCM_CCW) {
-        DC_Spin(IncomingPacket.combined, COUNTERCLOCKWISE);
+    } else if (IncomingPacket.comm == GAN_PAUSE) {
+        isGantryRunning = false;
         return;
-    } else if (IncomingPacket.comm == DCM_BRAKE) {
-        DC_Brake();
+    } else if (IncomingPacket.comm == GAN_DELTA_POS_DC) {
+        DC_targetPosition += IncomingPacket.combined;
+        return;
+    } else if (IncomingPacket.comm == GAN_DELTA_NEG_DC) {
+        DC_targetPosition -= IncomingPacket.combined;
+        return;
+    } else if (IncomingPacket.comm == GAN_SET_MAX_PWM_DC) {
+        DC_maxPWM = IncomingPacket.combined;
+        return;
+    } else if (IncomingPacket.comm == GAN_ZERO_SETPOINT) {
+        if (IncomingPacket.d1 > 0)
+            ZeroGantry_DC();
         return;
     }
-
-    // TODO: Add Commands for re-setting zero and updating target position
 
 
     // Unhandled COMM byte, notify of that
@@ -105,7 +122,7 @@ int main(void)
     ENCODER_SetupEncoder();
 
     //Zero the system
-    ZeroSystem();
+    ZeroGantry_DC();
 
     // Set up Debug LEDs    (M) pg. 73
     P1DIR  |=   (HEARTBEAT_LED | VEL_IE_LED);
@@ -119,7 +136,7 @@ int main(void)
     while(1)
     {
         DelayMillis_8Mhz(1);
-        ControlDCMotor();
+        ControlGantry_DC();
 
         // Heartbeat
         P1OUT ^= HEARTBEAT_LED;
