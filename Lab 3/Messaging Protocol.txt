@@ -30,8 +30,8 @@
 22  - STP_6 - reserved
 23  - STP_7 - reserved
 ## Encoder commands
-24  - ENC_0 - Communicates a rotational delta. D1 is cw counts, D2 is ccw counts.
-25  - ENC_1 - reserved
+24  - ENC_0 - Communicates a CW rotational delta. D1 and D2 combine to be an int of counts.
+25  - ENC_1 - Communicates a CCW rotational delta. D1 and D2 combine to be an int of counts.
 26  - ENC_2 - reserved
 27  - ENC_3 - reserved
 28  - ENC_4 - reserved
@@ -39,14 +39,16 @@
 30  - ENC_6 - reserved
 31  - ENC_7 - reserved
 ## Gantry commands
-32  - GAN_0 - reserved
-33  - GAN_1 - reserved
-34  - GAN_2 - reserved
-35  - GAN_3 - reserved
-36  - GAN_4 - reserved
-37  - GAN_5 - reserved
-38  - GAN_6 - reserved
-39  - GAN_7 - reserved
+32  - GAN_0 - Resume gantry movement
+33  - GAN_1 - Pause gantry
+34  - GAN_2 - Delta DC setpoint in positive direction (int D1D2)
+35  - GAN_3 - Delta DC setpoint in negative direction (int D1D2)
+36  - GAN_4 - Delta Stepper setpoint in positive direction (int D1D2)
+37  - GAN_5 - Delta Stepper setpoint in negative direction (int D1D2)
+38  - GAN_6 - Set DC speed (int D1D2)
+39  - GAN_7 - Set Stepper update delay (int D1D2)
+40  - GAN_8 - Zero gantry (D1 = zero DC?, D2 = zero stepper?)
+41  - GAN_9 - Response from gantry, indicates reached setpoint for both DC and stepper
 
 # Data Byte 1
 [0, 254] Usually most significant byte of a 16 byte value

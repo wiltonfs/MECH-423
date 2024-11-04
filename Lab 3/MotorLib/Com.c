@@ -92,14 +92,26 @@ typedef struct {
 #define ENC_ROT_DELTA_CW        ENC_0
 #define ENC_ROT_DELTA_CCW       ENC_1
 
-#define GAN_0 32
-#define GAN_1 (GAN_0 + 1)
-#define GAN_2 (GAN_0 + 2)
-#define GAN_3 (GAN_0 + 3)
-#define GAN_4 (GAN_0 + 4)
-#define GAN_5 (GAN_0 + 5)
-#define GAN_6 (GAN_0 + 6)
-#define GAN_7 (GAN_0 + 7)
+#define GAN_0 32                // Resume gantry movement
+#define GAN_1 (GAN_0 + 1)       // Pause gantry movement
+#define GAN_2 (GAN_0 + 2)       // Delta DC setpoint in positive direction (int D1D2)
+#define GAN_3 (GAN_0 + 3)       // Delta DC setpoint in negative direction (int D1D2)
+#define GAN_4 (GAN_0 + 4)       // Delta Stepper setpoint in positive direction (int D1D2)
+#define GAN_5 (GAN_0 + 5)       // Delta Stepper setpoint in negative direction (int D1D2)
+#define GAN_6 (GAN_0 + 6)       // Set DC speed (int D1D2)
+#define GAN_7 (GAN_0 + 7)       // Set Stepper update delay (int D1D2)
+#define GAN_8 (GAN_0 + 8)       // Zero gantry (D1 = zero DC?, D2 = zero stepper?)
+#define GAN_9 (GAN_0 + 9)       // Response from gantry, indicates reached setpoint for both DC and stepper
+#define GAN_RESUME          GAN_0
+#define GAN_PAUSE           GAN_1
+#define GAN_DELTA_POS_DC    GAN_2
+#define GAN_DELTA_NEG_DC    GAN_3
+#define GAN_DELTA_POS_STP   GAN_4
+#define GAN_DELTA_NEG_STP   GAN_5
+#define GAN_SET_DC_SPEED    GAN_6
+#define GAN_SET_STP_DELAY   GAN_7
+#define GAN_ZERO_SETPOINT   GAN_8
+#define GAN_REACH_SETPOINT  GAN_9
 
 // ------------------------------
 // -- Escape Byte Definitions ---
