@@ -19,6 +19,7 @@
 //      P1.2 - CW step pulse
 //      Timer A0 - CW counter
 //      Timer A1 - CCW counter
+//      Timer B1 - High accuracy TX timer
 // Debug:
 //      P1.6 - Heartbeat LED
 //      P1.7 - Velocity interrupt LED
@@ -26,15 +27,21 @@
 #define VEL_IE_LED BIT7
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
+MessagePacket txPacket = EMPTY_MESSAGE_PACKET;
+PACKET_FRAGMENT nextTx = START_BYTE;
+
 MessagePacket IncomingPacket = EMPTY_MESSAGE_PACKET;
 volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
-unsigned int DC_maxPWM = 16000;
 long DC_targetPosition = 0;     // measured in steps
 long DC_currentPosition = 0;    // measured in steps
-const int DC_errorThreshold = 3;
+const unsigned int Kp = 168;              // PWM/step
+const unsigned int maxError = 390;        // measured in steps
+const unsigned int minError = 1;
 
-bool isGantryRunning = false;
+volatile unsigned int NetStepsCW = 0;
+volatile unsigned int NetStepsCCW = 0;
 
 void ZeroGantry_DC()
 {
@@ -45,30 +52,53 @@ void ZeroGantry_DC()
 
 void ControlGantry_DC()
 {
-    if (!isGantryRunning) {
-        DC_Brake();
-        return;
-    }
 
     // Update current DC motor position
     if (ENCODER_GetNetSteps_CW() > 0) {
         DC_currentPosition += ENCODER_GetNetSteps_CW();
+        NetStepsCW += ENCODER_GetNetSteps_CW();
     } else {
         DC_currentPosition -= ENCODER_GetNetSteps_CCW();
+        NetStepsCCW += ENCODER_GetNetSteps_CCW();
     }
     // Clear the DC steps counter
     ENCODER_ClearEncoderCounts();
 
     long DC_error = DC_targetPosition - DC_currentPosition;
 
-    // TODO: Calculate PWM using the error and 32 bit multiplier
-    unsigned int DC_PWM = DC_maxPWM;
+    unsigned int error_Abs = 0;
+    if (DC_error >= 0)
+    {
+        error_Abs = ((unsigned int)DC_error);
+    } else {
+        error_Abs = ((unsigned int)-DC_error);
+    }
 
-    if (DC_error > DC_errorThreshold) {
+    if (error_Abs > maxError)
+    {
+        error_Abs = maxError;
+    }
+    unsigned int DC_PWM = Kp * error_Abs;
+    if (DC_PWM < 5300 && error_Abs > minError)
+    {
+        DC_PWM = 5300;
+    }
+
+    // Set up and perform 32-bit multiplication using the hardware multiplier
+    MPY = Kp;            // Set operand 1 (lower 16 bits)
+    MPY32CTL0 = MPYSAT;     // Turn on Saturation mode
+    OP2 = error_Abs;     // Set operand 2
+
+    // Get the result of the multiplication. Could be up to 32 bits
+    //unsigned int DC_PWM = RESHI;
+    //DC_PWM = 32000;
+
+    if (DC_error > minError) {
         DC_Spin(DC_PWM, CLOCKWISE);
-    } else if (DC_error < -DC_errorThreshold) {
+    } else if (DC_error < (-minError)) {
         DC_Spin(DC_PWM, COUNTERCLOCKWISE);
     } else {
+        DC_Spin(0, CLOCKWISE);
         DC_Brake();
     }
 }
@@ -77,20 +107,11 @@ void ProcessCompletePacket() {
     if (IncomingPacket.comm == DEBUG_ECHO_REQUEST) {
         COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(DEBUG_ECHO_RESPONSE, IncomingPacket.d1, IncomingPacket.d2);
         return;
-    } else if (IncomingPacket.comm == GAN_RESUME) {
-        isGantryRunning = true;
-        return;
-    } else if (IncomingPacket.comm == GAN_PAUSE) {
-        isGantryRunning = false;
-        return;
     } else if (IncomingPacket.comm == GAN_DELTA_POS_DC) {
         DC_targetPosition += IncomingPacket.combined;
         return;
     } else if (IncomingPacket.comm == GAN_DELTA_NEG_DC) {
         DC_targetPosition -= IncomingPacket.combined;
-        return;
-    } else if (IncomingPacket.comm == GAN_SET_MAX_PWM_DC) {
-        DC_maxPWM = IncomingPacket.combined;
         return;
     } else if (IncomingPacket.comm == GAN_ZERO_SETPOINT) {
         if (IncomingPacket.d1 > 0)
@@ -103,6 +124,20 @@ void ProcessCompletePacket() {
     COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(DEBUG_UNHANDLED_COMM, IncomingPacket.comm, 0);
 }
 
+void EncoderVelocityTimerSetup()
+{
+    // Set up a timer (TB1) to interrupt every 40 ms (25 Hz)
+    // The interrupt sends a packet fragment
+    // So a full packet is sent every 40*5=200 ms (5 Hz)
+
+    // Setup Timer B in the "up count" mode
+    TB1CTL |= TBCLR;            // Clear Timer B            (L) pg.372
+    TB1CTL |= (BIT4);           // Up mode                  (L) pg. 372
+    TB1CTL |= TBSSEL__SMCLK;    // Clock source select      (L) pg. 372
+    TB1CTL |= (BIT7 | BIT6);    // 1/8 divider (125 kHz)    (L) pg. 372
+    //upCountTarget = 5000, then 125000/5000= 25 Hz
+    TB1CCR0 = 5000;             // What we count to         (L) pg. 377
+}
 
 /**
  * main.c
@@ -120,6 +155,8 @@ int main(void)
 
     //Encoder set-up
     ENCODER_SetupEncoder();
+    EncoderVelocityTimerSetup();
+    TB1CCTL0 |= CCIE;           // Enable interrupt   (L) pg. 375
 
     //Zero the system
     ZeroGantry_DC();
@@ -143,6 +180,33 @@ int main(void)
     }
 
     return 0;
+}
+
+#pragma vector = TIMER1_B0_VECTOR
+__interrupt void transmission_timer_ISR(void){
+    // Toggle ISR visual
+    P1OUT ^= VEL_IE_LED;
+
+    if (COM_UART1_TransmitMessagePacketFragment(&txPacket, &nextTx))
+    {
+        // Just sent 255, so build the next packet
+        if (NetStepsCW > NetStepsCCW)
+        {
+            txPacket.comm = ENC_ROT_DELTA_CW;
+            txPacket.combined = NetStepsCW - NetStepsCCW;
+        } else {
+            txPacket.comm = ENC_ROT_DELTA_CCW;
+            txPacket.combined = NetStepsCCW - NetStepsCW;
+        }
+
+        // Clear the steps counter
+        NetStepsCW = 0;
+        NetStepsCCW = 0;
+
+        // Split "combined" into d1 and d2, calculate the escape byte
+        COM_SeperateDataBytes(&txPacket);
+        COM_CalculateEscapeByte(&txPacket);
+    }
 }
 
 #pragma vector = USCI_A1_VECTOR

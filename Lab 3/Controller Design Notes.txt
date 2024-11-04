@@ -1,0 +1,14 @@
+244 counts/rev
+1 rev ~= 3cm
+
+Full range of 12 cm
+So max control effort at:
+5cm =
+~ 390 counts
+
+
+u = Kp * e
+
+65535 = Kp * 390
+
+Kp = 168
