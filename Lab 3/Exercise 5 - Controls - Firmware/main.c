@@ -39,6 +39,7 @@ long DC_currentPosition = 0;    // measured in steps
 const unsigned int Kp = 168;              // PWM/step
 const unsigned int maxError = 390;        // measured in steps
 const unsigned int minError = 1;
+const unsigned int minPWM = 5500;
 
 volatile unsigned int NetStepsCW = 0;
 volatile unsigned int NetStepsCCW = 0;
@@ -78,20 +79,17 @@ void ControlGantry_DC()
     {
         error_Abs = maxError;
     }
-    unsigned int DC_PWM = Kp * error_Abs;
-    if (DC_PWM < 5300 && error_Abs > minError)
-    {
-        DC_PWM = 5300;
-    }
 
     // Set up and perform 32-bit multiplication using the hardware multiplier
-    MPY = Kp;            // Set operand 1 (lower 16 bits)
+    MPY = Kp;               // Set operand 1 (lower 16 bits)
     MPY32CTL0 = MPYSAT;     // Turn on Saturation mode
-    OP2 = error_Abs;     // Set operand 2
+    OP2 = error_Abs;        // Set operand 2
+    unsigned int DC_PWM = RESLO;         // Get the result of the multiplication.
 
-    // Get the result of the multiplication. Could be up to 32 bits
-    //unsigned int DC_PWM = RESHI;
-    //DC_PWM = 32000;
+    if (DC_PWM < minPWM && error_Abs > minError)
+    {
+        DC_PWM = minPWM;
+    }
 
     if (DC_error > minError) {
         DC_Spin(DC_PWM, CLOCKWISE);
