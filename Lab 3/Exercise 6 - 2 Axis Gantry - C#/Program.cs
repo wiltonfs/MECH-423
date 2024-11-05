@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace DCMotorController
+namespace Exercise6
 {
     internal static class Program
     {

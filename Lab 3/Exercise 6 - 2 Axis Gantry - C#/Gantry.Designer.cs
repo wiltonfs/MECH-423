@@ -1,4 +1,4 @@
-﻿namespace DCMotorController
+﻿namespace Exercise6
 {
     partial class Gantry
     {
@@ -212,6 +212,7 @@
             this.ResumeGantryButton.TabIndex = 58;
             this.ResumeGantryButton.Text = "Resume Gantry";
             this.ResumeGantryButton.UseVisualStyleBackColor = true;
+            this.ResumeGantryButton.Click += new System.EventHandler(this.ResumeGantryButton_Click);
             // 
             // ClearTrajectoryButton
             // 
@@ -221,6 +222,7 @@
             this.ClearTrajectoryButton.TabIndex = 59;
             this.ClearTrajectoryButton.Text = "Clear";
             this.ClearTrajectoryButton.UseVisualStyleBackColor = true;
+            this.ClearTrajectoryButton.Click += new System.EventHandler(this.ClearTrajectoryButton_Click);
             // 
             // LoadTrajectoryButton
             // 
@@ -230,6 +232,7 @@
             this.LoadTrajectoryButton.TabIndex = 60;
             this.LoadTrajectoryButton.Text = "Load Trajectory";
             this.LoadTrajectoryButton.UseVisualStyleBackColor = true;
+            this.LoadTrajectoryButton.Click += new System.EventHandler(this.LoadTrajectoryButton_Click);
             // 
             // XCoordinateInputBox
             // 
@@ -237,6 +240,7 @@
             this.XCoordinateInputBox.Name = "XCoordinateInputBox";
             this.XCoordinateInputBox.Size = new System.Drawing.Size(100, 20);
             this.XCoordinateInputBox.TabIndex = 61;
+            this.XCoordinateInputBox.Text = "0.0";
             // 
             // YCoordinateInputBox
             // 
@@ -244,6 +248,7 @@
             this.YCoordinateInputBox.Name = "YCoordinateInputBox";
             this.YCoordinateInputBox.Size = new System.Drawing.Size(100, 20);
             this.YCoordinateInputBox.TabIndex = 62;
+            this.YCoordinateInputBox.Text = "0.0";
             // 
             // SpeedInputBox
             // 
@@ -251,6 +256,7 @@
             this.SpeedInputBox.Name = "SpeedInputBox";
             this.SpeedInputBox.Size = new System.Drawing.Size(100, 20);
             this.SpeedInputBox.TabIndex = 63;
+            this.SpeedInputBox.Text = "100";
             // 
             // label1
             // 
@@ -287,6 +293,7 @@
             this.AddCoordinateButton.TabIndex = 67;
             this.AddCoordinateButton.Text = "Add Coordinate";
             this.AddCoordinateButton.UseVisualStyleBackColor = true;
+            this.AddCoordinateButton.Click += new System.EventHandler(this.AddCoordinateButton_Click);
             // 
             // label4
             // 
@@ -304,7 +311,6 @@
             this.TrajectoryVisualizationBox.Location = new System.Drawing.Point(531, 41);
             this.TrajectoryVisualizationBox.Multiline = true;
             this.TrajectoryVisualizationBox.Name = "TrajectoryVisualizationBox";
-            this.TrajectoryVisualizationBox.ReadOnly = true;
             this.TrajectoryVisualizationBox.Size = new System.Drawing.Size(257, 184);
             this.TrajectoryVisualizationBox.TabIndex = 69;
             // 

@@ -17,9 +17,9 @@ using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
-namespace DCMotorController
+namespace Exercise6
 {
-    enum PACKET_FRAGMENT
+    public enum PACKET_FRAGMENT
     {
         START_BYTE,
         COM_BYTE,
@@ -27,15 +27,7 @@ namespace DCMotorController
         D2_BYTE,
         ESCP_BYTE
     }
-    struct MessagePacket
-    {
-        public byte comm;
-        public byte d1;
-        public byte d2;
-        public byte esc;
-        public ushort combined;
-    }
-    enum COMM_BYTE
+    public enum COMM_BYTE
     {
         DEBUG_ECHO_REQUEST = 0, DEBUG_ECHO_RESPONSE = 1, DEBUG_UNHANDLED_COMM = 7,
 
@@ -43,7 +35,11 @@ namespace DCMotorController
 
         STP_SINGLE_CW = 16, STP_SINGLE_CCW = 17, STP_CONT_CW = 18, STP_CONT_CCW = 19, STP_STOP = 20,
 
-        ENC_ROT_DELTA_CW = 24, ENC_ROT_DELTA_CCW = 25
+        ENC_ROT_DELTA_CW = 24, ENC_ROT_DELTA_CCW = 25,
+
+        GAN_RESUME = 32, GAN_PAUSE = 33, GAN_DELTA_POS_DC = 34, GAN_DELTA_NEG_DC = 35,
+        GAN_DELTA_POS_STP = 36, GAN_DELTA_NEG_STP = 37, GAN_SET_MAX_PWM_DC = 38, GAN_SET_DELAY_STP = 39,
+        GAN_ZERO_SETPOINT = 40, GAN_REACH_SETPOINT = 41
     }
 
     public partial class Gantry : Form
@@ -58,6 +54,9 @@ namespace DCMotorController
         ConcurrentQueue<int> incomingQueue = new ConcurrentQueue<int>();
         PACKET_FRAGMENT expectedNextRx = PACKET_FRAGMENT.START_BYTE;
         MessagePacket mostRecentPacket = new MessagePacket();
+
+        // Trajectory
+        Queue<GantryCoordinate> trajectory = new Queue<GantryCoordinate>();
 
         // ---------------------------------
         // ----- Constructors and Load -----
@@ -92,10 +91,56 @@ namespace DCMotorController
         {
             refreshSerialConnectionsComboBox();
         }
+        // ----- Gantry buttons -----
         private void PauseGantryButton_Click(object sender, EventArgs e)
         {
-            // TODO: Pause Gantry
-            //SendDCMotorCommand(0);
+            QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_PAUSE));
+        }
+        private void AddCoordinateButton_Click(object sender, EventArgs e)
+        {
+            // Wrangle inputs
+            if (float.TryParse(XCoordinateInputBox.Text, out float X) && float.TryParse(YCoordinateInputBox.Text, out float Y) && uint.TryParse(SpeedInputBox.Text, out uint Speed))
+            {
+                // Clamp the values
+                X = GantryCoordinate.Clamp(X, -GantryCoordinate.X_WIDTH_CM, GantryCoordinate.X_WIDTH_CM);
+                Y = GantryCoordinate.Clamp(Y, -GantryCoordinate.Y_WIDTH_CM, GantryCoordinate.Y_WIDTH_CM);
+                Speed = GantryCoordinate.Clamp(Speed, 10, 100);
+                XCoordinateInputBox.Text = X.ToString();
+                YCoordinateInputBox.Text = Y.ToString();
+                SpeedInputBox.Text = Speed.ToString();
+
+                // Add to Coordinates queue
+                trajectory.Enqueue(new GantryCoordinate(X, Y, Speed));
+                RefreshVisuals();
+            }
+            else
+            {
+                MessageBox.Show("Please enter valid values. X, Y = float. Speed = unsigned integer", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private void ClearTrajectoryButton_Click(object sender, EventArgs e)
+        {
+            // Pause gantry
+            QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_PAUSE));
+            // Clear Coordinates queue
+            trajectory.Clear();
+            RefreshVisuals();
+        }
+        private void LoadTrajectoryButton_Click(object sender, EventArgs e)
+        {
+            // Pause gantry
+            QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_PAUSE));
+            // Clear Coordinates queue
+            trajectory.Clear();
+            // Open file dialogue
+            // Wrangle file
+            // Fill Coordinates queue
+
+            RefreshVisuals();
+        }
+        private void ResumeGantryButton_Click(object sender, EventArgs e)
+        {
+            QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_RESUME));
         }
 
         // ----- Timers -----
@@ -158,6 +203,14 @@ namespace DCMotorController
             { boardConnectedLabel.Text = "No board detected"; }
             else
             { boardConnectedLabel.Text = "Board connected"; }
+
+            string traj = "";
+            foreach (GantryCoordinate c in trajectory)
+            {
+                traj += c.ToString();
+                traj += "\r\n";
+            }
+            TrajectoryVisualizationBox.Text = traj;
         }
         void refreshSerialConnectionsComboBox()
         {
@@ -177,32 +230,15 @@ namespace DCMotorController
         // -------------------------------------------------
         // ----- Serial Functions & Messaging Protocol -----
         // -------------------------------------------------
-        private void QueueOutgoing(COMM_BYTE COMMenum, byte D1, byte D2)
+        private void QueueOutgoing(MessagePacket mp)
         {
-            byte COMM = (byte)COMMenum;
-
-            byte ESC = 0;
-
-            if (COMM > 254)
-            {
-                COMM = 254; ESC += 1;
-            }
-            if (D1 > 254)
-            {
-                D1 = 254; ESC += 2;
-            }
-            if (D2 > 254)
-            {
-                D2 = 254; ESC += 4;
-            }
-
             outgoingQueue.Enqueue(255);
-            outgoingQueue.Enqueue(COMM);
-            outgoingQueue.Enqueue(D1);
-            outgoingQueue.Enqueue(D2);
-            outgoingQueue.Enqueue(ESC);
+            outgoingQueue.Enqueue(mp.comm);
+            outgoingQueue.Enqueue(mp.d1);
+            outgoingQueue.Enqueue(mp.d2);
+            outgoingQueue.Enqueue(mp.esc);
 
-            string packet = $"[{COMMenum}, {DataBytesToUShort(D1, D2)}] = [255 {COMM} {D1} {D2} {ESC}]\t\t";
+            string packet = $"{mp.ToString()} -> {mp.ToStringRaw()}\r\n";
             txHistoryDisplay.Text += packet;
         }
 
@@ -223,9 +259,9 @@ namespace DCMotorController
             } else if (expectedNextRx == PACKET_FRAGMENT.ESCP_BYTE) {
                 mostRecentPacket.esc = nextReceive;
                 // Finished transmission
-                rxHistoryDisplay.Text += $"[255 {mostRecentPacket.comm} {mostRecentPacket.d1} {mostRecentPacket.d2} {mostRecentPacket.esc}] = ";
-                FormatCompletePacket(ref mostRecentPacket);
-                rxHistoryDisplay.Text += $"[{(COMM_BYTE)mostRecentPacket.comm}, {mostRecentPacket.combined}]\t\t";
+                rxHistoryDisplay.Text += $"{mostRecentPacket.ToStringRaw()} -> ";
+                mostRecentPacket.ApplyEscapeByte();mostRecentPacket.SeparateDataBytes();
+                rxHistoryDisplay.Text += $"{mostRecentPacket.ToString()}\r\n";
                 UseCompletePacket(mostRecentPacket);
             }
 
@@ -234,22 +270,6 @@ namespace DCMotorController
             {
                 expectedNextRx = PACKET_FRAGMENT.START_BYTE;
             } else { expectedNextRx++; }
-            
-            
-        }
-
-        void FormatCompletePacket(ref MessagePacket MP)
-        {
-            // Handle the escape byte
-            if ((MP.esc & 0x1) > 0)
-                MP.comm = 255;
-            if ((MP.esc & 0x2) > 0)
-                MP.d1 = 255;
-            if ((MP.esc & 0x4) > 0)
-                MP.d2 = 255;
-
-            // Combine data 1 and 2
-            MP.combined = DataBytesToUShort(MP.d1, MP.d2);
         }
         void UseCompletePacket(MessagePacket MP)
         {
@@ -257,21 +277,6 @@ namespace DCMotorController
             COMM_BYTE comm = (COMM_BYTE)MP.comm;
 
             // TODO: Use received command byte
-        }
-
-        private byte MostSignificant(uint value)
-        {
-            return (byte)((value >> 8) & 0xFF);
-        }
-
-        private byte LeastSignificant(uint value)
-        {
-            return (byte)(value & 0xFF);
-        }
-
-        private ushort DataBytesToUShort(byte D1, byte D2)
-        {
-            return (ushort)(((ushort)D1 << 8) | (ushort)D2);
         }
     }
 }

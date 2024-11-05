@@ -53,6 +53,8 @@
     <Compile Include="Gantry.Designer.cs">
       <DependentUpon>Gantry.cs</DependentUpon>
     </Compile>
+    <Compile Include="GantryCoordinate.cs" />
+    <Compile Include="MessagePacket.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
