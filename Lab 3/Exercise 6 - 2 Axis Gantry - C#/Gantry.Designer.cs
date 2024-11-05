@@ -58,6 +58,9 @@
             this.AddCoordinateButton = new System.Windows.Forms.Button();
             this.label4 = new System.Windows.Forms.Label();
             this.TrajectoryVisualizationBox = new System.Windows.Forms.TextBox();
+            this.HomeGantryButton = new System.Windows.Forms.Button();
+            this.ZeroGantryButton = new System.Windows.Forms.Button();
+            this.RunTrajectoryButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // serialComboBox
@@ -186,7 +189,7 @@
             // 
             // PauseGantryButton
             // 
-            this.PauseGantryButton.Location = new System.Drawing.Point(531, 260);
+            this.PauseGantryButton.Location = new System.Drawing.Point(17, 183);
             this.PauseGantryButton.Name = "PauseGantryButton";
             this.PauseGantryButton.Size = new System.Drawing.Size(129, 23);
             this.PauseGantryButton.TabIndex = 54;
@@ -206,7 +209,7 @@
             // 
             // ResumeGantryButton
             // 
-            this.ResumeGantryButton.Location = new System.Drawing.Point(659, 260);
+            this.ResumeGantryButton.Location = new System.Drawing.Point(145, 183);
             this.ResumeGantryButton.Name = "ResumeGantryButton";
             this.ResumeGantryButton.Size = new System.Drawing.Size(129, 23);
             this.ResumeGantryButton.TabIndex = 58;
@@ -314,11 +317,44 @@
             this.TrajectoryVisualizationBox.Size = new System.Drawing.Size(257, 184);
             this.TrajectoryVisualizationBox.TabIndex = 69;
             // 
+            // HomeGantryButton
+            // 
+            this.HomeGantryButton.Location = new System.Drawing.Point(17, 212);
+            this.HomeGantryButton.Name = "HomeGantryButton";
+            this.HomeGantryButton.Size = new System.Drawing.Size(129, 23);
+            this.HomeGantryButton.TabIndex = 70;
+            this.HomeGantryButton.Text = "Home Gantry";
+            this.HomeGantryButton.UseVisualStyleBackColor = true;
+            this.HomeGantryButton.Click += new System.EventHandler(this.HomeGantryButton_Click);
+            // 
+            // ZeroGantryButton
+            // 
+            this.ZeroGantryButton.Location = new System.Drawing.Point(145, 212);
+            this.ZeroGantryButton.Name = "ZeroGantryButton";
+            this.ZeroGantryButton.Size = new System.Drawing.Size(129, 23);
+            this.ZeroGantryButton.TabIndex = 71;
+            this.ZeroGantryButton.Text = "Zero Gantry";
+            this.ZeroGantryButton.UseVisualStyleBackColor = true;
+            this.ZeroGantryButton.Click += new System.EventHandler(this.ZeroGantryButton_Click);
+            // 
+            // RunTrajectoryButton
+            // 
+            this.RunTrajectoryButton.Location = new System.Drawing.Point(276, 183);
+            this.RunTrajectoryButton.Name = "RunTrajectoryButton";
+            this.RunTrajectoryButton.Size = new System.Drawing.Size(129, 23);
+            this.RunTrajectoryButton.TabIndex = 72;
+            this.RunTrajectoryButton.Text = "Run Trajectory";
+            this.RunTrajectoryButton.UseVisualStyleBackColor = true;
+            this.RunTrajectoryButton.Click += new System.EventHandler(this.RunTrajectoryButton_Click);
+            // 
             // Gantry
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.RunTrajectoryButton);
+            this.Controls.Add(this.ZeroGantryButton);
+            this.Controls.Add(this.HomeGantryButton);
             this.Controls.Add(this.TrajectoryVisualizationBox);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.AddCoordinateButton);
@@ -383,6 +419,9 @@
         private System.Windows.Forms.Button AddCoordinateButton;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TextBox TrajectoryVisualizationBox;
+        private System.Windows.Forms.Button HomeGantryButton;
+        private System.Windows.Forms.Button ZeroGantryButton;
+        private System.Windows.Forms.Button RunTrajectoryButton;
     }
 }
 

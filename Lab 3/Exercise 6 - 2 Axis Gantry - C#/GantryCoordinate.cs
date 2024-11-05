@@ -38,13 +38,26 @@ namespace Exercise6
             Queue<MessagePacket> commands = new Queue<MessagePacket>();
 
             // Pause Gantry
-            commands.Append(new MessagePacket());
+            commands.Enqueue(new MessagePacket((byte)COMM_BYTE.GAN_PAUSE));
             // Update DC coordinate
             // Update Stepper coordiante
             // Update Stepper speed
+            commands.Enqueue(new MessagePacket((byte)COMM_BYTE.GAN_SET_DELAY_STP, StepperDelayFromSpeed()));
             // Update DC speed
+            commands.Enqueue(new MessagePacket((byte)COMM_BYTE.GAN_SET_MAX_PWM_DC, DCPWMFromSpeed()));
             // Resume Gantry
-            return new Queue<MessagePacket>();
+            commands.Enqueue(new MessagePacket((byte)COMM_BYTE.GAN_RESUME));
+            return commands;
+        }
+        private ushort DCLocation()
+        {
+            float CM_TO_COUNTS = 300f;
+            return (ushort)(X * CM_TO_COUNTS);
+        }
+        private ushort StepperLocation()
+        {
+            float CM_TO_STEPS = 1000f;
+            return (ushort)(Y * CM_TO_STEPS);
         }
 
         private ushort StepperDelayFromSpeed()
@@ -52,6 +65,11 @@ namespace Exercise6
             // Speed = 100, return 100
             // Speed = 10, return 1000
             return (ushort)(10000 / Speed);
+        }
+
+        private ushort DCPWMFromSpeed()
+        {
+            return 16000;
         }
 
         public override string ToString()

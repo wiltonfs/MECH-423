@@ -58,6 +58,10 @@ namespace Exercise6
         // Trajectory
         Queue<GantryCoordinate> trajectory = new Queue<GantryCoordinate>();
 
+        // Gantry commands
+        Queue<GantryCoordinate> commandedOffsets = new Queue<GantryCoordinate>();
+        int currentTrajectoryCommand = -2; // -2 = nothing, -1 = waiting to home, otherwise trajectory index
+
         // ---------------------------------
         // ----- Constructors and Load -----
         // ---------------------------------
@@ -94,7 +98,7 @@ namespace Exercise6
         // ----- Gantry buttons -----
         private void PauseGantryButton_Click(object sender, EventArgs e)
         {
-            QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_PAUSE));
+            PauseGantry();
         }
         private void AddCoordinateButton_Click(object sender, EventArgs e)
         {
@@ -118,9 +122,35 @@ namespace Exercise6
                 MessageBox.Show("Please enter valid values. X, Y = float. Speed = unsigned integer", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        private void ResumeGantryButton_Click(object sender, EventArgs e)
+        {
+            QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_RESUME));
+        }
+        private void HomeGantryButton_Click(object sender, EventArgs e)
+        {
+            HomeGantry();
+        }
+
+        private void ZeroGantryButton_Click(object sender, EventArgs e)
+        {
+            ZeroGantry();
+        }
+
+        // ----- Trajectory buttons -----
+        private void RunTrajectoryButton_Click(object sender, EventArgs e)
+        {
+            PauseGantry();
+            // Build the list of commands
+            commandedOffsets.Clear();
+
+            // Home the gantry
+            HomeGantry();
+            // Wait for success
+            // If next coordinate, run it
+        }
         private void ClearTrajectoryButton_Click(object sender, EventArgs e)
         {
-            // Pause gantry
+            PauseGantry();
             QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_PAUSE));
             // Clear Coordinates queue
             trajectory.Clear();
@@ -128,8 +158,7 @@ namespace Exercise6
         }
         private void LoadTrajectoryButton_Click(object sender, EventArgs e)
         {
-            // Pause gantry
-            QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_PAUSE));
+            PauseGantry();
             // Clear Coordinates queue
             trajectory.Clear();
             // Open file dialogue
@@ -137,10 +166,6 @@ namespace Exercise6
             // Fill Coordinates queue
 
             RefreshVisuals();
-        }
-        private void ResumeGantryButton_Click(object sender, EventArgs e)
-        {
-            QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_RESUME));
         }
 
         // ----- Timers -----
@@ -223,13 +248,26 @@ namespace Exercise6
                 serialComboBox.SelectedIndex = 0;
         }
 
-        // ------------------------------
+        // ----------------------------
         // ----- Gantry Functions -----
-        // ------------------------------
+        // ----------------------------
+
+        private void PauseGantry()
+        { QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_PAUSE)); }
+        private void HomeGantry()
+        { QueueOutgoing(new GantryCoordinate(0, 0)); }
+        private void ZeroGantry()
+        { QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_ZERO_SETPOINT)); }
 
         // -------------------------------------------------
         // ----- Serial Functions & Messaging Protocol -----
         // -------------------------------------------------
+        private void QueueOutgoing(GantryCoordinate gc)
+        { QueueOutgoing(gc.ConvertToCommands()); }
+        private void QueueOutgoing(Queue<MessagePacket> q)
+        {
+            foreach (MessagePacket mp in q) { QueueOutgoing(mp); }
+        }
         private void QueueOutgoing(MessagePacket mp)
         {
             outgoingQueue.Enqueue(255);
