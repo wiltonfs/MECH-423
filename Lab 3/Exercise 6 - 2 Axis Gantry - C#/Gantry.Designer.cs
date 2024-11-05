@@ -61,6 +61,7 @@
             this.HomeGantryButton = new System.Windows.Forms.Button();
             this.ZeroGantryButton = new System.Windows.Forms.Button();
             this.RunTrajectoryButton = new System.Windows.Forms.Button();
+            this.DebugCompletedCommand = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // serialComboBox
@@ -347,11 +348,22 @@
             this.RunTrajectoryButton.UseVisualStyleBackColor = true;
             this.RunTrajectoryButton.Click += new System.EventHandler(this.RunTrajectoryButton_Click);
             // 
+            // DebugCompletedCommand
+            // 
+            this.DebugCompletedCommand.Location = new System.Drawing.Point(276, 212);
+            this.DebugCompletedCommand.Name = "DebugCompletedCommand";
+            this.DebugCompletedCommand.Size = new System.Drawing.Size(129, 23);
+            this.DebugCompletedCommand.TabIndex = 73;
+            this.DebugCompletedCommand.Text = "DEBUG: Reached";
+            this.DebugCompletedCommand.UseVisualStyleBackColor = true;
+            this.DebugCompletedCommand.Click += new System.EventHandler(this.DebugCompletedCommand_Click);
+            // 
             // Gantry
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.DebugCompletedCommand);
             this.Controls.Add(this.RunTrajectoryButton);
             this.Controls.Add(this.ZeroGantryButton);
             this.Controls.Add(this.HomeGantryButton);
@@ -422,6 +434,7 @@
         private System.Windows.Forms.Button HomeGantryButton;
         private System.Windows.Forms.Button ZeroGantryButton;
         private System.Windows.Forms.Button RunTrajectoryButton;
+        private System.Windows.Forms.Button DebugCompletedCommand;
     }
 }
 

@@ -102,6 +102,10 @@ typedef struct {
 #define GAN_7 (GAN_0 + 7)       // Set Stepper update delay (int D1D2)
 #define GAN_8 (GAN_0 + 8)       // Zero gantry (D1 = zero DC?, D2 = zero stepper?)
 #define GAN_9 (GAN_0 + 9)       // Response from gantry, indicates reached setpoint for both DC and stepper
+#define GAN_A (GAN_0 + 10)      // Absolute DC setpoint in positive direction (int D1D2)
+#define GAN_B (GAN_0 + 11)      // Absolute DC setpoint in negative direction (int D1D2)
+#define GAN_C (GAN_0 + 12)      // Absolute Stepper setpoint in positive direction (int D1D2)
+#define GAN_D (GAN_0 + 13)      // Absolute Stepper setpoint in negative direction (int D1D2)
 #define GAN_RESUME          GAN_0
 #define GAN_PAUSE           GAN_1
 #define GAN_DELTA_POS_DC    GAN_2
@@ -112,6 +116,10 @@ typedef struct {
 #define GAN_SET_DELAY_STP   GAN_7
 #define GAN_ZERO_SETPOINT   GAN_8
 #define GAN_REACH_SETPOINT  GAN_9
+#define GAN_ABS_POS_DC      GAN_A
+#define GAN_ABS_NEG_DC      GAN_B
+#define GAN_ABS_POS_STP     GAN_C
+#define GAN_ABS_NEG_STP     GAN_D
 
 // ------------------------------
 // -- Escape Byte Definitions ---

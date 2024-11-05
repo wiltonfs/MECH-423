@@ -49,6 +49,10 @@
 39  - GAN_7 - Set Stepper update delay (int D1D2)
 40  - GAN_8 - Zero gantry (D1 = zero DC?, D2 = zero stepper?)
 41  - GAN_9 - Response from gantry, indicates reached setpoint for both DC and stepper
+42  - GAN_A - Absolute DC setpoint in positive direction (int D1D2)
+43  - GAN_B - Absolute DC setpoint in negative direction (int D1D2)
+44  - GAN_C - Absolute Stepper setpoint in positive direction (int D1D2)
+45  - GAN_D - Absolute Stepper setpoint in negative direction (int D1D2)
 
 # Data Byte 1
 [0, 254] Usually most significant byte of a 16 byte value

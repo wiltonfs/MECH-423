@@ -39,7 +39,8 @@ namespace Exercise6
 
         GAN_RESUME = 32, GAN_PAUSE = 33, GAN_DELTA_POS_DC = 34, GAN_DELTA_NEG_DC = 35,
         GAN_DELTA_POS_STP = 36, GAN_DELTA_NEG_STP = 37, GAN_SET_MAX_PWM_DC = 38, GAN_SET_DELAY_STP = 39,
-        GAN_ZERO_SETPOINT = 40, GAN_REACH_SETPOINT = 41
+        GAN_ZERO_SETPOINT = 40, GAN_REACH_SETPOINT = 41,
+        GAN_ABS_POS_DC = 42, GAN_ABS_NEG_DC = 43, GAN_ABS_POS_STP = 44, GAN_ABS_NEG_STP = 45
     }
 
     public partial class Gantry : Form
@@ -56,7 +57,7 @@ namespace Exercise6
         MessagePacket mostRecentPacket = new MessagePacket();
 
         // Trajectory
-        Queue<GantryCoordinate> trajectory = new Queue<GantryCoordinate>();
+        List<GantryCoordinate> trajectory = new List<GantryCoordinate>();
 
         // Gantry commands
         Queue<GantryCoordinate> commandedOffsets = new Queue<GantryCoordinate>();
@@ -114,7 +115,7 @@ namespace Exercise6
                 SpeedInputBox.Text = Speed.ToString();
 
                 // Add to Coordinates queue
-                trajectory.Enqueue(new GantryCoordinate(X, Y, Speed));
+                trajectory.Add(new GantryCoordinate(X, Y, Speed));
                 RefreshVisuals();
             }
             else
@@ -124,7 +125,7 @@ namespace Exercise6
         }
         private void ResumeGantryButton_Click(object sender, EventArgs e)
         {
-            QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_RESUME));
+            ResumeGantry();
         }
         private void HomeGantryButton_Click(object sender, EventArgs e)
         {
@@ -142,9 +143,24 @@ namespace Exercise6
             PauseGantry();
             // Build the list of commands
             commandedOffsets.Clear();
+            if (trajectory.Count > 0)
+            {
+                float x = trajectory[0].X;
+                float y = trajectory[0].Y;
+                uint speed = trajectory[0].Speed;
+                commandedOffsets.Enqueue(new GantryCoordinate(x, y, speed, false));
+                for (int i = 1; i < trajectory.Count; i++)
+                {
+                    x = trajectory[i].X - trajectory[i-1].X;
+                    y = trajectory[i].Y - trajectory[i-1].Y;
+                    speed = trajectory[i].Speed - trajectory[i-1].Speed;
+                    commandedOffsets.Enqueue(new GantryCoordinate(x, y, speed, false));
+                }
+            }
 
             // Home the gantry
             HomeGantry();
+            currentTrajectoryCommand = -1;
             // Wait for success
             // If next coordinate, run it
         }
@@ -162,8 +178,15 @@ namespace Exercise6
             // Clear Coordinates queue
             trajectory.Clear();
             // Open file dialogue
-            // Wrangle file
-            // Fill Coordinates queue
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    // Wrangle file, fill Coordinates queue
+                    ReadCSV(openFileDialog.FileName);
+                }
+            }
 
             RefreshVisuals();
         }
@@ -230,9 +253,11 @@ namespace Exercise6
             { boardConnectedLabel.Text = "Board connected"; }
 
             string traj = "";
-            foreach (GantryCoordinate c in trajectory)
+            for (int i = 0; i < trajectory.Count; i++)
             {
-                traj += c.ToString();
+                traj += trajectory[i].ToString();
+                if (currentTrajectoryCommand == i)
+                    traj += " <---";
                 traj += "\r\n";
             }
             TrajectoryVisualizationBox.Text = traj;
@@ -254,16 +279,28 @@ namespace Exercise6
 
         private void PauseGantry()
         { QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_PAUSE)); }
+        private void ResumeGantry()
+        { QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_RESUME)); }
         private void HomeGantry()
-        { QueueOutgoing(new GantryCoordinate(0, 0)); }
+        { QueueOutgoing(new GantryCoordinate(0, 0)); currentTrajectoryCommand = -2; }
         private void ZeroGantry()
-        { QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_ZERO_SETPOINT)); }
+        { QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_ZERO_SETPOINT)); currentTrajectoryCommand = -2; }
+
 
         // -------------------------------------------------
         // ----- Serial Functions & Messaging Protocol -----
         // -------------------------------------------------
-        private void QueueOutgoing(GantryCoordinate gc)
-        { QueueOutgoing(gc.ConvertToCommands()); }
+        private void QueueOutgoing(GantryCoordinate gc, bool absoluteCoordinate = true)
+        {
+            if (absoluteCoordinate)
+            {
+                QueueOutgoing(gc.ConvertToCommands());
+            } else
+            {
+                // Send as a differential
+                QueueOutgoing(gc.ConvertToCommands(false));
+            }
+        }
         private void QueueOutgoing(Queue<MessagePacket> q)
         {
             foreach (MessagePacket mp in q) { QueueOutgoing(mp); }
@@ -314,7 +351,64 @@ namespace Exercise6
             // Use the command byte to use the rx
             COMM_BYTE comm = (COMM_BYTE)MP.comm;
 
-            // TODO: Use received command byte
+            if (comm == COMM_BYTE.GAN_REACH_SETPOINT)
+            {
+                if (currentTrajectoryCommand == -2)
+                {
+                    // Not running a command
+                    return;
+                }
+                if (currentTrajectoryCommand == -1)
+                {
+                    // Reached home, ready to start commands
+                    QueueOutgoing(commandedOffsets.Dequeue());
+                    currentTrajectoryCommand = 0;
+                    return;
+                }
+                // If there are still commands to get, get them
+                if (commandedOffsets.Count > 0)
+                {
+                    QueueOutgoing(commandedOffsets.Dequeue());
+                    currentTrajectoryCommand++;
+                    return;
+                }
+                else
+                {
+                    currentTrajectoryCommand = -2;
+                    return;
+                }
+                
+            }
+        }
+
+        private void DebugCompletedCommand_Click(object sender, EventArgs e)
+        {
+            incomingQueue.Enqueue(255);
+            incomingQueue.Enqueue((byte)COMM_BYTE.GAN_REACH_SETPOINT);
+            incomingQueue.Enqueue(0);
+            incomingQueue.Enqueue(0);
+            incomingQueue.Enqueue(0);
+        }
+
+        private void ReadCSV(string filePath)
+        {
+            foreach (var line in File.ReadLines(filePath))
+            {
+                string[] values = line.Split(',');
+                float X = float.Parse(values[0]);
+                float Y = float.Parse(values[1]);
+                uint Speed = uint.Parse(values[2]);
+
+                X = GantryCoordinate.Clamp(X, -GantryCoordinate.X_WIDTH_CM, GantryCoordinate.X_WIDTH_CM);
+                Y = GantryCoordinate.Clamp(Y, -GantryCoordinate.Y_WIDTH_CM, GantryCoordinate.Y_WIDTH_CM);
+                Speed = GantryCoordinate.Clamp(Speed, 10, 100);
+                XCoordinateInputBox.Text = X.ToString();
+                YCoordinateInputBox.Text = Y.ToString();
+                SpeedInputBox.Text = Speed.ToString();
+
+                // Add to Coordinates queue
+                trajectory.Add(new GantryCoordinate(X, Y, Speed));
+            }
         }
     }
 }
