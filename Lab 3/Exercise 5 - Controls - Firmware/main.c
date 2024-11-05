@@ -36,10 +36,10 @@ volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
 long DC_targetPosition = 0;     // measured in steps
 long DC_currentPosition = 0;    // measured in steps
-const unsigned int Kp = 168;              // PWM/step
-const unsigned int maxError = 390;        // measured in steps
-const unsigned int minError = 1;
-const unsigned int minPWM = 5500;
+const unsigned int Kp = 200;              // PWM/step
+const unsigned int maxError = 327;        // measured in steps
+const unsigned int minError = 2;
+const unsigned int minPWM = 9000;
 
 volatile unsigned int NetStepsCW = 0;
 volatile unsigned int NetStepsCCW = 0;
@@ -49,6 +49,24 @@ void ZeroGantry_DC()
     DC_Brake();
     DC_targetPosition = 0;
     DC_currentPosition = 0;
+}
+
+unsigned int ErrorAbs(long error)
+{
+    unsigned long eAbs = 0;
+    if (error >= 0)
+    {
+        eAbs = ((unsigned long)error);
+    } else {
+        eAbs = ((unsigned long)-error);
+    }
+
+    if (eAbs > maxError)
+    {
+        eAbs = maxError;
+    }
+
+    return (unsigned int)eAbs;
 }
 
 void ControlGantry_DC()
@@ -67,18 +85,7 @@ void ControlGantry_DC()
 
     long DC_error = DC_targetPosition - DC_currentPosition;
 
-    unsigned int error_Abs = 0;
-    if (DC_error >= 0)
-    {
-        error_Abs = ((unsigned int)DC_error);
-    } else {
-        error_Abs = ((unsigned int)-DC_error);
-    }
-
-    if (error_Abs > maxError)
-    {
-        error_Abs = maxError;
-    }
+    unsigned int error_Abs = ErrorAbs(DC_error);
 
     // Set up and perform 32-bit multiplication using the hardware multiplier
     MPY = Kp;               // Set operand 1 (lower 16 bits)
