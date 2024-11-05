@@ -7,7 +7,7 @@
 % ChatGPT and Matlab forums were referenced to produce parts of this code
 clear;close all;clc;
 
-path = "../Exercise 5 - Controls - C#/Data/output_3.csv";
+path = "../Exercise 5 - Controls - C#/Data/PWM sweep.csv";
 
 data = readtable(path, 'NumHeaderLines', 1);
 time_ms = data{:, 1};
