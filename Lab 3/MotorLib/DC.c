@@ -73,6 +73,7 @@ void DC_SetupDCMotor()
 
 void DC_Brake()
 {
+    TB2CCR1 = 0;
     // Write P3.6 and P3.7 to LOW
     P3OUT  &=~  (BIT6 | BIT7);
 }

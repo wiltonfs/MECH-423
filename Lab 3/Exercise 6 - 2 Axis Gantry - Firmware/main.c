@@ -42,7 +42,7 @@ volatile long DC_currentPosition = 0;    // measured in counts
 volatile long STP_targetPosition = 400;    // measured in steps
 volatile long STP_currentPosition = 0;   // measured in steps
 
-const unsigned int DC_minError = 3;     // measured in steps
+const unsigned int DC_minError = 100;     // measured in steps
 unsigned int DC_PWM = 32000;
 
 STEPPER_STATE stepper_state = A1_xx;
@@ -54,10 +54,10 @@ volatile int SETPOINT_TIMER = RESET_SETPOINT_TIMER;  // Hecto-microseconds
 
 void GantryCheckReachedSetpoint()
 {
-    if (SETPOINT_TIMER <= 0) {
+    if (SETPOINT_TIMER == 0) {
         // Stable
         COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(GAN_REACH_SETPOINT, 0, 0);
-
+        SETPOINT_TIMER = -1;
     } else {
         SETPOINT_TIMER--;
     }
@@ -113,16 +113,18 @@ void ControlGantry_DC()
 
     long DC_error = DC_targetPosition - DC_currentPosition;
 
-    if (DC_error > DC_minError) {
+    if (DC_error > 3) {
         DC_Spin(DC_PWM, CLOCKWISE);
         SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
-    } else if (DC_error < (-DC_minError)) {
+        return;
+    } else if (DC_error < -3) {
         DC_Spin(DC_PWM, COUNTERCLOCKWISE);
         SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
-    } else {
-        DC_Spin(0, CLOCKWISE);
-        DC_Brake();
+        return;
     }
+
+    // Otherwise
+    DC_Brake();
 }
 
 void ProcessCompletePacket() {
@@ -210,7 +212,6 @@ int main(void)
 
     //DC Motor set-up
     DC_SetupDCMotor();
-    //DC_Spin(32000, CLOCKWISE);  // 50% duty cycle, P2.1 output
 
     //Stepper Motor set-up
     SetupStepperTimers();
