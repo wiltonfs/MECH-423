@@ -35,18 +35,18 @@
 MessagePacket IncomingPacket = EMPTY_MESSAGE_PACKET;
 volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
-volatile bool isGantryRunning = false;
+volatile bool isGantryRunning = true;
 
-volatile long DC_targetPosition = 0;     // measured in counts
+volatile long DC_targetPosition = 100;     // measured in counts
 volatile long DC_currentPosition = 0;    // measured in counts
-volatile long STP_targetPosition = 0;    // measured in steps
+volatile long STP_targetPosition = 400;    // measured in steps
 volatile long STP_currentPosition = 0;   // measured in steps
 
-const unsigned int DC_minError = 2;     // measured in steps
-unsigned int DC_PWM = 16000;
+const unsigned int DC_minError = 3;     // measured in steps
+unsigned int DC_PWM = 32000;
 
 STEPPER_STATE stepper_state = A1_xx;
-volatile int STP_SET_DELAY = 100;   // Hecto-microseconds
+volatile int STP_SET_DELAY = 10;   // Hecto-microseconds
 volatile int STP_delay = 100;       // Hecto-microseconds
 
 #define RESET_SETPOINT_TIMER 100
@@ -206,7 +206,7 @@ int main(void)
     StandardUART1Setup_9600_8();
     UCA1IE |= UCRXIE;           // Enable RX interrupt
 
-    ZeroGantry();
+    //ZeroGantry();
 
     //DC Motor set-up
     DC_SetupDCMotor();
@@ -235,6 +235,8 @@ int main(void)
             ControlGantry_STP();
             ControlGantry_DC();
             GantryCheckReachedSetpoint();
+        } else {
+            DC_Brake();
         }
         // Heartbeat
         P1OUT ^= HEARTBEAT_LED;

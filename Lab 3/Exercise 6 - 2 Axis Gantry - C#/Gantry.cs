@@ -69,7 +69,7 @@ namespace Exercise6
         public Gantry()
         {
             InitializeComponent();
-            refreshSerialConnectionsComboBox();
+            //refreshSerialConnectionsComboBox();
         }
 
         private void DcMotorController_Load(object sender, EventArgs e)
@@ -153,7 +153,7 @@ namespace Exercise6
                 {
                     x = trajectory[i].X - trajectory[i-1].X;
                     y = trajectory[i].Y - trajectory[i-1].Y;
-                    speed = trajectory[i].Speed - trajectory[i-1].Speed;
+                    speed = trajectory[i].Speed;
                     commandedOffsets.Enqueue(new GantryCoordinate(x, y, speed, false));
                 }
             }
@@ -270,7 +270,7 @@ namespace Exercise6
             if (serialComboBox.Items.Count == 0)
                 serialComboBox.Text = "No COM ports!";
             else
-                serialComboBox.SelectedIndex = 0;
+                serialComboBox.SelectedIndex = 1;
         }
 
         // ----------------------------
@@ -409,6 +409,12 @@ namespace Exercise6
                 // Add to Coordinates queue
                 trajectory.Add(new GantryCoordinate(X, Y, Speed));
             }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            txHistoryDisplay.Text = "";
+            rxHistoryDisplay.Text = "";
         }
     }
 }

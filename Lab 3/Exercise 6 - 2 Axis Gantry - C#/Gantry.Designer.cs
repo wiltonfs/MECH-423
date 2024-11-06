@@ -62,6 +62,7 @@
             this.ZeroGantryButton = new System.Windows.Forms.Button();
             this.RunTrajectoryButton = new System.Windows.Forms.Button();
             this.DebugCompletedCommand = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // serialComboBox
@@ -71,6 +72,7 @@
             this.serialComboBox.Name = "serialComboBox";
             this.serialComboBox.Size = new System.Drawing.Size(121, 21);
             this.serialComboBox.TabIndex = 0;
+            this.serialComboBox.Text = "COM6";
             this.serialComboBox.SelectedIndexChanged += new System.EventHandler(this.serialComboBox_SelectedIndexChanged);
             // 
             // refreshButton
@@ -95,7 +97,7 @@
             // 
             // serialPort1
             // 
-            this.serialPort1.PortName = "COM3";
+            this.serialPort1.PortName = "COM6";
             this.serialPort1.DataReceived += new System.IO.Ports.SerialDataReceivedEventHandler(this.serialPort1_DataReceived);
             // 
             // boardConnectedLabel
@@ -358,11 +360,22 @@
             this.DebugCompletedCommand.UseVisualStyleBackColor = true;
             this.DebugCompletedCommand.Click += new System.EventHandler(this.DebugCompletedCommand_Click);
             // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(276, 241);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(129, 23);
+            this.button1.TabIndex = 74;
+            this.button1.Text = "DEBUG: Clear queues";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
             // Gantry
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.button1);
             this.Controls.Add(this.DebugCompletedCommand);
             this.Controls.Add(this.RunTrajectoryButton);
             this.Controls.Add(this.ZeroGantryButton);
@@ -435,6 +448,7 @@
         private System.Windows.Forms.Button ZeroGantryButton;
         private System.Windows.Forms.Button RunTrajectoryButton;
         private System.Windows.Forms.Button DebugCompletedCommand;
+        private System.Windows.Forms.Button button1;
     }
 }
 

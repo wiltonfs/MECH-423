@@ -12,11 +12,11 @@ namespace Exercise6
         public const int X_WIDTH_CM = 6;
         public const int Y_WIDTH_CM = 6;
 
-        public const float DC_REVS_PER_CM = 1 / 3;      // 1 revolution = 3 cm
-        public const float COUNTS_PER_REV = 244;        // 244 counts = 1 revolution
-        public const float STP_REVS_PER_CM = 1 / 4;     // 1 revolution = 4 cm
-        public const float HALFSTEPS_PER_REV = 2000;    // 2000 halfsteps = 1 revolution
-        public const float PWM_PER_SPEED = 65000 / 5;   // 65000 PWM = 5 Hz
+        public const float DC_REVS_PER_CM = 0.25f;      // 1 revolution = 4 cm
+        public const float COUNTS_PER_REV = 244f;        // 244 counts = 1 revolution
+        public const float STP_REVS_PER_CM = 0.25f;     // 1 revolution = 4 cm
+        public const float HALFSTEPS_PER_REV = 400f;     // 400 halfsteps = 1 revolution
+        public const float PWM_PER_SPEED = 65000f / 5f;   // 65000 PWM = 5 Hz
 
         public bool absoluteCoordinate = true;
         public float X = 0;
@@ -93,34 +93,38 @@ namespace Exercise6
         }
         private ushort DCLocation()
         {
-            float counts = Math.Abs(X) * DC_REVS_PER_CM * COUNTS_PER_REV;
+            float counts = (float)Math.Abs(X) * DC_REVS_PER_CM * COUNTS_PER_REV;
             return (ushort)(counts);
         }
         private ushort StepperLocation()
-        {
+        { 
             float steps = Math.Abs(Y) * STP_REVS_PER_CM * HALFSTEPS_PER_REV;
             return (ushort)(steps);
         }
 
         private ushort StepperDelayFromSpeed()
         {
-            // Speed = 100, return 100 =  1ms
-            // Speed = 10, return 1000 = 10ms
-            return (ushort)(10000 / Speed);
+            //return 10;
+            // Speed = 100, return 10 =  1ms
+            // Speed = 10, return 100 = 10ms
+            return (ushort)(1000 / Speed);
         }
 
         private ushort DCPWMFromSpeed()
         {
+            //return 32000;
             if (Y == 0)
             {
                 return (ushort)(650*Speed);
             }
-            float CM_PER_HALFSTEP = 1 / (HALFSTEPS_PER_REV * STP_REVS_PER_CM);
-            float S = (CM_PER_HALFSTEP) / (StepperDelayFromSpeed() / 100000); // cm / s
+            float CM_PER_HALFSTEP = 1f / (HALFSTEPS_PER_REV * STP_REVS_PER_CM);
+            float S = (CM_PER_HALFSTEP) / ((float)StepperDelayFromSpeed() / 10000f); // cm / s
             float D = S * X / Y; // cm /s
             D = D * DC_REVS_PER_CM; // Hz
 
             ushort PWM = (ushort)Math.Abs(PWM_PER_SPEED * D);
+            if (PWM < 9000)
+                PWM = 9000;
             return PWM;
         }
 
