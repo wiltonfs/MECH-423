@@ -112,20 +112,7 @@ namespace Exercise6
 
         private ushort DCPWMFromSpeed()
         {
-            //return 32000;
-            if (Y == 0)
-            {
-                return (ushort)(650*Speed);
-            }
-            float CM_PER_HALFSTEP = 1f / (HALFSTEPS_PER_REV * STP_REVS_PER_CM);
-            float S = (CM_PER_HALFSTEP) / ((float)StepperDelayFromSpeed() / 10000f); // cm / s
-            float D = S * X / Y; // cm /s
-            D = D * DC_REVS_PER_CM; // Hz
-
-            ushort PWM = (ushort)Math.Abs(PWM_PER_SPEED * D);
-            if (PWM < 9000)
-                PWM = 9000;
-            return PWM;
+            return (ushort)(65000f*(Speed / 100f));
         }
 
         public override string ToString()

@@ -142,19 +142,28 @@ namespace Exercise6
         {
             PauseGantry();
             // Build the list of commands
+            int fractions = 100;
             commandedOffsets.Clear();
             if (trajectory.Count > 0)
             {
                 float x = trajectory[0].X;
                 float y = trajectory[0].Y;
                 uint speed = trajectory[0].Speed;
-                commandedOffsets.Enqueue(new GantryCoordinate(x, y, speed, false));
+                for (int u = 1; u <= fractions; u++)
+                {
+                    float scale = 1f / ((float)fractions);
+                    commandedOffsets.Enqueue(new GantryCoordinate(x*scale, y * scale, speed, false));
+                }
                 for (int i = 1; i < trajectory.Count; i++)
                 {
                     x = trajectory[i].X - trajectory[i-1].X;
                     y = trajectory[i].Y - trajectory[i-1].Y;
                     speed = trajectory[i].Speed;
-                    commandedOffsets.Enqueue(new GantryCoordinate(x, y, speed, false));
+                    for (int u = 1; u <= fractions; u++)
+                    {
+                        float scale = 1f / ((float)fractions);
+                        commandedOffsets.Enqueue(new GantryCoordinate(x * scale, y * scale, speed, false));
+                    }
                 }
             }
 
