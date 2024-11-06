@@ -29,46 +29,165 @@
 //      Timer A1 - CCW counter
 // Debug:
 //      P1.6 - Heartbeat LED
-//      P1.7 - Velocity interrupt LED
 #define HEARTBEAT_LED BIT6
-#define VEL_IE_LED BIT7
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 MessagePacket IncomingPacket = EMPTY_MESSAGE_PACKET;
 volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
+volatile bool isGantryRunning = false;
+
+volatile long DC_targetPosition = 0;     // measured in counts
+volatile long DC_currentPosition = 0;    // measured in counts
+volatile long STP_targetPosition = 0;    // measured in steps
+volatile long STP_currentPosition = 0;   // measured in steps
+
+const unsigned int DC_minError = 2;     // measured in steps
+unsigned int DC_PWM = 16000;
+
 STEPPER_STATE stepper_state = A1_xx;
-bool StepperContinous = false;              // If continous spinning
-bool StepperContinous_DirectionCW = true;   // What direction spinning
-int StepperContinous_Speed = 1;       // Speed (turns into delay)
+volatile int STP_SET_DELAY = 100;   // Hecto-microseconds
+volatile int STP_delay = 100;       // Hecto-microseconds
+
+#define RESET_SETPOINT_TIMER 100
+volatile int SETPOINT_TIMER = RESET_SETPOINT_TIMER;  // Hecto-microseconds
+
+void GantryCheckReachedSetpoint()
+{
+    if (SETPOINT_TIMER <= 0) {
+        // Stable
+        COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(GAN_REACH_SETPOINT, 0, 0);
+
+    } else {
+        SETPOINT_TIMER--;
+    }
+}
+
+void ZeroGantry()
+{
+    DC_Brake();
+    DC_targetPosition = 0;
+    DC_currentPosition = 0;
+    STP_targetPosition = 0;
+    STP_currentPosition = 0;
+}
+
+void ControlGantry_STP()
+{
+    if (STP_delay <= 0) {
+
+        long STP_error = STP_targetPosition - STP_currentPosition;
+
+        if (STP_error > 0)
+        {
+            IncrementHalfStep(&stepper_state, true);
+            STP_currentPosition++;
+            SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
+        }
+        else if (STP_error < 0)
+        {
+            IncrementHalfStep(&stepper_state, false);
+            STP_currentPosition--;
+            SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
+        }
+
+
+        STP_delay = STP_SET_DELAY;
+
+
+    } else {
+        STP_delay--;
+    }
+}
+
+void ControlGantry_DC()
+{
+    // Update current DC motor position
+    if (ENCODER_GetNetSteps_CW() > 0) {
+        DC_currentPosition += ENCODER_GetNetSteps_CW();
+    } else {
+        DC_currentPosition -= ENCODER_GetNetSteps_CCW();
+    }
+    // Clear the DC steps counter
+    ENCODER_ClearEncoderCounts();
+
+    long DC_error = DC_targetPosition - DC_currentPosition;
+
+    if (DC_error > DC_minError) {
+        DC_Spin(DC_PWM, CLOCKWISE);
+        SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
+    } else if (DC_error < (-DC_minError)) {
+        DC_Spin(DC_PWM, COUNTERCLOCKWISE);
+        SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
+    } else {
+        DC_Spin(0, CLOCKWISE);
+        DC_Brake();
+    }
+}
 
 void ProcessCompletePacket() {
     if (IncomingPacket.comm == DEBUG_ECHO_REQUEST) {
         COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(DEBUG_ECHO_RESPONSE, IncomingPacket.d1, IncomingPacket.d2);
         return;
-    } else if (IncomingPacket.comm == DCM_CW) {
-        DC_Spin(IncomingPacket.combined, CLOCKWISE);
+    }
+
+    if (IncomingPacket.comm == GAN_RESUME) {
+        isGantryRunning = true;
         return;
-    } else if (IncomingPacket.comm == DCM_CCW) {
-        DC_Spin(IncomingPacket.combined, COUNTERCLOCKWISE);
+    }
+    if (IncomingPacket.comm == GAN_PAUSE) {
+        isGantryRunning = false;
         return;
-    } else if (IncomingPacket.comm == DCM_BRAKE) {
-        DC_Brake();
+    }
+
+
+
+    // Relative locations
+    if (IncomingPacket.comm == GAN_DELTA_POS_DC) {
+        DC_targetPosition += IncomingPacket.combined;
         return;
-    } else if (IncomingPacket.comm == STP_SINGLE_CW) {
-        IncrementHalfStep(&stepper_state, true);
-    } else if (IncomingPacket.comm == STP_SINGLE_CCW) {
-        IncrementHalfStep(&stepper_state, false);
-    } else if (IncomingPacket.comm == STP_CONT_CW) {
-        StepperContinous = true;
-        StepperContinous_DirectionCW = true;
-        StepperContinous_Speed = IncomingPacket.combined;
-    } else if (IncomingPacket.comm == STP_CONT_CCW) {
-        StepperContinous = true;
-        StepperContinous_DirectionCW = false;
-        StepperContinous_Speed = IncomingPacket.combined;
-    } else if (IncomingPacket.comm == STP_STOP) {
-        StepperContinous = false;
+    } else if (IncomingPacket.comm == GAN_DELTA_NEG_DC) {
+        DC_targetPosition -= IncomingPacket.combined;
+        return;
+    } else if (IncomingPacket.comm == GAN_DELTA_POS_STP) {
+        STP_targetPosition += IncomingPacket.combined;
+        return;
+    } else if (IncomingPacket.comm == GAN_DELTA_NEG_STP) {
+        STP_targetPosition -= IncomingPacket.combined;
+        return;
+    }
+
+    // Speed controls
+    if (IncomingPacket.comm == GAN_SET_MAX_PWM_DC) {
+        DC_PWM = IncomingPacket.combined;
+        return;
+    } else if (IncomingPacket.comm == GAN_SET_DELAY_STP) {
+        STP_SET_DELAY = IncomingPacket.combined;
+        return;
+    }
+
+
+
+    // Absolute locations
+    if (IncomingPacket.comm == GAN_ABS_POS_DC) {
+        DC_targetPosition = IncomingPacket.combined;
+        return;
+    } else if (IncomingPacket.comm == GAN_ABS_NEG_DC) {
+        DC_targetPosition = -IncomingPacket.combined;
+        return;
+    } else if (IncomingPacket.comm == GAN_ABS_POS_STP) {
+        STP_targetPosition = IncomingPacket.combined;
+        return;
+    } else if (IncomingPacket.comm == GAN_ABS_NEG_STP) {
+        STP_targetPosition = -IncomingPacket.combined;
+        return;
+    }
+
+
+    // Zero gantry
+    if (IncomingPacket.comm == GAN_ZERO_SETPOINT) {
+        ZeroGantry();
+        return;
     }
 
 
@@ -87,9 +206,11 @@ int main(void)
     StandardUART1Setup_9600_8();
     UCA1IE |= UCRXIE;           // Enable RX interrupt
 
+    ZeroGantry();
+
     //DC Motor set-up
     DC_SetupDCMotor();
-    DC_Spin(32000, CLOCKWISE);  // 50% duty cycle, P2.1 output
+    //DC_Spin(32000, CLOCKWISE);  // 50% duty cycle, P2.1 output
 
     //Stepper Motor set-up
     SetupStepperTimers();
@@ -98,19 +219,25 @@ int main(void)
     ENCODER_SetupEncoder();
 
     // Set up Debug LEDs    (M) pg. 73
-    P1DIR  |=   (HEARTBEAT_LED | VEL_IE_LED);
-    P1SEL1 &=~  (HEARTBEAT_LED | VEL_IE_LED);
-    P1SEL0 &=~  (HEARTBEAT_LED | VEL_IE_LED);
+    P1DIR  |=   (HEARTBEAT_LED);
+    P1SEL1 &=~  (HEARTBEAT_LED);
+    P1SEL0 &=~  (HEARTBEAT_LED);
     // Turn the LEDs off
-    P1OUT  &=~  (HEARTBEAT_LED | VEL_IE_LED);
+    P1OUT  &=~  (HEARTBEAT_LED);
 
     __enable_interrupt();        // Enable global interrupts
 
     while(1)
     {
-        DelayHectoMicros_8Mhz(SpeedToDelay_HectoMicros(StepperContinous_Speed));
-        if (StepperContinous)
-            IncrementHalfStep(&stepper_state, StepperContinous_DirectionCW);
+        DelayHectoMicros_8Mhz(1); // Delay 1/10 ms
+        if (isGantryRunning)
+        {
+            ControlGantry_STP();
+            ControlGantry_DC();
+            GantryCheckReachedSetpoint();
+        }
+        // Heartbeat
+        P1OUT ^= HEARTBEAT_LED;
     }
 
     return 0;
