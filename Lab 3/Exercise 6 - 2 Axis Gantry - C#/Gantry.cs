@@ -60,6 +60,7 @@ namespace Exercise6
         List<GantryCoordinate> trajectory = new List<GantryCoordinate>();
 
         // Gantry commands
+        int fractions = 20; // Number of chunks to split the path into
         Queue<GantryCoordinate> commandedOffsets = new Queue<GantryCoordinate>();
         int currentTrajectoryCommand = -2; // -2 = nothing, -1 = waiting to home, otherwise trajectory index
 
@@ -142,24 +143,23 @@ namespace Exercise6
         {
             PauseGantry();
             // Build the list of commands
-            int fractions = 100;
             commandedOffsets.Clear();
             if (trajectory.Count > 0)
             {
                 float x = trajectory[0].X;
                 float y = trajectory[0].Y;
                 uint speed = trajectory[0].Speed;
-                for (int u = 1; u <= fractions; u++)
+                for (int u = 0; u < fractions; u++)
                 {
                     float scale = 1f / ((float)fractions);
-                    commandedOffsets.Enqueue(new GantryCoordinate(x*scale, y * scale, speed, false));
+                    commandedOffsets.Enqueue(new GantryCoordinate(x * scale, y * scale, speed, false));
                 }
                 for (int i = 1; i < trajectory.Count; i++)
                 {
                     x = trajectory[i].X - trajectory[i-1].X;
                     y = trajectory[i].Y - trajectory[i-1].Y;
                     speed = trajectory[i].Speed;
-                    for (int u = 1; u <= fractions; u++)
+                    for (int u = 0; u < fractions; u++)
                     {
                         float scale = 1f / ((float)fractions);
                         commandedOffsets.Enqueue(new GantryCoordinate(x * scale, y * scale, speed, false));

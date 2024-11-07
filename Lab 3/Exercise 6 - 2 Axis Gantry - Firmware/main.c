@@ -36,29 +36,30 @@ MessagePacket IncomingPacket = EMPTY_MESSAGE_PACKET;
 volatile PACKET_FRAGMENT NextRead = START_BYTE;
 
 volatile bool isGantryRunning = true;
+volatile bool isPCAwaitingResponse = false;
 
 volatile long DC_targetPosition = 100;     // measured in counts
 volatile long DC_currentPosition = 0;    // measured in counts
 volatile long STP_targetPosition = 400;    // measured in steps
 volatile long STP_currentPosition = 0;   // measured in steps
 
-const unsigned int DC_minError = 100;     // measured in steps
 unsigned int DC_PWM = 32000;
 
 STEPPER_STATE stepper_state = A1_xx;
 volatile int STP_SET_DELAY = 10;   // Hecto-microseconds
 volatile int STP_delay = 100;       // Hecto-microseconds
 
-#define RESET_SETPOINT_TIMER 100
+#define RESET_SETPOINT_TIMER 20 // Hecto-microseconds of stability before tx success
 volatile int SETPOINT_TIMER = RESET_SETPOINT_TIMER;  // Hecto-microseconds
 
 void GantryCheckReachedSetpoint()
 {
-    if (SETPOINT_TIMER == 0) {
-        // Stable
+    if (SETPOINT_TIMER < 1 && isPCAwaitingResponse) {
+        // Stable for long enough
         COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(GAN_REACH_SETPOINT, 0, 0);
         SETPOINT_TIMER = -1;
-    } else {
+        isPCAwaitingResponse = false;
+    } else if (SETPOINT_TIMER > 0) {
         SETPOINT_TIMER--;
     }
 }
@@ -113,11 +114,11 @@ void ControlGantry_DC()
 
     long DC_error = DC_targetPosition - DC_currentPosition;
 
-    if (DC_error > 3) {
+    if (DC_error > 1) {
         DC_Spin(DC_PWM, CLOCKWISE);
         SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
         return;
-    } else if (DC_error < -3) {
+    } else if (DC_error < -1) {
         DC_Spin(DC_PWM, COUNTERCLOCKWISE);
         SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
         return;
@@ -132,12 +133,13 @@ void ProcessCompletePacket() {
         COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(DEBUG_ECHO_RESPONSE, IncomingPacket.d1, IncomingPacket.d2);
         return;
     }
-
     if (IncomingPacket.comm == GAN_RESUME) {
+        isPCAwaitingResponse = true;
         isGantryRunning = true;
         return;
     }
     if (IncomingPacket.comm == GAN_PAUSE) {
+        isPCAwaitingResponse = false;
         isGantryRunning = false;
         return;
     }
@@ -168,8 +170,6 @@ void ProcessCompletePacket() {
         return;
     }
 
-
-
     // Absolute locations
     if (IncomingPacket.comm == GAN_ABS_POS_DC) {
         DC_targetPosition = IncomingPacket.combined;
@@ -185,13 +185,11 @@ void ProcessCompletePacket() {
         return;
     }
 
-
     // Zero gantry
     if (IncomingPacket.comm == GAN_ZERO_SETPOINT) {
         ZeroGantry();
         return;
     }
-
 
     // Unhandled COMM byte, notify of that
     COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(DEBUG_UNHANDLED_COMM, IncomingPacket.comm, 0);
