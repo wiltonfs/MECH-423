@@ -121,6 +121,16 @@ typedef struct {
 #define GAN_ABS_POS_STP     GAN_C
 #define GAN_ABS_NEG_STP     GAN_D
 
+#define MES_0 48            // Reset measurement
+#define MES_1 (MES_0 + 1)   // Measurement request. Measure positional response with a voltage step, PWM = uint D1D2
+
+#define MES_2 (MES_0 + 2)   // Measurement request. Measure positional response with an absolute position command, position = uint D1D2
+#define MES_3 (MES_0 + 3)   // Measurement response. Position = uint D1D2
+#define MES_RESET           MES_0
+#define MES_REQ_STEP        MES_1
+#define MES_REQ_POSITION    MES_2
+#define MES_RESPONSE        MES_3
+
 // ------------------------------
 // -- Escape Byte Definitions ---
 // ------------------------------

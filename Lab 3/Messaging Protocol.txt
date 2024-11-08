@@ -53,6 +53,11 @@
 43  - GAN_B - Absolute DC setpoint in negative direction (int D1D2)
 44  - GAN_C - Absolute Stepper setpoint in positive direction (int D1D2)
 45  - GAN_D - Absolute Stepper setpoint in negative direction (int D1D2)
+## Measurement commands
+48  - MES_0 - Reset measurement
+49  - MES_1 - Measure positional response with a square wave pulse, PWM = uint D1D2
+50  - MES_2 - Measure positional response with an absolute position command, position = uint D1D2
+51  - MES_3 - TX of measurement, position = uint D1D2
 
 # Data Byte 1
 [0, 254] Usually most significant byte of a 16 byte value
