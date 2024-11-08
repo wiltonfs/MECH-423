@@ -71,6 +71,7 @@ void ZeroGantry()
     DC_currentPosition = 0;
     STP_targetPosition = 0;
     STP_currentPosition = 0;
+    ENCODER_ClearEncoderCounts();
 }
 
 void ControlGantry_STP()
