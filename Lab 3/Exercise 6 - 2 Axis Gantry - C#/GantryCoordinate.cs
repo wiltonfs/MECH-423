@@ -9,14 +9,17 @@ namespace Exercise6
 {
     public class GantryCoordinate
     {
-        public const int X_WIDTH_CM = 6;
-        public const int Y_WIDTH_CM = 6;
+        public const int X_WIDTH_CM = 7;
+        public const int Y_WIDTH_CM = 7;
+
+        public const float DRAWING_SCALE = 0.5f;
 
         public const float DC_REVS_PER_CM = 0.25f;      // 1 revolution = 4 cm
-        public const float COUNTS_PER_REV = 244f;        // 244 counts = 1 revolution
+        public const float COUNTS_PER_REV = 245f;        // 245 counts = 1 revolution
         public const float STP_REVS_PER_CM = 0.25f;     // 1 revolution = 4 cm
         public const float HALFSTEPS_PER_REV = 400f;     // 400 halfsteps = 1 revolution
-        public const float PWM_PER_SPEED = 65000f / 5f;   // 65000 PWM = 5 Hz
+        //public const float PWM_PER_SPEED = 65000f / 3.8095f;   // 65000 PWM = 3.8095 Hz
+        public const float PWM_PER_SPEED = 65000f / 3.8095f;   // 65000 PWM = 3.8095 Hz
 
         public bool absoluteCoordinate = true;
         public float X = 0;
@@ -93,12 +96,12 @@ namespace Exercise6
         }
         private ushort DCLocation()
         {
-            float counts = (float)Math.Abs(X) * DC_REVS_PER_CM * COUNTS_PER_REV;
+            float counts = (float)Math.Abs(X) * DC_REVS_PER_CM * COUNTS_PER_REV * DRAWING_SCALE;
             return (ushort)(counts);
         }
         private ushort StepperLocation()
         { 
-            float steps = Math.Abs(Y) * STP_REVS_PER_CM * HALFSTEPS_PER_REV;
+            float steps = Math.Abs(Y) * STP_REVS_PER_CM * HALFSTEPS_PER_REV * DRAWING_SCALE;
             return (ushort)(steps);
         }
 
@@ -112,7 +115,7 @@ namespace Exercise6
 
         private ushort DCPWMFromSpeed()
         {
-            return (ushort)(65000f*(Speed / 100f));
+            return (ushort)(32000f*(Speed / 100f));
         }
 
         public override string ToString()

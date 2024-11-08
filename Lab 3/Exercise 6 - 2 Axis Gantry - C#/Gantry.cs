@@ -60,7 +60,7 @@ namespace Exercise6
         List<GantryCoordinate> trajectory = new List<GantryCoordinate>();
 
         // Gantry commands
-        int fractions = 20; // Number of chunks to split the path into
+        int fractions = 5; // Number of chunks to split the path into
         Queue<GantryCoordinate> commandedOffsets = new Queue<GantryCoordinate>();
         int currentTrajectoryCommand = -2; // -2 = nothing, -1 = waiting to home, otherwise trajectory index
 
@@ -279,7 +279,7 @@ namespace Exercise6
             if (serialComboBox.Items.Count == 0)
                 serialComboBox.Text = "No COM ports!";
             else
-                serialComboBox.SelectedIndex = 1;
+                serialComboBox.SelectedIndex = 0;
         }
 
         // ----------------------------

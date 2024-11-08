@@ -38,9 +38,9 @@ volatile PACKET_FRAGMENT NextRead = START_BYTE;
 volatile bool isGantryRunning = true;
 volatile bool isPCAwaitingResponse = false;
 
-volatile long DC_targetPosition = 100;     // measured in counts
+volatile long DC_targetPosition = 0;     // measured in counts
 volatile long DC_currentPosition = 0;    // measured in counts
-volatile long STP_targetPosition = 400;    // measured in steps
+volatile long STP_targetPosition = 0;    // measured in steps
 volatile long STP_currentPosition = 0;   // measured in steps
 
 unsigned int DC_PWM = 32000;
@@ -114,11 +114,11 @@ void ControlGantry_DC()
 
     long DC_error = DC_targetPosition - DC_currentPosition;
 
-    if (DC_error > 1) {
+    if (DC_error > 2) {
         DC_Spin(DC_PWM, CLOCKWISE);
         SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
         return;
-    } else if (DC_error < -1) {
+    } else if (DC_error < -2) {
         DC_Spin(DC_PWM, COUNTERCLOCKWISE);
         SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
         return;
@@ -206,7 +206,7 @@ int main(void)
     StandardUART1Setup_9600_8();
     UCA1IE |= UCRXIE;           // Enable RX interrupt
 
-    //ZeroGantry();
+    ZeroGantry();
 
     //DC Motor set-up
     DC_SetupDCMotor();
