@@ -30,7 +30,7 @@
 // Record position at very small time intervals, and then tx that after collecting the data
 
 // Data collection
-#define DATA_AMMOUNT 20
+#define DATA_AMMOUNT 200
 unsigned int DC_positions[DATA_AMMOUNT];
 unsigned char nextDataPoint = 0;
 
@@ -160,6 +160,13 @@ __interrupt void data_timer_ISR(void){
     {
         unsigned char i = 0;
         // Else, transmit the collected data (BLOCKING)
+
+        // Disable measurement timer interrupt
+        TB1CCTL0 &=~ CCIE;
+        // Stop motor
+        DC_Brake();
+
+        // Transmit the collected data (BLOCKING)
         for (i = 0; i < DATA_AMMOUNT; i++)
         {
             OutgoingPacket.comm = MES_RESPONSE;
@@ -169,13 +176,7 @@ __interrupt void data_timer_ISR(void){
             COM_UART1_TransmitMessagePacket_BLOCKING(&OutgoingPacket);
             DelayMillis_8Mhz(10);
         }
-
-        // Disable measurement timer interrupt
-        TB1CCTL0 &=~ CCIE;
-        // Stop motor
-        DC_Brake();
     }
-
 }
 
 #pragma vector = USCI_A1_VECTOR
