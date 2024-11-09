@@ -1,19 +1,110 @@
-%% Motor Positional Response to Step Input
+% MECH 423
+% Exercise 5
+% Motor-Encoder System Characterization
+% Felix Wilton      Lazar Stanojevic
+% 2024-11-08
+
+% ChatGPT and Matlab forums were referenced to produce parts of this code
+clear;close all;clc;
+
+% Approximates velocity from time data
+function [velocity, time_vel] = compute_velocity(position, time)
+    velocity = [0];
+    time_vel = [0];
+
+    last_pos = 0;
+    last_t = 0;
+
+    for i=1:length(position)
+        if (position(i) ~= last_pos)
+            newVel = (position(i) - last_pos) / (time(i) - last_t);
+            
+            % Ignore decreasing velocities (ignore some noise)
+            if (newVel >= velocity(end))
+                velocity = [velocity, newVel];
+                time_vel = [time_vel, time(i)];
+            end
+            last_pos = position(i);
+            last_t = time(i);
+        end
+    end
+end
+
+
+%% Motor Positional and Velocity Response to Step Input, 200ms sampling period
+data = readtable("MotorSteps_Clean.csv", 'NumHeaderLines', 1);
+timeStep_ms = 200;
+
+st = 328;
+en = 561;
+time_ms = data{st:en,1};
+command_PWM = data{st:en,2};
+position_counts = data{st:en,3};
+velocity_Hz = data{st:en,4};
+
+% Zero the time and position
+time_ms = time_ms - time_ms(1);
+position_counts = position_counts - position_counts(1);
+
+figure('Position', [100, 100, 1200, 400]);
+sgtitle('Motor Response To 20% Step Input - 200ms Sampling Period');
+
+% Plotting position vs. time on the right subplot
+subplot(1, 2, 2);
+plot(time_ms/1000, position_counts, 'b-');
+title('System Positional Response');
+xlabel('Time [s]');
+ylabel('Position [counts]');
+
+% Plotting velocity vs. time on the left subplot
+subplot(1, 2, 1);
+plot(time_ms/1000, velocity_Hz*245, 'r-');
+title('System Velocity Response');
+xlabel('Time [s]');
+ylabel('Velocity [counts/s]');
+
+saveas(gcf, 'StepInput_200ms.png');
+
+%% Motor Positional and Velocity Response to Step Input, 1ms and 5ms sampling period
 close all; clear; clc;
+timeStep_ms = 1;
 DutyCycles = [25, 50, 75, 100];
 
 data = readtable("StepInput_1ms.csv", 'NumHeaderLines', 1);
 time_ms = 0:1:(size(data(:,1))-1);
-figure;
-hold on;
+figure('Position', [100, 100, 1200, 400]);
+sgtitle('Motor Response To Step Inputs - 1ms Sampling Period');
 for i = 1:length(DutyCycles)
-    plot(time_ms, data{:, i});
+    % Plotting position vs. time on the right subplot
+    subplot(1, 2, 2);
+    hold on;
+    position_counts = data{:, i};
+    plot(time_ms/1000, position_counts);
+
+    % Plotting velocity vs. time on the left subplot
+    subplot(1, 2, 1);
+    hold on;
+    [velocity_counts_ms, time_vel_ms] = compute_velocity(position_counts, time_ms);
+    plot(time_vel_ms/1000, velocity_counts_ms*1000);
 end
-title("Motor Response to Step Inputs (1ms Sample Time)")
+% Plotting position vs. time on the right subplot
+subplot(1, 2, 2);
+title('System Positional Response');
+xlabel('Time [s]');
+ylabel('Position [counts]');
 legend('25% Duty Cycle', '50% Duty Cycle', '75% Duty Cycle', '100% Duty Cycle', 'location', 'northwest');
-xlabel("Time [ms]");
-ylabel("Motor Position [counts]");
+
+% Plotting velocity vs. time on the left subplot
+subplot(1, 2, 1);
+title('System Velocity Response');
+xlabel('Time [s]');
+ylabel('Velocity [counts/s]');
+legend('25% Duty Cycle', '50% Duty Cycle', '75% Duty Cycle', '100% Duty Cycle', 'location', 'northwest');
+
 saveas(gcf, 'StepInput_1ms.png');
+
+
+
 
 data = readtable("StepInput_5ms.csv", 'NumHeaderLines', 1);
 time_ms = 0:5:5*(size(data(:,1))-1);
@@ -28,8 +119,6 @@ xlabel("Time [ms]");
 ylabel("Motor Position [counts]");
 saveas(gcf, 'StepInput_5ms.png');
 
-
-%% Motor Velocity Response to Step Input
 
 %% Motor Positional Response to Positional Command
 Kp = 200;
