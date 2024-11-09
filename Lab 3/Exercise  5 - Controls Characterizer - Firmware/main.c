@@ -4,7 +4,7 @@
 #include "../MotorLib/DC.c"
 #include "../MotorLib/Encoder.c"
 
-// Lab 3 - Exercise 5.5 - Used to characterize motor to a step input
+// Lab 3 - Exercise 5.6 - Used to characterize motor to a positional command
 // Felix Wilton & Lazar Stanojevic
 // Nov 08 2024
 
@@ -38,12 +38,21 @@ MessagePacket IncomingPacket = EMPTY_MESSAGE_PACKET;
 volatile PACKET_FRAGMENT NextRead = START_BYTE;
 MessagePacket OutgoingPacket = EMPTY_MESSAGE_PACKET;
 
-long DC_currentPosition = 0;    // measured in steps
+volatile long DC_currentPosition = 0;    // measured in steps
+volatile long DC_targetPosition = 0;
+volatile bool isGantryRunning = false;
+
+// Controls parameters
+const unsigned int Kp = 1000;              // PWM/step
+const unsigned int maxError = 327;        // measured in steps
+const unsigned int minError = 2;
+const unsigned int minPWM = 9000;
 
 void ZeroGantry_DC()
 {
     DC_Brake();
     DC_currentPosition = 0;
+    DC_targetPosition = 0;
     ENCODER_ClearEncoderCounts();
 }
 
@@ -59,23 +68,83 @@ void UpdatePosition_DC()
     ENCODER_ClearEncoderCounts();
 }
 
+unsigned int ErrorAbs(long error)
+{
+    unsigned long eAbs = 0;
+    if (error >= 0)
+    {
+        eAbs = ((unsigned long)error);
+    } else {
+        eAbs = ((unsigned long)-error);
+    }
+
+    if (eAbs > maxError)
+    {
+        eAbs = maxError;
+    }
+
+    return (unsigned int)eAbs;
+}
+
+void ControlGantry_DC()
+{
+
+    UpdatePosition_DC();
+
+    long DC_error = DC_targetPosition - DC_currentPosition;
+
+    unsigned int error_Abs = ErrorAbs(DC_error);
+
+    if (error_Abs <= minError)
+    {
+        DC_Spin(0, CLOCKWISE);
+        DC_Brake();
+        return;
+    }
+
+    // Set up and perform 32-bit multiplication using the hardware multiplier
+    MPY = Kp;               // Set operand 1 (lower 16 bits)
+    MPY32CTL0 = MPYSAT;     // Turn on Saturation mode
+    OP2 = error_Abs;        // Set operand 2
+    unsigned int DC_PWM = RESLO;         // Get the result of the multiplication.
+
+    // Fake saturation mode
+    if (RESHI > 0)
+    {
+        DC_PWM = 65535;
+    }
+
+    if (DC_PWM < minPWM)
+    {
+        DC_PWM = minPWM;
+    }
+
+    if (DC_error > minError) {
+        DC_Spin(DC_PWM, CLOCKWISE);
+    } else {
+        DC_Spin(DC_PWM, COUNTERCLOCKWISE);
+    }
+}
+
 void ProcessCompletePacket() {
     if (IncomingPacket.comm == DEBUG_ECHO_REQUEST) {
         COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(DEBUG_ECHO_RESPONSE, IncomingPacket.d1, IncomingPacket.d2);
         return;
     } else if (IncomingPacket.comm == MES_RESET) {
+        isGantryRunning = false;
         ZeroGantry_DC();
         nextDataPoint = 0;
         return;
-    } else if (IncomingPacket.comm == MES_REQ_STEP) {
+    } else if (IncomingPacket.comm == MES_REQ_POSITION) {
         ZeroGantry_DC();
         nextDataPoint = 0;
         // Clear measurement timer
         TB1CTL |= TBCLR;
         // Enable measurement timer interrupt
         TB1CCTL0 |= CCIE;
-        // Start DC motor
-        DC_Spin(IncomingPacket.combined, CLOCKWISE);
+        // Start controls
+        DC_targetPosition = IncomingPacket.combined;
+        isGantryRunning = true;
         return;
     }
 
@@ -96,7 +165,7 @@ void MeasurementTimerSetup()
     TB1CTL |= TBSSEL__SMCLK;    // Clock source select      (L) pg. 372
     TB1CTL |= (BIT7 | BIT6);    // 1/8 divider (125 kHz)    (L) pg. 372
     //upCountTarget = 125, then 125000/125 = 1000 Hz
-    TB1CCR0 = 125;             // What we count to         (L) pg. 377
+    TB1CCR0 = 625;             // What we count to         (L) pg. 377
 }
 
 /**
@@ -134,8 +203,10 @@ int main(void)
 
     while(1)
     {
-        DelayMillis_8Mhz(50);
-
+        DelayMillis_8Mhz(1);
+        if (isGantryRunning) {
+            ControlGantry_DC();
+        }
         // Heartbeat
         P1OUT ^= HEARTBEAT_LED;
     }
@@ -152,7 +223,6 @@ __interrupt void data_timer_ISR(void){
     if (nextDataPoint < DATA_AMMOUNT)
     {
         // If in recording mode, record data
-        UpdatePosition_DC();
         DC_positions[nextDataPoint] = DC_currentPosition;
         nextDataPoint++;
     }
