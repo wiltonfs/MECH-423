@@ -16,7 +16,7 @@ function [velocity, time_vel] = compute_velocity(position, time)
     last_t = 0;
 
     for i=1:length(position)
-        if (position(i) ~= last_pos)
+        if (position(i) > last_pos)
             newVel = (position(i) - last_pos) / (time(i) - last_t);
             
             % Ignore decreasing velocities (ignore some noise)
@@ -28,6 +28,64 @@ function [velocity, time_vel] = compute_velocity(position, time)
             last_t = time(i);
         end
     end
+
+    % Maintain all values to the end
+    velocity = [velocity, velocity(end)];
+    time_vel = [time_vel, time(end)];
+end
+
+% Approximates velocity from time data
+function [velocity, time_vel] = compute_velocity_2(position, time, step)
+    velocity = [0];
+    time_vel = [0];
+
+    for i=(1+step):1:length(position)
+        newVel = (position(i) - position(i-step))/(time(i) - time(i-step));
+        % Ignore decreasing velocities (ignore some noise)
+        if (newVel >= velocity(end))
+            velocity = [velocity, newVel];
+            time_vel = [time_vel, time(i)];
+        end
+    end
+    % Maintain all values to the end
+    velocity = [velocity, velocity(end)];
+    time_vel = [time_vel, time(end)];
+end
+
+% Approximates velocity from position data, 3 point approximation
+function [velocity, time_vel] = compute_velocity_3point(position, time)
+    weights = [-0.5 0 0.5;]
+
+    velocity = [0];
+    time_vel = [0];
+
+    for i=(1+1):1:length(position)-1
+        newVel = (weights(1)*position(i-1) + weights(2)*position(i) + weights(3)*position(i+1))/(time(i+1) - time(i-1));
+        % Ignore decreasing velocities (ignore some noise)
+        velocity = [velocity, newVel];
+        time_vel = [time_vel, time(i)];
+    end
+    % Maintain all values to the end
+    velocity = [velocity, velocity(end)];
+    time_vel = [time_vel, time(end)];
+end
+
+% Approximates velocity from position data, 5 point approximation
+function [velocity, time_vel] = compute_velocity_5point(position, time)
+    weights = [1/12 -8/12 0 8/12 -1/12];
+
+    velocity = [0];
+    time_vel = [0];
+
+    for i=(1+2):1:length(position)-2
+        newVel = (weights(1)*position(i-2) + weights(2)*position(i-1) + weights(3)*position(i) + weights(4)*position(i+1) + weights(5)*position(i+2))/(time(i+2) - time(i-2));
+        % Ignore decreasing velocities (ignore some noise)
+        velocity = [velocity, newVel];
+        time_vel = [time_vel, time(i)];
+    end
+    % Maintain all values to the end
+    velocity = [velocity, velocity(end)];
+    time_vel = [time_vel, time(end)];
 end
 
 
@@ -71,7 +129,7 @@ timeStep_ms = 1;
 DutyCycles = [25, 50, 75, 100];
 
 data = readtable("StepInput_1ms.csv", 'NumHeaderLines', 1);
-time_ms = 0:1:(size(data(:,1))-1);
+time_ms = 0:timeStep_ms:timeStep_ms*(size(data(:,1))-1);
 figure('Position', [100, 100, 1200, 400]);
 sgtitle('Motor Response To Step Inputs - 1ms Sampling Period');
 for i = 1:length(DutyCycles)
@@ -84,7 +142,7 @@ for i = 1:length(DutyCycles)
     % Plotting velocity vs. time on the left subplot
     subplot(1, 2, 1);
     hold on;
-    [velocity_counts_ms, time_vel_ms] = compute_velocity(position_counts, time_ms);
+    [velocity_counts_ms, time_vel_ms] = compute_velocity_2(position_counts, time_ms, 15);
     plot(time_vel_ms/1000, velocity_counts_ms*1000);
 end
 % Plotting position vs. time on the right subplot
@@ -96,27 +154,47 @@ legend('25% Duty Cycle', '50% Duty Cycle', '75% Duty Cycle', '100% Duty Cycle', 
 
 % Plotting velocity vs. time on the left subplot
 subplot(1, 2, 1);
-title('System Velocity Response');
+title('Approximate System Velocity Response');
 xlabel('Time [s]');
 ylabel('Velocity [counts/s]');
-legend('25% Duty Cycle', '50% Duty Cycle', '75% Duty Cycle', '100% Duty Cycle', 'location', 'northwest');
+legend('25% Duty Cycle', '50% Duty Cycle', '75% Duty Cycle', '100% Duty Cycle', 'location', 'northeast');
 
 saveas(gcf, 'StepInput_1ms.png');
 
 
 
-
+timeStep_ms = 5;
 data = readtable("StepInput_5ms.csv", 'NumHeaderLines', 1);
-time_ms = 0:5:5*(size(data(:,1))-1);
-figure;
-hold on;
+time_ms = 0:timeStep_ms:timeStep_ms*(size(data(:,1))-1);
+figure('Position', [100, 100, 1200, 400]);
+sgtitle('Motor Response To Step Inputs - 5ms Sampling Period');
 for i = 1:length(DutyCycles)
-    plot(time_ms, data{:, i});
+    % Plotting position vs. time on the right subplot
+    subplot(1, 2, 2);
+    hold on;
+    position_counts = data{:, i};
+    plot(time_ms/1000, position_counts);
+
+    % Plotting velocity vs. time on the left subplot
+    subplot(1, 2, 1);
+    hold on;
+    [velocity_counts_ms, time_vel_ms] = compute_velocity_2(position_counts, time_ms, 15);
+    plot(time_vel_ms/1000, velocity_counts_ms*1000);
 end
-title("Motor Response to Step Inputs (5ms Sample Time)")
+% Plotting position vs. time on the right subplot
+subplot(1, 2, 2);
+title('System Positional Response');
+xlabel('Time [s]');
+ylabel('Position [counts]');
 legend('25% Duty Cycle', '50% Duty Cycle', '75% Duty Cycle', '100% Duty Cycle', 'location', 'northwest');
-xlabel("Time [ms]");
-ylabel("Motor Position [counts]");
+
+% Plotting velocity vs. time on the left subplot
+subplot(1, 2, 1);
+title('Approximate System Velocity Response');
+xlabel('Time [s]');
+ylabel('Velocity [counts/s]');
+legend('25% Duty Cycle', '50% Duty Cycle', '75% Duty Cycle', '100% Duty Cycle', 'location', 'northeast');
+
 saveas(gcf, 'StepInput_5ms.png');
 
 
@@ -172,8 +250,8 @@ positionTo250_Kp1000_counts = [ 0, 0, 0, 0, 2, 3, 5, 7, 10, 13, 16, 19, 23, 25, 
 
 time_ms = 0:5:5*(length(positionTo500_counts)-1);
 figure; hold on;
-plot(time_ms, positionTo250_Kp500_counts);
-plot(time_ms, positionTo250_Kp5000_counts);
+%plot(time_ms, positionTo250_Kp500_counts);
+%plot(time_ms, positionTo250_Kp5000_counts);
 plot(time_ms, positionTo250_Kp1000_counts);
 title("Motor Response to Positional Command (1ms Sample Time)")
 xlabel("Time [ms]");
