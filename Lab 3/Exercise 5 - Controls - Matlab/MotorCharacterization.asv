@@ -448,16 +448,17 @@ minThreshold = 0.1*steady;
 maxThreshold = 0.9*steady;
 s = find(positionTo250_Kp1000_counts > minThreshold, 1);
 e = find(positionTo250_Kp1000_counts > maxThreshold, 1);
-riseTime_s = time_s(e)-time_s(s);
+riseTime_s = time(e)-time(s);
 
 % Calculate the overshoot
 overshoot = max(positionTo250_Kp1000_counts)/positionTo250_Kp1000_counts(end);
 
 % Calculate the settling time
-settlingTime_s = 0;
+threshold = 1.05*steady;
+settlingTime = 0;
 for i = length(positionTo250_Kp1000_counts):-1:1
-    if (positionTo250_Kp1000_counts(i) > 1.05*steady || positionTo250_Kp1000_counts(i) < 0.95*steady)
-        settlingTime_s = time_s(i+1);
+    if (positionTo250_Kp1000_counts(i) > threshold)
+        
         break
     end
 end
