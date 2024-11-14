@@ -58,10 +58,6 @@ namespace Exercise6
 
         // Trajectory
         List<GantryCoordinate> trajectory = new List<GantryCoordinate>();
-
-        // Gantry commands
-        int fractions = 5; // Number of chunks to split the path into
-        Queue<GantryCoordinate> commandedOffsets = new Queue<GantryCoordinate>();
         int currentTrajectoryCommand = -2; // -2 = nothing, -1 = waiting to home, otherwise trajectory index
 
         // ---------------------------------
@@ -142,31 +138,6 @@ namespace Exercise6
         private void RunTrajectoryButton_Click(object sender, EventArgs e)
         {
             PauseGantry();
-            // Build the list of commands
-            commandedOffsets.Clear();
-            if (trajectory.Count > 0)
-            {
-                float x = trajectory[0].X;
-                float y = trajectory[0].Y;
-                uint speed = trajectory[0].Speed;
-                for (int u = 0; u < fractions; u++)
-                {
-                    float scale = 1f / ((float)fractions);
-                    commandedOffsets.Enqueue(new GantryCoordinate(x * scale, y * scale, speed, false));
-                }
-                for (int i = 1; i < trajectory.Count; i++)
-                {
-                    x = trajectory[i].X - trajectory[i-1].X;
-                    y = trajectory[i].Y - trajectory[i-1].Y;
-                    speed = trajectory[i].Speed;
-                    for (int u = 0; u < fractions; u++)
-                    {
-                        float scale = 1f / ((float)fractions);
-                        commandedOffsets.Enqueue(new GantryCoordinate(x * scale, y * scale, speed, false));
-                    }
-                }
-            }
-
             // Home the gantry
             HomeGantry();
             currentTrajectoryCommand = -1;
@@ -176,7 +147,6 @@ namespace Exercise6
         private void ClearTrajectoryButton_Click(object sender, EventArgs e)
         {
             PauseGantry();
-            QueueOutgoing(new MessagePacket((byte)COMM_BYTE.GAN_PAUSE));
             // Clear Coordinates queue
             trajectory.Clear();
             RefreshVisuals();
@@ -299,16 +269,9 @@ namespace Exercise6
         // -------------------------------------------------
         // ----- Serial Functions & Messaging Protocol -----
         // -------------------------------------------------
-        private void QueueOutgoing(GantryCoordinate gc, bool absoluteCoordinate = true)
+        private void QueueOutgoing(GantryCoordinate gc)
         {
-            if (absoluteCoordinate)
-            {
-                QueueOutgoing(gc.ConvertToCommands());
-            } else
-            {
-                // Send as a differential
-                QueueOutgoing(gc.ConvertToCommands(false));
-            }
+            QueueOutgoing(gc.ConvertToCommands());
         }
         private void QueueOutgoing(Queue<MessagePacket> q)
         {
@@ -370,15 +333,15 @@ namespace Exercise6
                 if (currentTrajectoryCommand == -1)
                 {
                     // Reached home, ready to start commands
-                    QueueOutgoing(commandedOffsets.Dequeue());
                     currentTrajectoryCommand = 0;
+                    QueueOutgoing(trajectory[currentTrajectoryCommand]);
                     return;
                 }
-                // If there are still commands to get, get them
-                if (commandedOffsets.Count > 0)
+                // If there are still commands to send, send them
+                if (currentTrajectoryCommand + 1 < trajectory.Count)
                 {
-                    QueueOutgoing(commandedOffsets.Dequeue());
                     currentTrajectoryCommand++;
+                    QueueOutgoing(trajectory[currentTrajectoryCommand]);
                     return;
                 }
                 else

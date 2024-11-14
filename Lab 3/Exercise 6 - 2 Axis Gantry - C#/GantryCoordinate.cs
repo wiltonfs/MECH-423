@@ -18,20 +18,16 @@ namespace Exercise6
         public const float COUNTS_PER_REV = 245f;        // 245 counts = 1 revolution
         public const float STP_REVS_PER_CM = 0.25f;     // 1 revolution = 4 cm
         public const float HALFSTEPS_PER_REV = 400f;     // 400 halfsteps = 1 revolution
-        //public const float PWM_PER_SPEED = 65000f / 3.8095f;   // 65000 PWM = 3.8095 Hz
-        public const float PWM_PER_SPEED = 65000f / 3.8095f;   // 65000 PWM = 3.8095 Hz
 
-        public bool absoluteCoordinate = true;
         public float X = 0;
         public float Y = 0;
         public uint Speed = 100;
 
-        public GantryCoordinate(float x=0f, float y=0f, uint s=100, bool abs = true)
+        public GantryCoordinate(float x=0f, float y=0f, uint s=100)
         {
             X = Clamp(x, -X_WIDTH_CM, X_WIDTH_CM);
             Y = Clamp(y, -Y_WIDTH_CM, Y_WIDTH_CM);
             Speed = Clamp(s, 10, 100);
-            absoluteCoordinate = abs;
         }
         public static uint Clamp(uint value, uint min, uint max)
         {
@@ -64,15 +60,7 @@ namespace Exercise6
 
         private byte DC_Direction()
         {
-            if (X >= 0 && !absoluteCoordinate)
-            {
-                return (byte)COMM_BYTE.GAN_DELTA_POS_DC;
-            }
-            if (X < 0 && !absoluteCoordinate)
-            {
-                return (byte)COMM_BYTE.GAN_DELTA_NEG_DC;
-            }
-            if (X >= 0 && absoluteCoordinate)
+            if (X >= 0)
             {
                 return (byte)COMM_BYTE.GAN_ABS_POS_DC;
             }
@@ -80,15 +68,7 @@ namespace Exercise6
         }
         private byte Stepper_Direction()
         {
-            if (Y >= 0 && !absoluteCoordinate)
-            {
-                return (byte)COMM_BYTE.GAN_DELTA_POS_STP;
-            }
-            if (Y < 0 && !absoluteCoordinate)
-            {
-                return (byte)COMM_BYTE.GAN_DELTA_NEG_STP;
-            }
-            if (Y >= 0 && absoluteCoordinate)
+            if (Y >= 0)
             {
                 return (byte)COMM_BYTE.GAN_ABS_POS_STP;
             }
@@ -96,7 +76,7 @@ namespace Exercise6
         }
         private ushort DCLocation()
         {
-            float counts = (float)Math.Abs(X) * DC_REVS_PER_CM * COUNTS_PER_REV * DRAWING_SCALE;
+            float counts = Math.Abs(X) * DC_REVS_PER_CM * COUNTS_PER_REV * DRAWING_SCALE;
             return (ushort)(counts);
         }
         private ushort StepperLocation()
