@@ -195,7 +195,6 @@ void UpdateLocalTargetTowardsGlobalTarget()
 #define MAX_COUNTS_PER_SEGMENT  4
 
 
-
     // Stepper errors
     int STP_global_error = STP_globalTarget - STP_actualPosition;
 
@@ -203,6 +202,10 @@ void UpdateLocalTargetTowardsGlobalTarget()
     DCM_UpdateCurrentPosition();
     int DCM_global_error = DCM_globalTarget - DCM_actualPosition;
     unsigned int DCM_global_error_abs = ErrorAbs(DCM_global_error);
+
+    // Remainders
+    unsigned int DCM_remaining_counts = ErrorAbs(DCM_globalTarget - DCM_localTarget);
+    unsigned int STP_remaining_steps  = ErrorAbs(STP_globalTarget - STP_localTarget);
 
 
     // ~~~~~ Case 1 ~~~~~
@@ -216,7 +219,7 @@ void UpdateLocalTargetTowardsGlobalTarget()
 
     // ~~~~~ Case 2 ~~~~~
     // Local is close enough to global to just jump there next
-    if (ErrorAbs(STP_globalTarget - STP_localTarget) <= MAX_STEPS_PER_SEGMENT || ErrorAbs(DCM_globalTarget - DCM_localTarget) <= MAX_COUNTS_PER_SEGMENT)
+    if (STP_remaining_steps <= MAX_STEPS_PER_SEGMENT || DCM_remaining_counts <= MAX_COUNTS_PER_SEGMENT)
     {
         STP_localTarget = STP_globalTarget;
         DCM_localTarget = DCM_globalTarget;
@@ -224,19 +227,65 @@ void UpdateLocalTargetTowardsGlobalTarget()
     }
 
     // ~~~~~ Case 3 ~~~~~
-    // We still have a ways to go for both
-    // Super basic implementation. Just increment both by the same ratio.
+    // We still have a ways to go for both. Split a movement budget between the two axis
+    unsigned char DCM_COUNTS = 0;
+    unsigned char STP_STEPS = 0;
 
-    unsigned char DCM_COUNTS = MAX_COUNTS_PER_SEGMENT;
-    unsigned char STP_STEPS  = MAX_STEPS_PER_SEGMENT;
+    // Needed slopes:
+    // Distribute up to 21 counts
+    //   x/y    =
+    //   1/1    = 10/10
+    //  -1/2    =  7/14
+    //  12/7    = 12/7
+    // -14/1    = 14/1
+    //  -7/8    =  7/8
 
+    // In units
+    //  counts/step
+    //  30/50   = 3/5   =  3/5  = 8     = 16
+    // -30/100  = 3/10  =  3/10 = 13    = 13
+    // 360/350  = 36/35 =  1/1  = 2     = 14
+    // 420/50   = 42/5  =  8/1  = 9     = 18
+    // 210/400  = 21/40 =  1/2  = 3     = 15
+
+    // Sorted by magnitude
+    // 8/1  = 8
+    // 1/1  = 1
+    // 6/10 = 0.6
+    // 5/10 = 0.5
+    // 3/10 = 0.3
+
+    // Hardcode the cases
+    if ((DCM_remaining_counts >> 2) > STP_remaining_steps)
+    {
+        DCM_COUNTS = 8; STP_STEPS = 1;
+    }
+    else if (DCM_remaining_counts >= STP_remaining_steps)
+    {
+        DCM_COUNTS = 7; STP_STEPS = 7;
+    }
+    //else if ()
+    //{
+       // DCM_COUNTS = 6; STP_STEPS = 10;
+    //}
+    else if ((DCM_remaining_counts << 1) >= STP_remaining_steps)
+    {
+        DCM_COUNTS = 5; STP_STEPS = 10;
+    }
+    else
+    {
+        DCM_COUNTS = 3; STP_STEPS = 10;
+    }
+
+
+    // Apply the counts
     if (DCM_localTarget < DCM_globalTarget)
     {
         DCM_localTarget += DCM_COUNTS;
     } else {
         DCM_localTarget -= DCM_COUNTS;
     }
-
+    // Apply the steps
     if (STP_localTarget < STP_globalTarget)
     {
         STP_localTarget += STP_STEPS;
@@ -339,15 +388,19 @@ void ProcessCompletePacket() {
 
     // Absolute locations
     if (IncomingPacket.comm == GAN_ABS_POS_DC) {
+        DCM_localTarget = DCM_actualPosition;
         DCM_globalTarget = IncomingPacket.combined;
         return;
     } else if (IncomingPacket.comm == GAN_ABS_NEG_DC) {
+        DCM_localTarget = DCM_actualPosition;
         DCM_globalTarget = -IncomingPacket.combined;
         return;
     } else if (IncomingPacket.comm == GAN_ABS_POS_STP) {
+        STP_localTarget = STP_actualPosition;
         STP_globalTarget = IncomingPacket.combined;
         return;
     } else if (IncomingPacket.comm == GAN_ABS_NEG_STP) {
+        STP_localTarget = STP_actualPosition;
         STP_globalTarget = -IncomingPacket.combined;
         return;
     }
