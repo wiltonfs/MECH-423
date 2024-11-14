@@ -53,8 +53,8 @@ volatile unsigned int STP_SET_DELAY = 10;   // Hecto-microseconds
 
 // DC Motor Kp parameters
 #define MAX_ERROR 327
-#define MIN_ERROR 2
-#define Kp 1000
+#define MIN_ERROR 1
+#define Kp 500
 #define DCM_MinPWM 9000
 
 // Stepper motion data.
@@ -191,8 +191,8 @@ void UpdateLocalTargetTowardsGlobalTarget()
 {
     // 245 encoder counts = 1 rev = 400 halfsteps
     // Roughly 2 halfsteps = 1 encoder count
-#define MAX_STEPS_PER_SEGMENT   12
-#define MAX_COUNTS_PER_SEGMENT  12
+#define MAX_STEPS_PER_SEGMENT   1
+#define MAX_COUNTS_PER_SEGMENT  1
 
 
     // Stepper errors
@@ -259,7 +259,7 @@ void UpdateLocalTargetTowardsGlobalTarget()
     if (DCM_globalTarget == 0 && STP_globalTarget > 0)
     {
         // P1 -> P2
-        DCM_COUNTS = 6; STP_STEPS = 10;
+        DCM_COUNTS = 3; STP_STEPS = 5;
     }
     else if (DCM_globalTarget < 0 && STP_globalTarget <= -250)
     {
@@ -269,17 +269,17 @@ void UpdateLocalTargetTowardsGlobalTarget()
     else if (DCM_globalTarget > 0 && STP_globalTarget > 0)
     {
         // P3 -> P4
-        DCM_COUNTS = 7; STP_STEPS = 7;
+        DCM_COUNTS = 3; STP_STEPS = 3;
     }
     else if (DCM_globalTarget < 0 && STP_globalTarget > 0)
     {
         // P4 -> P5
-        DCM_COUNTS = 8; STP_STEPS = 1;
+        DCM_COUNTS = 7; STP_STEPS = 1;
     }
     else if (DCM_globalTarget == 0 && STP_globalTarget < 0)
     {
         // P5 -> P6
-        DCM_COUNTS = 5; STP_STEPS = 10;
+        DCM_COUNTS = 3; STP_STEPS = 6;
     }
 
 

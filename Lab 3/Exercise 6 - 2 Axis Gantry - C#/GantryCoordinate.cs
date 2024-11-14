@@ -95,7 +95,7 @@ namespace Exercise6
 
         private ushort DCPWMFromSpeed()
         {
-            ushort pwm = (ushort)(32000f * (Speed / 100f));
+            ushort pwm = (ushort)(16000f * (Speed / 100f));
             if (pwm < 10000) pwm = 10000;
             return pwm;
         }
