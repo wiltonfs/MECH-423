@@ -38,96 +38,279 @@ volatile PACKET_FRAGMENT NextRead = START_BYTE;
 volatile bool isGantryRunning = true;
 volatile bool isPCAwaitingResponse = false;
 
-volatile long DC_targetPosition = 0;     // measured in counts
-volatile long DC_currentPosition = 0;    // measured in counts
-volatile long STP_targetPosition = 0;    // measured in steps
-volatile long STP_currentPosition = 0;   // measured in steps
+// Global target position. This comes in from the C# and is the macro path
+volatile int DCM_globalTarget = 0;      // measured in counts
+volatile int STP_globalTarget = 0;      // measured in steps
+// Local target position. The global target is reached through small deltas, turned into local targets. This synchronizes the two motors.
+volatile int DCM_localTarget = 0;       // measured in counts
+volatile int STP_localTarget = 0;       // measured in steps
+// Actual position. The stepper updates this after commanding a step, and the DC motor accumulates this from the encoder.
+volatile int DCM_actualPosition = 0;    // measured in counts
+volatile int STP_actualPosition = 0;    // measured in steps
+// Speed values. Max DCM PWM, and minimum delay for a STP step.
+unsigned int DCM_MaxPWM = 32000;
+volatile unsigned int STP_SET_DELAY = 10;   // Hecto-microseconds
 
-unsigned int DC_PWM = 32000;
+// DC Motor Kp parameters
+#define MAX_ERROR 327
+#define MIN_ERROR 2
+#define Kp 1000
+#define DCM_MinPWM 9000
 
+// Stepper motion data.
 STEPPER_STATE stepper_state = A1_xx;
-volatile int STP_SET_DELAY = 10;   // Hecto-microseconds
-volatile int STP_delay = 100;       // Hecto-microseconds
+volatile unsigned int STP_delay = 100;       // Hecto-microseconds
 
-#define RESET_SETPOINT_TIMER 20 // Hecto-microseconds of stability before tx success
-volatile int SETPOINT_TIMER = RESET_SETPOINT_TIMER;  // Hecto-microseconds
+// Gantry completion parameters.
+#define RESET_SETPOINT_TIMER 20 // Hecto-microseconds of stability before achieving a success, and tx-ing success to the PC
+volatile unsigned int SETPOINT_TIMER = RESET_SETPOINT_TIMER;  // Hecto-microseconds
 
-void GantryCheckReachedSetpoint()
-{
-    if (SETPOINT_TIMER < 1 && isPCAwaitingResponse) {
-        // Stable for long enough
-        COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(GAN_REACH_SETPOINT, 0, 0);
-        SETPOINT_TIMER = -1;
-        isPCAwaitingResponse = false;
-    } else if (SETPOINT_TIMER > 0) {
-        SETPOINT_TIMER--;
-    }
-}
 
-void ZeroGantry()
-{
-    DC_Brake();
-    DC_targetPosition = 0;
-    DC_currentPosition = 0;
-    STP_targetPosition = 0;
-    STP_currentPosition = 0;
-    ENCODER_ClearEncoderCounts();
-}
 
+
+
+
+
+
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~ Stepper Motor Logic ~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+// Has a delay variable to regulate speed. If enough cycles have passed, increments a half step and resets the delay
 void ControlGantry_STP()
 {
-    if (STP_delay <= 0) {
+    if (STP_delay == 0) {
+        STP_delay = STP_SET_DELAY;
 
-        long STP_error = STP_targetPosition - STP_currentPosition;
+        int STP_error = STP_localTarget - STP_actualPosition;
 
         if (STP_error > 0)
         {
             IncrementHalfStep(&stepper_state, true);
-            STP_currentPosition++;
-            SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
+            STP_actualPosition++;
         }
         else if (STP_error < 0)
         {
             IncrementHalfStep(&stepper_state, false);
-            STP_currentPosition--;
-            SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
+            STP_actualPosition--;
         }
-
-
-        STP_delay = STP_SET_DELAY;
-
 
     } else {
         STP_delay--;
     }
 }
 
-void ControlGantry_DC()
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~ DC Motor Logic ~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+// Updates the current DCM position from the encoder counts
+void DCM_UpdateCurrentPosition()
 {
-    // Update current DC motor position
     if (ENCODER_GetNetSteps_CW() > 0) {
-        DC_currentPosition += ENCODER_GetNetSteps_CW();
+        DCM_actualPosition += ENCODER_GetNetSteps_CW();
     } else {
-        DC_currentPosition -= ENCODER_GetNetSteps_CCW();
+        DCM_actualPosition -= ENCODER_GetNetSteps_CCW();
     }
-    // Clear the DC steps counter
     ENCODER_ClearEncoderCounts();
+}
 
-    long DC_error = DC_targetPosition - DC_currentPosition;
+// Absolute value of an error
+unsigned int ErrorAbs(int error)
+{
+    unsigned int eAbs = 0;
+    if (error >= 0)
+    {
+        eAbs = ((unsigned int)error);
+    } else {
+        eAbs = ((unsigned int)-error);
+    }
 
-    if (DC_error > 2) {
-        DC_Spin(DC_PWM, CLOCKWISE);
-        SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
+    return eAbs;
+}
+
+// Proportional controller for DC motor based on error difference
+void ControlGantry_DCM()
+{
+    DCM_UpdateCurrentPosition();
+
+    int DCM_error = DCM_localTarget - DCM_actualPosition;
+    unsigned int DCM_error_abs = ErrorAbs(DCM_error);
+    if (DCM_error_abs > MAX_ERROR)
+    {
+        DCM_error_abs = MAX_ERROR;
+    }
+
+    if (DCM_error_abs < MIN_ERROR)
+    {
+        DC_Spin(0, CLOCKWISE);
+        DC_Brake();
         return;
-    } else if (DC_error < -2) {
+    }
+    // Set up and perform 32-bit multiplication using the hardware multiplier
+    MPY = Kp;               // Set operand 1 (lower 16 bits)
+    MPY32CTL0 = MPYSAT;     // Turn on Saturation mode
+    OP2 = DCM_error_abs;    // Set operand 2
+    unsigned int DC_PWM = RESLO;         // Get the result of the multiplication.
+    // Force 16 bit saturation mode
+    if (RESHI > 0)
+    {
+        DC_PWM = DCM_MaxPWM;
+    }
+
+    // Clamp PWM between bounds
+    if (DC_PWM < DCM_MinPWM)
+    {
+        DC_PWM = DCM_MinPWM;
+    }
+    if (DC_PWM > DCM_MaxPWM)
+    {
+        DC_PWM = DCM_MaxPWM;
+    }
+
+    // Spin direction based on error
+    if (DCM_error > 0) {
+        DC_Spin(DC_PWM, CLOCKWISE);
+    } else {
         DC_Spin(DC_PWM, COUNTERCLOCKWISE);
-        SETPOINT_TIMER = RESET_SETPOINT_TIMER; // If error, not at setpoint
+    }
+}
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~ Overall Control Logic ~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+// Local target has been reached, so move the local target closer to the global target
+void UpdateLocalTargetTowardsGlobalTarget()
+{
+    // 245 encoder counts = 1 rev = 400 halfsteps
+    // Roughly 2 halfsteps = 1 encoder count
+#define MAX_STEPS_PER_SEGMENT   8
+#define MAX_COUNTS_PER_SEGMENT  4
+
+
+
+    // Stepper errors
+    int STP_global_error = STP_globalTarget - STP_actualPosition;
+
+    // DCM errors
+    DCM_UpdateCurrentPosition();
+    int DCM_global_error = DCM_globalTarget - DCM_actualPosition;
+    unsigned int DCM_global_error_abs = ErrorAbs(DCM_global_error);
+
+
+    // ~~~~~ Case 1 ~~~~~
+    // We have reached on one axis, so only have to move in the other axis
+    if (STP_global_error == 0 || DCM_global_error_abs < MIN_ERROR)
+    {
+        STP_localTarget = STP_globalTarget;
+        DCM_localTarget = DCM_globalTarget;
         return;
     }
 
-    // Otherwise
-    DC_Brake();
+    // ~~~~~ Case 2 ~~~~~
+    // Local is close enough to global to just jump there next
+    if (ErrorAbs(STP_globalTarget - STP_localTarget) <= MAX_STEPS_PER_SEGMENT || ErrorAbs(DCM_globalTarget - DCM_localTarget) <= MAX_COUNTS_PER_SEGMENT)
+    {
+        STP_localTarget = STP_globalTarget;
+        DCM_localTarget = DCM_globalTarget;
+        return;
+    }
+
+    // ~~~~~ Case 3 ~~~~~
+    // We still have a ways to go for both
+    // Super basic implementation. Just increment both by the same ratio.
+
+    unsigned char DCM_COUNTS = MAX_COUNTS_PER_SEGMENT;
+    unsigned char STP_STEPS  = MAX_STEPS_PER_SEGMENT;
+
+    if (DCM_localTarget < DCM_globalTarget)
+    {
+        DCM_localTarget += DCM_COUNTS;
+    } else {
+        DCM_localTarget -= DCM_COUNTS;
+    }
+
+    if (STP_localTarget < STP_globalTarget)
+    {
+        STP_localTarget += STP_STEPS;
+    } else {
+        STP_localTarget -= STP_STEPS;
+    }
+
 }
+
+// Check if we've reached local or global targets yet
+void GantryCheckReachedSetpoint()
+{
+    // Stepper errors
+    int STP_global_error = STP_globalTarget - STP_actualPosition;
+    int STP_local_error = STP_localTarget - STP_actualPosition;
+
+    // DCM errors
+    DCM_UpdateCurrentPosition();
+    int DCM_global_error = DCM_globalTarget - DCM_actualPosition;
+    int DCM_local_error = DCM_localTarget - DCM_actualPosition;
+    unsigned int DCM_global_error_abs = ErrorAbs(DCM_global_error);
+    unsigned int DCM_local_error_abs = ErrorAbs(DCM_local_error);
+
+
+
+    // If reached global setpoint, transmit success
+    if (STP_global_error == 0 && DCM_global_error_abs < MIN_ERROR) {
+        // Reached global setpoint
+
+        // Align local to global, just in case
+        STP_localTarget = STP_globalTarget;
+        DCM_localTarget = DCM_globalTarget;
+        // Stop DC motor, just in case
+        DC_Spin(0, CLOCKWISE);
+        DC_Brake();
+
+        if (isPCAwaitingResponse) {
+            COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(GAN_REACH_SETPOINT, 0, 0);
+            isPCAwaitingResponse = false;
+        }
+
+        return;
+    }
+
+
+
+    // Otherwise, if reached local setpoint, move local goal towards global setpoint
+    if (STP_local_error == 0 && DCM_local_error_abs < MIN_ERROR) {
+        // Reached local setpoint
+
+        UpdateLocalTargetTowardsGlobalTarget();
+
+        return;
+    }
+
+}
+
+void ZeroGantry()
+{
+    DC_Spin(0, CLOCKWISE);
+    DC_Brake();
+    ENCODER_ClearEncoderCounts();
+    DCM_actualPosition = 0;
+    STP_actualPosition = 0;
+    DCM_globalTarget = 0;
+    STP_globalTarget = 0;
+    DCM_localTarget = 0;
+    STP_localTarget = 0;
+}
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~ UART Logic ~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 void ProcessCompletePacket() {
     if (IncomingPacket.comm == DEBUG_ECHO_REQUEST) {
@@ -145,26 +328,9 @@ void ProcessCompletePacket() {
         return;
     }
 
-
-
-    // Relative locations
-    if (IncomingPacket.comm == GAN_DELTA_POS_DC) {
-        DC_targetPosition += IncomingPacket.combined;
-        return;
-    } else if (IncomingPacket.comm == GAN_DELTA_NEG_DC) {
-        DC_targetPosition -= IncomingPacket.combined;
-        return;
-    } else if (IncomingPacket.comm == GAN_DELTA_POS_STP) {
-        STP_targetPosition += IncomingPacket.combined;
-        return;
-    } else if (IncomingPacket.comm == GAN_DELTA_NEG_STP) {
-        STP_targetPosition -= IncomingPacket.combined;
-        return;
-    }
-
     // Speed controls
     if (IncomingPacket.comm == GAN_SET_MAX_PWM_DC) {
-        DC_PWM = IncomingPacket.combined;
+        DCM_MaxPWM = IncomingPacket.combined;
         return;
     } else if (IncomingPacket.comm == GAN_SET_DELAY_STP) {
         STP_SET_DELAY = IncomingPacket.combined;
@@ -173,16 +339,16 @@ void ProcessCompletePacket() {
 
     // Absolute locations
     if (IncomingPacket.comm == GAN_ABS_POS_DC) {
-        DC_targetPosition = IncomingPacket.combined;
+        DCM_globalTarget = IncomingPacket.combined;
         return;
     } else if (IncomingPacket.comm == GAN_ABS_NEG_DC) {
-        DC_targetPosition = -IncomingPacket.combined;
+        DCM_globalTarget = -IncomingPacket.combined;
         return;
     } else if (IncomingPacket.comm == GAN_ABS_POS_STP) {
-        STP_targetPosition = IncomingPacket.combined;
+        STP_globalTarget = IncomingPacket.combined;
         return;
     } else if (IncomingPacket.comm == GAN_ABS_NEG_STP) {
-        STP_targetPosition = -IncomingPacket.combined;
+        STP_globalTarget = -IncomingPacket.combined;
         return;
     }
 
@@ -192,14 +358,16 @@ void ProcessCompletePacket() {
         return;
     }
 
-    // Unhandled COMM byte, notify of that
+    // Un-handled/un-implemented COMM byte, we should notify the PC
     COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(DEBUG_UNHANDLED_COMM, IncomingPacket.comm, 0);
 }
 
 
-/**
- * main.c
- */
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~ Main ~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 int main(void)
 {
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
@@ -233,7 +401,7 @@ int main(void)
         if (isGantryRunning)
         {
             ControlGantry_STP();
-            ControlGantry_DC();
+            ControlGantry_DCM();
             GantryCheckReachedSetpoint();
         } else {
             DC_Brake();
@@ -244,6 +412,12 @@ int main(void)
 
     return 0;
 }
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~ UART Receive ISR ~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 #pragma vector = USCI_A1_VECTOR
 __interrupt void uart_ISR(void)
