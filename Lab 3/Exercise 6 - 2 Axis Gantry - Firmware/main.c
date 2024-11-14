@@ -191,8 +191,8 @@ void UpdateLocalTargetTowardsGlobalTarget()
 {
     // 245 encoder counts = 1 rev = 400 halfsteps
     // Roughly 2 halfsteps = 1 encoder count
-#define MAX_STEPS_PER_SEGMENT   8
-#define MAX_COUNTS_PER_SEGMENT  4
+#define MAX_STEPS_PER_SEGMENT   12
+#define MAX_COUNTS_PER_SEGMENT  12
 
 
     // Stepper errors
@@ -228,8 +228,8 @@ void UpdateLocalTargetTowardsGlobalTarget()
 
     // ~~~~~ Case 3 ~~~~~
     // We still have a ways to go for both. Split a movement budget between the two axis
-    unsigned char DCM_COUNTS = 0;
-    unsigned char STP_STEPS = 0;
+    unsigned char DCM_COUNTS = 7;
+    unsigned char STP_STEPS = 7;
 
     // Needed slopes:
     // Distribute up to 21 counts
@@ -256,25 +256,30 @@ void UpdateLocalTargetTowardsGlobalTarget()
     // 3/10 = 0.3
 
     // Hardcode the cases
-    if ((DCM_remaining_counts >> 2) > STP_remaining_steps)
+    if (DCM_globalTarget == 0 && STP_globalTarget > 0)
     {
-        DCM_COUNTS = 8; STP_STEPS = 1;
+        // P1 -> P2
+        DCM_COUNTS = 6; STP_STEPS = 10;
     }
-    else if (DCM_remaining_counts >= STP_remaining_steps)
+    else if (DCM_globalTarget < 0 && STP_globalTarget <= -250)
     {
+        // P2 -> P3
+        DCM_COUNTS = 3; STP_STEPS = 10;
+    }
+    else if (DCM_globalTarget > 0 && STP_globalTarget > 0)
+    {
+        // P3 -> P4
         DCM_COUNTS = 7; STP_STEPS = 7;
     }
-    //else if ()
-    //{
-       // DCM_COUNTS = 6; STP_STEPS = 10;
-    //}
-    else if ((DCM_remaining_counts << 1) >= STP_remaining_steps)
+    else if (DCM_globalTarget < 0 && STP_globalTarget > 0)
     {
-        DCM_COUNTS = 5; STP_STEPS = 10;
+        // P4 -> P5
+        DCM_COUNTS = 8; STP_STEPS = 1;
     }
-    else
+    else if (DCM_globalTarget == 0 && STP_globalTarget < 0)
     {
-        DCM_COUNTS = 3; STP_STEPS = 10;
+        // P5 -> P6
+        DCM_COUNTS = 5; STP_STEPS = 10;
     }
 
 
@@ -310,9 +315,10 @@ void GantryCheckReachedSetpoint()
     unsigned int DCM_local_error_abs = ErrorAbs(DCM_local_error);
 
 
-
+    // ~~~~~ Case 1 ~~~~~
     // If reached global setpoint, transmit success
-    if (STP_global_error == 0 && DCM_global_error_abs < MIN_ERROR) {
+    if (STP_global_error == 0 && DCM_global_error_abs < MIN_ERROR)
+    {
         // Reached global setpoint
 
         // Align local to global, just in case
@@ -331,10 +337,9 @@ void GantryCheckReachedSetpoint()
     }
 
 
-
+    // ~~~~~ Case 2 ~~~~~
     // Otherwise, if reached local setpoint, move local goal towards global setpoint
     if (STP_local_error == 0 && DCM_local_error_abs < MIN_ERROR) {
-        // Reached local setpoint
 
         UpdateLocalTargetTowardsGlobalTarget();
 
