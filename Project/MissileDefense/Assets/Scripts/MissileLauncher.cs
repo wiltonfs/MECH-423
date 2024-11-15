@@ -6,6 +6,8 @@ using UnityEngine;
 public class MissileLauncher : MonoBehaviour
 {
     public Transform[] cities = new Transform[4];
+    public GameObject missilePrefab;
+
     public float aimLineThickness = 2f;
     public float aimLineLength = 150f;
     public float aimSpeedCoarse = 10f;
@@ -20,9 +22,10 @@ public class MissileLauncher : MonoBehaviour
     void Start()
     {
         // Configure aiming line
+        Color aimColor = new Color(1f, 0f, 0f, 0.25f); // Red with 25% opacity
         aimLine = gameObject.GetComponent<LineRenderer>();
-        aimLine.startColor = Color.red;
-        aimLine.endColor = Color.red;
+        aimLine.startColor = aimColor;
+        aimLine.endColor = aimColor;
         aimLine.startWidth = aimLineThickness;
         aimLine.endWidth = aimLineThickness;
     }
@@ -30,7 +33,17 @@ public class MissileLauncher : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKey(KeyCode.Space))
+        UpdateAimLine();
+
+        // Fire button
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            GameObject missile = Instantiate(missilePrefab, cities[activeCity].position, Quaternion.Euler(0, 0, aimRotationDegrees));
+            missile.GetComponent<Missile>().speed = 20f;
+        }
+
+        // Fine vs coarse aim
+        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
         {
             aimSpeed = aimSpeedFine;
         } 
@@ -40,8 +53,9 @@ public class MissileLauncher : MonoBehaviour
         }
 
 
-        UpdateAimLine();
+        
 
+        // Update selected city
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             activeCity = 0;
@@ -56,6 +70,7 @@ public class MissileLauncher : MonoBehaviour
             activeCity = 3;
         }
 
+        // Update aim line
         if (Input.GetKey(KeyCode.RightArrow))
         {
             aimRotationDegrees -= Time.deltaTime * aimSpeed;
