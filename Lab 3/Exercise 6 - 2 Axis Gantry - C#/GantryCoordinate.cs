@@ -12,7 +12,7 @@ namespace Exercise6
         public const int X_WIDTH_CM = 7;
         public const int Y_WIDTH_CM = 7;
 
-        public const float DRAWING_SCALE = 0.5f;
+        public const float DRAWING_SCALE = 1f;
 
         public const float DC_REVS_PER_CM = 0.25f;      // 1 revolution = 4 cm
         public const float COUNTS_PER_REV = 245f;        // 245 counts = 1 revolution
