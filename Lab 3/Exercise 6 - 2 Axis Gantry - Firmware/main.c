@@ -61,10 +61,6 @@ volatile unsigned int STP_SET_DELAY = 10;   // Hecto-microseconds
 STEPPER_STATE stepper_state = A1_xx;
 volatile unsigned int STP_delay = 100;       // Hecto-microseconds
 
-// Gantry completion parameters.
-#define RESET_SETPOINT_TIMER 20 // Hecto-microseconds of stability before achieving a success, and tx-ing success to the PC
-volatile unsigned int SETPOINT_TIMER = RESET_SETPOINT_TIMER;  // Hecto-microseconds
-
 
 
 
@@ -191,8 +187,8 @@ void UpdateLocalTargetTowardsGlobalTarget()
 {
     // 245 encoder counts = 1 rev = 400 halfsteps
     // Roughly 2 halfsteps = 1 encoder count
-#define MAX_STEPS_PER_SEGMENT   1
-#define MAX_COUNTS_PER_SEGMENT  1
+#define MAX_STEPS_PER_SEGMENT   10
+#define MAX_COUNTS_PER_SEGMENT  10
 
 
     // Stepper errors
