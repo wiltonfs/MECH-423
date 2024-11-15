@@ -228,8 +228,8 @@ void UpdateLocalTargetTowardsGlobalTarget()
 
     // ~~~~~ Case 3 ~~~~~
     // We still have a ways to go for both. Split a movement budget between the two axis
-    unsigned char DCM_COUNTS = 7;
-    unsigned char STP_STEPS = 7;
+    unsigned char DCM_COUNTS = 3;
+    unsigned char STP_STEPS = 3;
 
     // Needed slopes:
     // Distribute up to 21 counts
@@ -261,7 +261,7 @@ void UpdateLocalTargetTowardsGlobalTarget()
         // P1 -> P2
         DCM_COUNTS = 3; STP_STEPS = 5;
     }
-    else if (DCM_globalTarget < 0 && STP_globalTarget <= -250)
+    else if (DCM_globalTarget < 0 && STP_globalTarget < 0)
     {
         // P2 -> P3
         DCM_COUNTS = 3; STP_STEPS = 10;
@@ -269,17 +269,17 @@ void UpdateLocalTargetTowardsGlobalTarget()
     else if (DCM_globalTarget > 0 && STP_globalTarget > 0)
     {
         // P3 -> P4
-        DCM_COUNTS = 3; STP_STEPS = 3;
+        DCM_COUNTS = 20; STP_STEPS = 19;
     }
     else if (DCM_globalTarget < 0 && STP_globalTarget > 0)
     {
         // P4 -> P5
-        DCM_COUNTS = 7; STP_STEPS = 1;
+        DCM_COUNTS = 9; STP_STEPS = 1;
     }
     else if (DCM_globalTarget == 0 && STP_globalTarget < 0)
     {
         // P5 -> P6
-        DCM_COUNTS = 3; STP_STEPS = 6;
+        DCM_COUNTS = 10; STP_STEPS = 19;
     }
 
 
