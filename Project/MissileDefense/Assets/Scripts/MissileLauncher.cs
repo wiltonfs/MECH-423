@@ -5,19 +5,46 @@ using UnityEngine;
 
 public class MissileLauncher : MonoBehaviour
 {
+    // Cities
     public Transform[] cities = new Transform[4];
+    private int activeCity = 0;
+
+    // Missiles
     public GameObject missilePrefab;
 
+    // Enemies
+    public Canvas enemiesList;
+    public GameObject enemyUIPrefab;
+    private List<Enemy> enemies = new List<Enemy>();
+    private List<EnemyDescription> descriptions = new List<EnemyDescription>();
+
+    // Aiming Parameters
     public float aimLineThickness = 2f;
     public float aimLineLength = 150f;
-    public float aimSpeedCoarse = 10f;
-    public float aimSpeedFine = 1f;
-
-    private int activeCity = 0;
-    private float aimSpeed = 0f;
-
     private LineRenderer aimLine;
     private float aimRotationDegrees = 0;
+    private float aimSpeed = 0f;
+    private float aimSpeedCoarse = 100f;
+    private float aimSpeedFine = 10f;
+
+    public void TrackNewEnemy(Enemy enemy)
+    {
+        enemies.Add(enemy);
+        GameObject newEnemyUI = Instantiate(enemyUIPrefab, enemiesList.transform);
+        descriptions.Add(newEnemyUI.GetComponent<EnemyDescription>());
+    }
+
+    public void DeregisterEnemy(Enemy enemy)
+    {
+        int i = enemies.IndexOf(enemy);
+        if (i >= 0)
+        {
+            enemies.RemoveAt(i);
+            Destroy(descriptions[i].gameObject);
+            descriptions.RemoveAt(i);
+        }
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -33,6 +60,7 @@ public class MissileLauncher : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        UpdateMissileDescriptions();
         UpdateAimLine();
 
         // Fire button
@@ -88,6 +116,16 @@ public class MissileLauncher : MonoBehaviour
         aimLine.positionCount = 2;
         aimLine.SetPosition(0, startPoint);
         aimLine.SetPosition(1, endPoint);
+    }
+
+    private void UpdateMissileDescriptions()
+    {
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            Enemy enemy = enemies[i];
+            int distance = (int) Mathf.Abs(enemy.transform.position.magnitude);
+            descriptions[i].UpdateDescription(enemy.ID, distance, (int)enemy.speed, enemy.radarCrossSection, enemy.emissivity);
+        }
     }
 
 }

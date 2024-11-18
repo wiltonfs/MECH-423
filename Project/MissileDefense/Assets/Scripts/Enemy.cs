@@ -4,8 +4,17 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
-    public float speed = 5f;
+
     private Rigidbody2D rb;
+
+    // Visible Enemy Parameters
+    public int ID = 0;
+    public float speed = 20f;
+    public float radarCrossSection; // square meters
+    public float emissivity; // dimensionless
+
+    // Secret Enemy Parameters
+    public int level = 1;
 
     // Start is called before the first frame update
     void Start()
@@ -24,6 +33,7 @@ public class Enemy : MonoBehaviour
     {
         if (collision.GetComponent<Missile>() != null)
         {
+            FindObjectOfType<MissileLauncher>().DeregisterEnemy(this);
             Destroy(gameObject);
         }
     }
