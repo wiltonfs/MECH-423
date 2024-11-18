@@ -14,6 +14,7 @@ public class Enemy : MonoBehaviour
     public float emissivity; // dimensionless
 
     // Secret Enemy Parameters
+    public int myPoints = 10;
     public int level = 1;
 
     // Start is called before the first frame update
@@ -26,7 +27,11 @@ public class Enemy : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        // If I get close enough to the center, game over!
+        if (Vector3.Distance(transform.position, Vector3.zero) < 1f)
+        {
+            FindObjectOfType<ScoreManager>().GameOver();
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -34,6 +39,7 @@ public class Enemy : MonoBehaviour
         if (collision.GetComponent<Missile>() != null)
         {
             FindObjectOfType<MissileLauncher>().DeregisterEnemy(this);
+            FindObjectOfType<ScoreManager>().DestroyEnemyGetPoints(myPoints);
             Destroy(gameObject);
         }
     }

@@ -17,7 +17,7 @@ public class Missile : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Vector3.Distance(transform.position, Vector3.zero) > 300f)
+        if (Vector3.Distance(transform.position, Vector3.zero) > 50f)
         {
             Destroy(gameObject);
         }

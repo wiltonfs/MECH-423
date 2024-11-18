@@ -13,7 +13,7 @@ public class MissileLauncher : MonoBehaviour
     public GameObject missilePrefab;
 
     // Enemies
-    public Canvas enemiesList;
+    public GameObject enemiesListParent;
     public GameObject enemyUIPrefab;
     private List<Enemy> enemies = new List<Enemy>();
     private List<EnemyDescription> descriptions = new List<EnemyDescription>();
@@ -30,7 +30,7 @@ public class MissileLauncher : MonoBehaviour
     public void TrackNewEnemy(Enemy enemy)
     {
         enemies.Add(enemy);
-        GameObject newEnemyUI = Instantiate(enemyUIPrefab, enemiesList.transform);
+        GameObject newEnemyUI = Instantiate(enemyUIPrefab, enemiesListParent.transform);
         descriptions.Add(newEnemyUI.GetComponent<EnemyDescription>());
     }
 
