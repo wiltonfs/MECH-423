@@ -1,0 +1,40 @@
+# Start Byte
+255 - signals MSP that a transmission is coming
+
+# Command Byte
+## Debug commands
+0   - DEBUG_0 - reserved
+1   - DEBUG_1 - reserved
+2   - DEBUG_2 - reserved
+3   - DEBUG_3 - reserved
+4   - DEBUG_4 - reserved
+5   - DEBUG_5 - reserved
+6   - DEBUG_6 - reserved
+7   - DEBUG_7 - reserved
+## Briefcase Outputs
+8   - ROT_CW  - Communicates a CW rotational delta. D1 and D2 combine to be an int of counts.
+9   - ROT_CCW - Communicates a CCW rotational delta. D1 and D2 combine to be an int of counts.
+10  - SLIDERS - Analog sliders 1 & 2 values
+11  - BIN_INS - All binary switches, discrete dial states, and state machine state.
+12  - LAUNCH  - Launch button pressed
+
+13-31 - reserved
+
+## Briefcase Inputs
+32  - GM_OVER - Game Over message
+33  - GM_STRT - Game Start message
+34  - MS_DEST - Enemy Destroyed message
+35  - MS_STRK - Enemy Strike message
+
+
+# Data Byte 1
+[0, 254] Usually most significant byte of a 16 byte value
+
+# Data Byte 2
+[0, 254] Usually least significant byte of a 16 byte value
+
+# Escape Byte
+Flags bytes that should be 255
+xxxxxxx1 - Command Byte
+xxxxxx1x - Data Byte 1
+xxxxx1xx - Data Byte 2

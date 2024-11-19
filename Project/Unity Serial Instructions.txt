@@ -1,0 +1,8 @@
+https://stackoverflow.com/questions/54677130/the-type-or-namespace-name-ports-does-not-exist-in-the-namespace-system-io
+
+
+
+
+Edit > Project Settings > Player > PC setting (icon) > Other Settings > API Compatibility Level
+from .NET Standard 2.1 to .NET Framework
+
