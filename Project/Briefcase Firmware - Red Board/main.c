@@ -1,13 +1,16 @@
 #include <msp430.h> 
-#include "../BriefcaseLib/Green.c"
+#include "../BriefcaseLib/Red.c"
 #include "../BriefcaseLib/Com.c"
 #include "../BriefcaseLib/Encoder.c"
 
-// Project Firmware - Green Board Version
+// Project Firmware - Red Board Version
 // Felix Wilton & Lazar Stanojevic
-// Nov 18 2024
+// Nov 19 2024
 
 // ~~~~~ This Firmware Uses ~~~~~
+// UART:
+//      P2.0 - UART TX
+//      P2.1 - UART RX
 // Encoder:
 //      P1.1 - CCW step pulse
 //      P1.2 - CW step pulse
@@ -29,9 +32,9 @@ typedef enum TXSequence {
 volatile TXSequence NextUpdate = ROTATION_1;
 
 // Briefcase Data
-volatile unsigned char Slider1 = 13;
-volatile unsigned char Slider2 = 17;
-volatile unsigned char StateMachine_State = 0;
+volatile unsigned char Slider1 = 222;
+volatile unsigned char Slider2 = 37;
+volatile unsigned char StateMachine_State = 15;
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,8 +49,8 @@ void TxBriefcaseState()
     // Put in values depending on NextUpdate
     if (NextUpdate == ROTATION_1 || NextUpdate == ROTATION_2)
     {
-        unsigned int counts = 0;
         // Send rotation counts
+        unsigned int counts = 0;
         if (ENCODER_GetNetSteps_CW() > 0) {
             counts = ENCODER_GetNetSteps_CW();
             TxPacket.comm = ROT_CW;
@@ -59,9 +62,23 @@ void TxBriefcaseState()
         COM_SeperateDataBytes(&TxPacket);
         ENCODER_ClearEncoderCounts();
     }
+    else if (NextUpdate == ANALOG_SLIDERS)
+    {
+        // Send analog slider values
+        TxPacket.comm = SLIDERS;
+        TxPacket.d1 = Slider1;
+        TxPacket.d2 = Slider2;
+    }
+    else if (NextUpdate == BINARIES)
+    {
+        // All binary switches, discrete dial states, and state machine.
+        TxPacket.comm = BIN_INS;
+        // TODO: Assemble data1
+        TxPacket.d1 = 255;
+        TxPacket.d2 = (StateMachine_State << 1) & STATE_MACHINE_MASK;
+    }
 
     // Send the packet
-    COM_CalculateEscapeByte(&TxPacket);
     COM_UART1_TransmitMessagePacket_BLOCKING(&TxPacket);
 
     // Increment next update
@@ -100,17 +117,20 @@ int main(void)
 {
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
     StandardClockSetup_8Mhz_1Mhz();
-    StandardUART1Setup_9600_8();
+    StandardUARTSetup_9600_8();
     UCA1IE |= UCRXIE;           // Enable RX interrupt
 
-    //Encoder set-up
+    // Encoder set-up
     ENCODER_SetupEncoder();
+
+    // TODO: Setup all the input and output pins
+    //          including pulldown/pullup, etc
 
     __enable_interrupt();        // Enable global interrupts
 
     while(1)
     {
-        DelayMillis_8Mhz(100);
+        DelayMillis_8Mhz(50);
 
         TxBriefcaseState();
     }

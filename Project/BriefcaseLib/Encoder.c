@@ -1,6 +1,5 @@
 #include <msp430.h> 
-#include "General.c"
-// Definitions for the encoder reading we developed in MECH 423, Lab 3
+// Definitions for the encoder reading we developed in MECH 423 for our project
 // Felix Wilton & Lazar Stanojevic
 // Oct 2024
 // (L) = MSP430 Fammily User Guide [576 pages]

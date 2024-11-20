@@ -79,6 +79,15 @@ typedef struct {
 #define ESC_DATA1   BIT1
 #define ESC_DATA2   BIT2
 
+// -------------------------------------
+// -- Briefcase Data Mask Definitions --
+// -------------------------------------
+// Data 1
+//TODO
+// Data 2
+#define MODULE_3_ENABLE_MASK (BIT0)
+#define STATE_MACHINE_MASK (BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6)
+
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~ Function Declarations ~~~~~~~~~~~~
