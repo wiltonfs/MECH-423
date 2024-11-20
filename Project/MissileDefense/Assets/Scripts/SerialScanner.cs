@@ -6,9 +6,53 @@ using System.IO;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Drawing;
-enum ExpectedNextRead
+public enum ExpectedNextRead
 {
     START, COMM, DATA1, DATA2, ESCAPE
+}
+
+public enum CommBytes
+{
+    DEBUG_0 = 0, ROT_CW = 8, ROT_CCW = 9, SLIDERS = 10, BIN_INS = 11, LAUNCH = 12
+}
+
+public struct MessagePacket
+{
+    public CommBytes comm;
+    public byte d1;
+    public byte d2;
+
+    public MessagePacket(CommBytes c)
+    {
+        comm = c;
+        d1 = 0; d2 = 0;
+    }
+
+    public override string ToString()
+    {
+        return $"[{(byte)comm}, {d1}, {d2}] = [{comm}, {this.Combined()}]";
+    }
+
+    public void ApplyEscapeByte(byte esc)
+    {
+        if ((esc & 1) > 0)
+            throw new System.NotImplementedException();
+        if ((esc & 2) > 0)
+            d1 = 255;
+        if ((esc & 4) > 0)
+            d2 = 255;
+    }
+
+    public uint Combined()
+    {
+        return (uint)(d1 << 8) | d2;
+    }
+
+    public void Split(uint combined)
+    {
+        d1 = (byte) (combined >> 8);
+        d2 = (byte) (combined & 0xff);
+    }
 }
 
 public class SerialScanner : MonoBehaviour
@@ -16,6 +60,7 @@ public class SerialScanner : MonoBehaviour
     [Header("Serial Parameters")]
     public int baudRate = 9600;
     public string portName = "COM3";
+    public MessagePacket MostRecentRxPacket = new MessagePacket(CommBytes.DEBUG_0);
 
     [Header("Serial Status")]
     [SerializeField] private bool openPort = false;
@@ -62,8 +107,7 @@ public class SerialScanner : MonoBehaviour
                 bytesRead++;
 
                 newByte = data_stream.ReadByte();
-                Debug.Log(newByte);
-                ReadByte(newByte);
+                ReadByte((byte)newByte);
 
                 bytesToRead = data_stream.BytesToRead;
             }
@@ -75,7 +119,7 @@ public class SerialScanner : MonoBehaviour
         }
     }
 
-    void ReadByte(int newByte)
+    void ReadByte(byte newByte)
     {
         if (newByte == 255)
         {
@@ -89,19 +133,20 @@ public class SerialScanner : MonoBehaviour
                 case ExpectedNextRead.START:
                     break;
                 case ExpectedNextRead.COMM:
-                    
+                    MostRecentRxPacket.comm = (CommBytes)newByte;
                     expectedNextRead++;
                     break;
                 case ExpectedNextRead.DATA1:
-                    
+                    MostRecentRxPacket.d1 = newByte;
                     expectedNextRead++;
                     break;
                 case ExpectedNextRead.DATA2:
-
+                    MostRecentRxPacket.d2 = newByte;
                     expectedNextRead++;
                     break;
                 case ExpectedNextRead.ESCAPE:
-                    
+                    MostRecentRxPacket.ApplyEscapeByte(newByte);
+                    Debug.Log($"Rx'd a new Packet: {MostRecentRxPacket.ToString()}");
                     expectedNextRead = ExpectedNextRead.START;
                     break;
                 default:
