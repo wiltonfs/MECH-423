@@ -8,6 +8,8 @@
 // Nov 19 2024
 
 // ~~~~~ This Firmware Uses ~~~~~
+// General:
+//      Timer B1 - UART TX timer
 // UART:
 //      P2.0 - UART TX
 //      P2.1 - UART RX
@@ -32,8 +34,8 @@ typedef enum TXSequence {
 volatile TXSequence NextUpdate = ROTATION_1;
 
 // Briefcase Data
-volatile unsigned char Slider1 = 222;
-volatile unsigned char Slider2 = 37;
+volatile unsigned char Slider1 = 0;
+volatile unsigned char Slider2 = 0;
 volatile unsigned char StateMachine_State = 15;
 
 
@@ -43,6 +45,10 @@ volatile unsigned char StateMachine_State = 15;
 
 void TxBriefcaseState()
 {
+    // Back out if can't transmit yet
+    if (!UART_READY_TO_TX)
+        return;
+
     // Build a packet
     MessagePacket TxPacket = EMPTY_MESSAGE_PACKET;
 
@@ -126,16 +132,32 @@ int main(void)
     // TODO: Setup all the input and output pins
     //          including pulldown/pullup, etc
 
+    // Set up Timer B1 for UART TX every 10 ms
+    TimerB1Setup_UpCount_125kHz(1250); // 125000 / x = 100 Hz
+    TB1CCTL0 |= CCIE;            // Enable interrupt                (L) pg. 375
+
+
     __enable_interrupt();        // Enable global interrupts
 
     while(1)
     {
-        DelayMillis_8Mhz(50);
-
-        TxBriefcaseState();
+        DelayMillis_8Mhz(300);
+        Slider1 += 10;
+        Slider2++;
     }
 
     return 0;
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~ Timer B1 ISR - UART TX ~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#pragma vector = TIMER1_B0_VECTOR
+__interrupt void TIMER_B1_ISR(void)
+{
+    // Transmit next packet fragment
+    TxBriefcaseState();
 }
 
 
@@ -145,7 +167,7 @@ int main(void)
 
 
 #pragma vector = USCI_A1_VECTOR
-__interrupt void uart_ISR(void)
+__interrupt void uart_RX_ISR(void)
 {
     if (UCA1IV == USCI_UART_UCRXIFG)    // Receive buffer full. (L) pg. 504
     {

@@ -49,6 +49,12 @@ void StandardUARTSetup_9600_8();
 // [Requires StandardClockSetup_8Mhz_1Mhz()]
 // Setup UART0 at 9800 baud, 8 data bits, no parity, 1 stop bit
 
+void TimerB1Setup_UpCount_125kHz(unsigned short upCountTarget);
+// [Requires StandardClockSetup_8Mhz_1Mhz()]
+// Setup TimerB1 in the "up count" mode at 125kHz
+// upCountTarget of 249 =   ~500Hz interrupt
+// upCountTarget of 100 = ~1.25kHz interrupt
+
 // --------------------
 // -- Misc Functions --
 // --------------------
@@ -116,6 +122,21 @@ void StandardUARTSetup_9600_8()
 
     // Start UART
     UCA0CTLW0 &= ~UCSWRST;       // Undo reset on eUSCI (L) pg. 495
+}
+
+void TimerB1Setup_UpCount_125kHz(unsigned short upCountTarget)
+{
+    // Setup Timer B in the "up count" mode
+    TB1CTL |= TBCLR;            // Clear Timer B            (L) pg.372
+    TB1CTL |= (BIT4);           // Up mode                  (L) pg. 372
+    TB1CTL |= TBSSEL__SMCLK;    // Clock source select      (L) pg. 372
+    TB1CTL |= (BIT7 | BIT6);    // 1/8 divider (125 kHz)    (L) pg. 372
+    TB1CCR0 = upCountTarget;    // What we count to         (L) pg. 377
+    // 65535 = ~1.9 Hz
+    // 249 = 496 Hz
+    // 247 = 500 Hz
+    // 245 = 504 Hz
+    // 10  = ~12.5 kHz
 }
 
 // --------------------

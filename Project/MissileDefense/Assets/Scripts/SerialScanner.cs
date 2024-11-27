@@ -67,6 +67,11 @@ public class SerialScanner : MonoBehaviour
     [SerializeField] private int readAttempts = 0;
     [SerializeField] private int bytesRead = 0;
 
+    [Header("Briefcase Status")]
+    [SerializeField] private byte StateMachine = 0;
+    [SerializeField] private byte Slider1 = 0;
+    [SerializeField] private byte Slider2 = 0;
+
 
     // Serial reading
     SerialPort data_stream;
@@ -146,12 +151,32 @@ public class SerialScanner : MonoBehaviour
                     break;
                 case ExpectedNextRead.ESCAPE:
                     MostRecentRxPacket.ApplyEscapeByte(newByte);
-                    Debug.Log($"Rx'd a new Packet: {MostRecentRxPacket.ToString()}");
+                    ProcessCompletePacket();
                     expectedNextRead = ExpectedNextRead.START;
                     break;
                 default:
                     break;
             }
         }
+    }
+
+    void ProcessCompletePacket()
+    {
+        Debug.Log($"Rx'd a new Packet: {MostRecentRxPacket.ToString()}");
+
+        switch (MostRecentRxPacket.comm)
+        {
+            case CommBytes.SLIDERS:
+                Slider1 = MostRecentRxPacket.d1;
+                Slider2 = MostRecentRxPacket.d2;
+                break;
+            case CommBytes.BIN_INS:
+                StateMachine = (byte)((MostRecentRxPacket.d2 >> 1) & 0b111111);
+                break;
+            default:
+                // TODO: Implement the rest of them here
+                break;
+        }
+
     }
 }
