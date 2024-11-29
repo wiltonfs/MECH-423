@@ -2,6 +2,7 @@
 #include "../BriefcaseLib/Red.c"
 #include "../BriefcaseLib/Com.c"
 #include "../BriefcaseLib/Encoder.c"
+#include "../BriefcaseLib/Analog.c"
 
 // Project Firmware - Red Board Version
 // Felix Wilton & Lazar Stanojevic
@@ -18,6 +19,9 @@
 //      P1.2 - CW step pulse
 //      Timer A0 - CW counter
 //      Timer A1 - CCW counter
+// Sliders:
+//      P3.0 (A12) - Slider 1
+//      P3.1 (A13) - Slider 2
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 // UART Receive
@@ -32,6 +36,9 @@ typedef enum TXSequence {
     BINARIES
 } TXSequence;
 volatile TXSequence NextUpdate = ROTATION_1;
+
+// ADC Reading
+volatile bool readingSlider1 = true;
 
 // Briefcase Data
 volatile unsigned char Slider1 = 0;
@@ -129,6 +136,11 @@ int main(void)
     // Encoder set-up
     ENCODER_SetupEncoder();
 
+    // Analog set-up
+    ADCSetup();
+    ADC10IE |= ADC10IE0;        // Enable interrupt when ADC done   (L) pg. 458
+    ADC_ReadSlider(readingSlider1);
+
     // TODO: Setup all the input and output pins
     //          including pulldown/pullup, etc
 
@@ -142,8 +154,6 @@ int main(void)
     while(1)
     {
         DelayMillis_8Mhz(300);
-        Slider1 += 10;
-        Slider2++;
     }
 
     return 0;
@@ -179,4 +189,28 @@ __interrupt void uart_RX_ISR(void)
             ProcessCompletePacket();
         }
     }
+}
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~ ADC Complete ISR ~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+// When the ADC has finished converting, save the value and begin the next one
+#pragma vector = ADC10_VECTOR
+__interrupt void ADC_ISR(void)
+{
+    unsigned char result = ADC10MEM0 >> 2;  // Read and shift 10-bit result to 8 bits
+
+    if (readingSlider1)
+    {
+        Slider1 = result;
+        readingSlider1 = false;
+    } else {
+        Slider2 = result;
+        readingSlider1 = true;
+    }
+
+    ADC_ReadSlider(readingSlider1);
 }
