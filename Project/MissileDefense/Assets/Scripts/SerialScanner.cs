@@ -64,13 +64,28 @@ public class SerialScanner : MonoBehaviour
 
     [Header("Serial Status")]
     [SerializeField] private bool openPort = false;
-    [SerializeField] private int readAttempts = 0;
-    [SerializeField] private int bytesRead = 0;
+    [SerializeField] private uint readAttempts = 0;
+    [SerializeField] private uint bytesRead = 0;
 
-    [Header("Briefcase Status")]
-    [SerializeField] private byte StateMachine = 0;
-    [SerializeField] private byte Slider1 = 0;
-    [SerializeField] private byte Slider2 = 0;
+    [Header("Module 1")]
+    public bool FineAdjustmentSwitch = false;
+    public long CummulativeEncoderCounts = 0;
+    public bool BatterySelect1 = false;
+    public bool BatterySelect2 = false;
+    public bool BatterySelect3 = false;
+    public bool CruiseMissileSwitch = false;
+    public uint RxdLaunchCommands = 0;
+
+    [Header("Module 2")]
+    public bool Module2Enabled = false;
+    public byte Slider1 = 0;
+    public byte Slider2 = 0;
+    public bool ThermalCorrectionByte0 = false;
+    public bool ThermalCorrectionByte1 = false;
+
+    [Header("Module 3")]
+    public bool Module3Enabled = false;
+    public byte StateMachine = 0;
 
 
     // Serial reading
@@ -166,15 +181,39 @@ public class SerialScanner : MonoBehaviour
 
         switch (MostRecentRxPacket.comm)
         {
+            case CommBytes.ROT_CW:
+                CummulativeEncoderCounts += MostRecentRxPacket.Combined();
+                break;
+            case CommBytes.ROT_CCW:
+                CummulativeEncoderCounts -= MostRecentRxPacket.Combined();
+                break;
             case CommBytes.SLIDERS:
                 Slider1 = MostRecentRxPacket.d1;
                 Slider2 = MostRecentRxPacket.d2;
                 break;
             case CommBytes.BIN_INS:
+                // Data Byte 1
+                FineAdjustmentSwitch = (MostRecentRxPacket.d1 & 1) > 0;
+                BatterySelect1 = (MostRecentRxPacket.d1 & 2) > 0;
+                BatterySelect2 = (MostRecentRxPacket.d1 & 4) > 0;
+                BatterySelect3 = (MostRecentRxPacket.d1 & 8) > 0;
+                CruiseMissileSwitch = (MostRecentRxPacket.d1 & 16) > 0;
+                Module2Enabled = (MostRecentRxPacket.d1 & 32) > 0;
+                ThermalCorrectionByte0 = (MostRecentRxPacket.d1 & 64) > 0;
+                ThermalCorrectionByte1 = (MostRecentRxPacket.d1 & 128) > 0;
+                // Data Byte 2
+                Module3Enabled = (MostRecentRxPacket.d2 & 1) > 0;
                 StateMachine = (byte)((MostRecentRxPacket.d2 >> 1) & 0b111111);
                 break;
+            case CommBytes.LAUNCH:
+                RxdLaunchCommands++;
+                MissileLauncher missileLauncher = FindObjectOfType<MissileLauncher>();
+                if (missileLauncher)
+                {
+                    missileLauncher.LaunchMissile();
+                }   
+                break;
             default:
-                // TODO: Implement the rest of them here
                 break;
         }
 

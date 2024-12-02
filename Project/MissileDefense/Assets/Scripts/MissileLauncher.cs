@@ -45,6 +45,12 @@ public class MissileLauncher : MonoBehaviour
         }
     }
 
+    public void LaunchMissile()
+    {
+        GameObject missile = Instantiate(missilePrefab, cities[activeCity].position, Quaternion.Euler(0, 0, aimRotationDegrees));
+        missile.GetComponent<Missile>().speed = 20f;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -66,8 +72,7 @@ public class MissileLauncher : MonoBehaviour
         // Fire button
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            GameObject missile = Instantiate(missilePrefab, cities[activeCity].position, Quaternion.Euler(0, 0, aimRotationDegrees));
-            missile.GetComponent<Missile>().speed = 20f;
+            LaunchMissile();
         }
 
         // Fine vs coarse aim
