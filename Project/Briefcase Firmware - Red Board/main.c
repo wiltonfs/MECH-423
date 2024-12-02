@@ -4,6 +4,8 @@
 #include "../BriefcaseLib/Encoder.c"
 #include "../BriefcaseLib/Analog.c"
 #include "../BriefcaseLib/StateMachine.c"
+#include "../BriefcaseLib/Switches.c"
+#include "../BriefcaseLib/OutputLEDs.c"
 
 // Project Firmware - Red Board Version
 // Felix Wilton & Lazar Stanojevic
@@ -23,12 +25,22 @@
 // Sliders:
 //      P3.0 (A12) - Slider 1
 //      P3.1 (A13) - Slider 2
-// Buttons:
-//      P2.2 - State Machine Button 1
-//      P2.3 - State Machine Button 2
-//      P2.4 - State Machine Button 3
-//      P2.5 - State Machine Button 4
-//      P2.6 - Launch Button
+// Buttons (Use Interrupts):
+//      P2.2 - State machine button 1
+//      P2.3 - State machine button 2
+//      P2.4 - State machine button 3
+//      P2.5 - State machine button 4
+//      P2.6 - Launch button
+// Switches:
+//      PJ.0 - Battery selection 1 switch
+//      PJ.1 - Battery selection 2 switch
+//      PJ.2 - Battery selection 3 switch
+//      PJ.3 - Cruise missile switch
+//      P3.2 - Fine adjustment switch
+//      P3.3 - Module 2 enable switch
+//      P3.4 - Thermal correction bit 0 switch
+//      P3.5 - Thermal correction bit 1 switch
+//      P3.6 - Module 3 enable switch
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 // UART Receive
@@ -99,9 +111,8 @@ void TxBriefcaseState()
         TxPacket.comm = BIN_INS;
         TxPacket.d1 = 0;
         TxPacket.d2 = 0;
-        // TODO: Assemble data1
 
-        // TODO: Assemble data2
+        ReadFromBinaryInputSwitches(&TxPacket.d1, &TxPacket.d2);
 
         TxPacket.d2 |= (StateMachine_State << 1) & STATE_MACHINE_MASK;
     }
@@ -166,11 +177,12 @@ int main(void)
     SetupStateMachineAndLaunchButton();
     P2IE |=   (STATE_MACHINE_BUTTONS | FIRE_BUTTON);    // Enable button interrupts     (L) pg. 316
 
-    // TODO: Input switches set-up
+    // Input switches set-up
+    SetupBinaryInputSwitches();
 
 // Setting up OUTPUTS
-    // TODO: Output LEDs set-up
-    // State machine LEDs, flashy LEDs
+    // Output LEDs set-up (State machine LEDs, flashed LED)
+    SetupOutputLEDs();
 
 
     __enable_interrupt();        // Enable global interrupts
@@ -290,6 +302,8 @@ __interrupt void Port_2(void)
         P2IFG &= ~MACHINE_BUTTON_4;     // Clear interrupt flag
     }
 
-    // Simple debouncing timer back up
+    WriteStateToLEDs(StateMachine_State);
+
+    // Simple debouncing timer reset back up
     debounceTimer = DEBOUNCE_RESET;
 }
