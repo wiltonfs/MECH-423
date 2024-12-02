@@ -193,11 +193,11 @@ public class SerialScanner : MonoBehaviour
                 break;
             case CommBytes.BIN_INS:
                 // Data Byte 1
-                FineAdjustmentSwitch = (MostRecentRxPacket.d1 & 1) > 0;
-                BatterySelect1 = (MostRecentRxPacket.d1 & 2) > 0;
-                BatterySelect2 = (MostRecentRxPacket.d1 & 4) > 0;
-                BatterySelect3 = (MostRecentRxPacket.d1 & 8) > 0;
-                CruiseMissileSwitch = (MostRecentRxPacket.d1 & 16) > 0;
+                BatterySelect1 = (MostRecentRxPacket.d1 & 1) > 0;
+                BatterySelect2 = (MostRecentRxPacket.d1 & 2) > 0;
+                BatterySelect3 = (MostRecentRxPacket.d1 & 4) > 0;
+                CruiseMissileSwitch = (MostRecentRxPacket.d1 & 8) > 0;
+                FineAdjustmentSwitch = (MostRecentRxPacket.d1 & 16) > 0;
                 Module2Enabled = (MostRecentRxPacket.d1 & 32) > 0;
                 ThermalCorrectionByte0 = (MostRecentRxPacket.d1 & 64) > 0;
                 ThermalCorrectionByte1 = (MostRecentRxPacket.d1 & 128) > 0;
