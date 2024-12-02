@@ -3,6 +3,7 @@
 #include "../BriefcaseLib/Com.c"
 #include "../BriefcaseLib/Encoder.c"
 #include "../BriefcaseLib/Analog.c"
+#include "../BriefcaseLib/StateMachine.c"
 
 // Project Firmware - Red Board Version
 // Felix Wilton & Lazar Stanojevic
@@ -22,6 +23,12 @@
 // Sliders:
 //      P3.0 (A12) - Slider 1
 //      P3.1 (A13) - Slider 2
+// Buttons:
+//      P2.2 - State Machine Button 1
+//      P2.3 - State Machine Button 2
+//      P2.4 - State Machine Button 3
+//      P2.5 - State Machine Button 4
+//      P2.6 - Launch Button
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 // UART Receive
@@ -44,6 +51,10 @@ volatile bool readingSlider1 = true;
 volatile unsigned char Slider1 = 0;
 volatile unsigned char Slider2 = 0;
 volatile unsigned char StateMachine_State = 15;
+
+// Buttons de-bouncing
+#define DEBOUNCE_RESET 10
+volatile unsigned char debounceTimer = 0;
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,9 +97,13 @@ void TxBriefcaseState()
     {
         // All binary switches, discrete dial states, and state machine.
         TxPacket.comm = BIN_INS;
+        TxPacket.d1 = 0;
+        TxPacket.d2 = 0;
         // TODO: Assemble data1
-        TxPacket.d1 = 255;
-        TxPacket.d2 = (StateMachine_State << 1) & STATE_MACHINE_MASK;
+
+        // TODO: Assemble data2
+
+        TxPacket.d2 |= (StateMachine_State << 1) & STATE_MACHINE_MASK;
     }
 
     // Send the packet
@@ -128,11 +143,17 @@ void ProcessCompletePacket() {
 
 int main(void)
 {
+// Setting up SYSTEMS
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
     StandardClockSetup_8Mhz_1Mhz();
     StandardUARTSetup_9600_8();
     UCA1IE |= UCRXIE;           // Enable RX interrupt
 
+    // Set up Timer B1 for UART TX every 10 ms
+    TimerB1Setup_UpCount_125kHz(1250); // 125000 / x = 100 Hz
+    TB1CCTL0 |= CCIE;            // Enable interrupt                (L) pg. 375
+
+// Setting up INPUTS
     // Encoder set-up
     ENCODER_SetupEncoder();
 
@@ -141,19 +162,26 @@ int main(void)
     ADC10IE |= ADC10IE0;        // Enable interrupt when ADC done   (L) pg. 458
     ADC_ReadSlider(readingSlider1);
 
-    // TODO: Setup all the input and output pins
-    //          including pulldown/pullup, etc
+    // Input buttons set-up
+    SetupStateMachineAndLaunchButton();
+    P2IE |=   (STATE_MACHINE_BUTTONS | FIRE_BUTTON);    // Enable button interrupts     (L) pg. 316
 
-    // Set up Timer B1 for UART TX every 10 ms
-    TimerB1Setup_UpCount_125kHz(1250); // 125000 / x = 100 Hz
-    TB1CCTL0 |= CCIE;            // Enable interrupt                (L) pg. 375
+    // TODO: Input switches set-up
+
+// Setting up OUTPUTS
+    // TODO: Output LEDs set-up
+    // State machine LEDs, flashy LEDs
 
 
     __enable_interrupt();        // Enable global interrupts
 
     while(1)
     {
-        DelayMillis_8Mhz(300);
+        DelayMillis_8Mhz(10);
+
+        // Simple debouncing timer decrement
+        if (debounceTimer > 0)
+            debounceTimer--;
     }
 
     return 0;
@@ -213,4 +241,55 @@ __interrupt void ADC_ISR(void)
     }
 
     ADC_ReadSlider(readingSlider1);
+}
+
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~ Button Inputs ISR ~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+// State machine buttons or launch button
+#pragma vector=PORT2_VECTOR
+__interrupt void Port_2(void)
+{
+    // Simple debouncing timer check
+    if (debounceTimer > 0) {
+        // Clear all interrupt flags
+        P2IFG &= 0;
+        return;
+    }
+
+
+
+    if (P2IFG & FIRE_BUTTON)// Check if interrupt is from P2.7 (Launch button) (L) pg. 317
+    {
+        // Fire a missile!
+        COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(LAUNCH, 0, 0);
+        P2IFG &= ~FIRE_BUTTON;  // Clear interrupt flag
+    }
+
+    if (P2IFG & MACHINE_BUTTON_1)
+    {
+        IncrementStateMachine(&StateMachine_State, 1);
+        P2IFG &= ~MACHINE_BUTTON_1;     // Clear interrupt flag
+    }
+    if (P2IFG & MACHINE_BUTTON_2)
+    {
+        IncrementStateMachine(&StateMachine_State, 2);
+        P2IFG &= ~MACHINE_BUTTON_2;     // Clear interrupt flag
+    }
+    if (P2IFG & MACHINE_BUTTON_3)
+    {
+        IncrementStateMachine(&StateMachine_State, 3);
+        P2IFG &= ~MACHINE_BUTTON_3;     // Clear interrupt flag
+    }
+    if (P2IFG & MACHINE_BUTTON_4)
+    {
+        IncrementStateMachine(&StateMachine_State, 4);
+        P2IFG &= ~MACHINE_BUTTON_4;     // Clear interrupt flag
+    }
+
+    // Simple debouncing timer back up
+    debounceTimer = DEBOUNCE_RESET;
 }
