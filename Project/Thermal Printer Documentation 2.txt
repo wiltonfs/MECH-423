@@ -1,0 +1,43 @@
+Copied from https://learn.adafruit.com/mini-thermal-receipt-printer/overview
+
+Add printing to any microcontroller project with these very cute thermal printers. Also known as receipt printers, they’re what you see at the ATM or grocery store. Now you can embed a little printer of your own into a project. These printers is ideal for interfacing with a microcontroller, you simply need a 3.3V to 5V TTL serial output from your microcontroller to print text, barcodes, bitmap graphics, even a QR code!
+
+These printers use very common 2.25" (58mm) wide thermal paper, available in the Adafruit shop or most office or stationery supply stores. You will also need a 5 Volt to 9 Volt regulated DC power supply that can provide 2 Amps or more during high-current printing — our 5V 2A power supply will work very nicely.
+
+You can pick up a thermal printer pack including printer, paper, power supply and terminal-block adapter in the Adafruit shop!
+
+Of course, we wouldn't leave you with a datasheet and a “good luck!” — this tutorial and matching Arduino library demonstrate the following:
+
+Printing with small, medium and large text
+Bold, underline and inverted text
+Variable line spacing
+Left, center and right justification
+Barcodes in the following standard formats: UPC A, UPC E, EAN13, EAN8, CODE39, I25, CODEBAR, CODE93, CODE128, CODE11 and MSI - with adjustable barcode height
+Custom monochrome bitmap graphics
+How to print a QR code
+Models
+components_mini.jpg
+Our Mini Thermal Receipt Printer is a popular choice as it accommodates a full-length thermal roll (15m/50'), meaning fewer paper changes. It’s also available in a starter pack that includes a 5V power supply and DC jack adapter.
+
+This model has a 3-pin serial interface for connecting to 3.3V or 5V microcontrollers or Raspberry Pi.
+
+components_tiny.jpg
+The Tiny Thermal Receipt Printer is a bit more compact, accommodating shorter 10m/33' rolls.
+
+What’s interesting and unique to this model is that it has both a 5-pin serial header and a USB port, which can make for easier interfacing on Raspberry Pi.
+
+components_nano.jpg
+For the most compact and portable situations, the Nano Thermal Receipt Printer is smaller still, accommodating a 5m/16' paper roll.
+
+This one has a 5-pin header for serial data and power.
+
+components_guts.jpg
+For the most peculiar situations not covered above, the Thermal Printer Receipt Guts is just the insides of a thermal printer. You will need to design and build an enclosure to mount the hardware and hold a paper roll…in principle, any length roll can then work with this.
+
+This unit has a 5-pin header for serial data and power.
+
+The thermal paper rolls in the Adafruit shop are BPA-free and ready sized to each of the above units. You can also find compatible 2.25" (58mm) wide thermal paper at many office supply stores, though usually in 80–85 foot (25m) lengths that won’t fit as-is in any of these printers. With some patience you can re-roll these onto an empty spool, cutting when the roll reaches a suitable diameter.
+
+None of these small thermal printers have a cut feature; pull the finished print against the perforated edge. The Thermal Printer Guts has no perforated edge; you’ll need to design this into your enclosure.
+
+We offer documentation and guides for using these printers with ARDUINO, CIRCUITPYTHON and RASPBERRY PI. No support is provided for “native” OS printing in Windows, Android or macOS. Most can be used to some degree via the Blinka library for Python, with a USB-to-serial/FTDI cable or with the USB-equipped Tiny unit, but nothing beyond that scope is presented.
