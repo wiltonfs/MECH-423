@@ -10,8 +10,8 @@
 #ifndef STATEMACHINE_INCLUDED
 #define STATEMACHINE_INCLUDED
 
-#define STATE_MACHINE_BUTTONS (MACHINE_BUTTON_1 | MACHINE_BUTTON_2 | MACHINE_BUTTON_3 | MACHINE_BUTTON_4)
 #define FIRE_BUTTON (BIT6)
+#define STATE_MACHINE_BUTTONS (MACHINE_BUTTON_1 | MACHINE_BUTTON_2 | MACHINE_BUTTON_3 | MACHINE_BUTTON_4)
 #define MACHINE_BUTTON_1 (BIT2)
 #define MACHINE_BUTTON_2 (BIT3)
 #define MACHINE_BUTTON_3 (BIT4)
@@ -49,19 +49,19 @@ void IncrementStateMachine(volatile unsigned char* MachineState, unsigned char B
 
     if (Button == 1)
     {
-        *MachineState = 1;
+        *MachineState += 1;
     }
     else if (Button == 2)
     {
-        *MachineState = 2;
+        *MachineState -= 1;
     }
     else if (Button == 3)
     {
-        *MachineState = 3;
+        *MachineState += 10;
     }
     else if (Button == 4)
     {
-        *MachineState = 4;
+        *MachineState -= 10;
     }
 
     ClampStateMachine(MachineState); // Clamp just in case
