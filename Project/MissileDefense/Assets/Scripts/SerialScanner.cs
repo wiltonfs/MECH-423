@@ -63,6 +63,7 @@ public class SerialScanner : MonoBehaviour
     public MessagePacket MostRecentRxPacket = new MessagePacket(CommBytes.DEBUG_0);
 
     [Header("Serial Status")]
+    [SerializeField] private bool printMessages = false;
     [SerializeField] private bool openPort = false;
     [SerializeField] private uint readAttempts = 0;
     [SerializeField] private uint bytesRead = 0;
@@ -92,6 +93,11 @@ public class SerialScanner : MonoBehaviour
     SerialPort data_stream;
     ExpectedNextRead expectedNextRead = ExpectedNextRead.START;
 
+    void Awake()
+    {
+        // Ensures the object persists across scenes
+        DontDestroyOnLoad(gameObject); 
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -104,13 +110,19 @@ public class SerialScanner : MonoBehaviour
         data_stream.ReadTimeout = -1;
         data_stream.StopBits = StopBits.One;
         data_stream.Open();
-        Debug.Log("Starting serial scanner");
+        if (printMessages)
+            Debug.Log("Starting serial scanner");
     }
 
     // Update is called once per frame
     void Update()
     {
         ReadSerial();
+    }
+
+    public bool IsBoardConnected()
+    {
+        return bytesRead > 0;
     }
 
     void ReadSerial()
@@ -177,7 +189,8 @@ public class SerialScanner : MonoBehaviour
 
     void ProcessCompletePacket()
     {
-        Debug.Log($"Rx'd a new Packet: {MostRecentRxPacket.ToString()}");
+        if (printMessages)
+            Debug.Log($"Rx'd a new Packet: {MostRecentRxPacket.ToString()}");
 
         switch (MostRecentRxPacket.comm)
         {
