@@ -61,6 +61,9 @@ namespace Exercise6
         // ----- Printer buttons -----
         private void TransmitText_Click(object sender, EventArgs e)
         {
+            serialPort1.WriteLine("Hello Lazar. This comes from my PC!");
+            return;
+
             string tx = inputTextbox.Text;
             if (serialPort1.IsOpen)
             {
