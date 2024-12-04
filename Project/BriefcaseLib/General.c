@@ -52,14 +52,9 @@ void TimerB1Setup_UpCount_125kHz(unsigned short upCountTarget);
 void UART_TX_Char_BLOCKING(unsigned char c);
 // Transmits a char through uart. Blocks until complete!
 
-void UART_TX_String_BLOCKING(const unsigned char *str);
-// Transmits a string through uart. Blocks until complete!
-
 void DelayMillis_8Mhz(unsigned int millis);
-void DelayMillis_1Mhz(unsigned int millis);
 
 void DelaySeconds_8Mhz(unsigned int seconds);
-void DelaySeconds_1Mhz(unsigned int seconds);
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,15 +106,6 @@ void UART_TX_Char_BLOCKING(unsigned char c)
     UART_TX_BUFFER = c; // Write to transmit buffer
 }
 
-void UART_TX_String_BLOCKING(const unsigned char *str)
-{
-    // Transmits a string through uart. Blocks until complete!
-    while (*str != '\0') { // Continue until we reach the null terminator
-        UART_TX_Char_BLOCKING(*str);
-        str++; // Move to the next character in the string
-    }
-}
-
 void DelayMillis_8Mhz(unsigned int millis)
 {
     // Assumes 8Mhz clock cycle
@@ -129,30 +115,12 @@ void DelayMillis_8Mhz(unsigned int millis)
     }
 }
 
-void DelayMillis_1Mhz(unsigned int millis)
-{
-    // Assumes 1Mhz clock cycle
-    while(millis-- > 0)
-    {
-        __delay_cycles(1000);
-    }
-}
-
 void DelaySeconds_8Mhz(unsigned int seconds)
 {
     // Assumes 8Mhz clock cycle
     while(seconds-- > 0)
     {
         __delay_cycles(8000000);
-    }
-}
-
-void DelaySeconds_1Mhz(unsigned int seconds)
-{
-    // Assumes 1Mhz clock cycle
-    while(seconds-- > 0)
-    {
-        __delay_cycles(1000000);
     }
 }
 

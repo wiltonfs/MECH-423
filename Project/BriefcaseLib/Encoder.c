@@ -16,14 +16,15 @@
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#define P2_ENCODER_PIN (BIT7)
-#define P3_ENCODER_PIN (BIT7)
+#define CW_PIN  (BIT7)
+#define CCW_PIN (BIT6)
+#define ENCODER_PINS (CW_PIN | CCW_PIN)
 
-#define P2_ENCODER_PIN_IS_HIGH ((P2IN & P2_ENCODER_PIN) > 0)
-#define P3_ENCODER_PIN_IS_HIGH ((P3IN & P3_ENCODER_PIN) > 0)
+#define CW_PIN_IS_HIGH  ((P3IN & CW_PIN)  > 0)
+#define CCW_PIN_IS_HIGH ((P3IN & CCW_PIN) > 0)
 
 volatile unsigned int ACCUMULATED_CW_STEPS = 0;  // P3.7
-volatile unsigned int ACCUMULATED_CCW_STEPS = 0; // P2.7
+volatile unsigned int ACCUMULATED_CCW_STEPS = 0; // P3.6
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -33,7 +34,6 @@ volatile unsigned int ACCUMULATED_CCW_STEPS = 0; // P2.7
 
 void ENCODER_SetupEncoder();
 // Sets up the pins and interrupt for the encoder.
-// P3.7 - CCW pulses, P2.7 - CW pulses.
 
 void ENCODER_ClearEncoderCounts();
 // Clears the encoder counts, stored in two unsigned ints.
@@ -52,27 +52,21 @@ unsigned int ENCODER_GetNetSteps_CCW();
 
 void ENCODER_SetupEncoder()
 {
-    // Set P2.7 and P3.7 as inputs with pull-down resistors
+    // Set inputs with pull-down resistors
 
-    // Configure both as a digital input       (M) pg. 78 and pg. 82
-	P2DIR  &= ~(P2_ENCODER_PIN);
-    P2SEL1 &= ~(P2_ENCODER_PIN);
-    P2SEL0 &= ~(P2_ENCODER_PIN);
-    P3DIR  &= ~(P3_ENCODER_PIN);
-    P3SEL1 &= ~(P3_ENCODER_PIN);
-    P3SEL0 &= ~(P3_ENCODER_PIN);
+    // Configure both as a digital input       (M) pg. 82
+    P3DIR  &= ~(ENCODER_PINS);
+    P3SEL1 &= ~(ENCODER_PINS);
+    P3SEL0 &= ~(ENCODER_PINS);
     // Pull-down resistors
-    P2OUT &= ~(P2_ENCODER_PIN);         // Pulldown             (L) pg. 314
-    P3OUT &= ~(P3_ENCODER_PIN);         // Pulldown             (L) pg. 314
-    P2REN |= (P2_ENCODER_PIN);          // Enable resistors     (L) pg. 315
-    P3REN |= (P3_ENCODER_PIN);          // Enable resistors     (L) pg. 315
+    P3OUT &= ~(ENCODER_PINS);       // Pulldown             (L) pg. 314
+    P3REN |=  (ENCODER_PINS);       // Enable resistors     (L) pg. 315
     
 
-
-    // P2.7 Interrupt from a falling edge
-    P2IES |= (P2_ENCODER_PIN);      // Falling edge detection (L) pg. 316
-    // P3.7 Interrupt from a rising edge
-    P3IES &= ~(P3_ENCODER_PIN);    // Rising edge detection (L) pg. 316
+    // Interrupt from a falling edge
+    P3IES |=  (CW_PIN);      // Falling edge detection (L) pg. 316
+    // Interrupt from a rising edge
+    P3IES &= ~(CCW_PIN);     // Rising edge detection (L) pg. 316
 
     ENCODER_ClearEncoderCounts();
 }
