@@ -67,6 +67,10 @@ volatile unsigned char StateMachine_State = 15;
 #define DEBOUNCE_RESET 50
 volatile unsigned char debounceTimer = 0;
 
+// Encoder de-bouncing
+#define ENCODER_DEBOUNCE_RESET 3
+volatile unsigned char encoderDebounceTimer = 0;
+
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~ UART Transmission Logic ~~~~~~~~~~~~~~~~~~~~
@@ -190,11 +194,19 @@ int main(void)
     while(1)
     {
         DelayMillis_8Mhz(10);
+        // Display the state on the LEDs
+        WriteStateToLEDs(StateMachine_State);
 
         // Simple debouncing timer decrement. Decrement when no button is down
         if (debounceTimer > 0 && NO_BUTTON_DOWN)
         {
             debounceTimer--;
+        }
+
+        // Simple encoder debouncing timer decrement
+        if (encoderDebounceTimer > 0)
+        {
+            encoderDebounceTimer--;
         }
     }
 
@@ -248,12 +260,11 @@ __interrupt void ADC_ISR(void)
     if (readingSlider1)
     {
         Slider1 = result;
-        readingSlider1 = false;
     } else {
         Slider2 = result;
-        readingSlider1 = true;
     }
 
+    readingSlider1 = !readingSlider1;
     ADC_ReadSlider(readingSlider1);
 }
 
@@ -272,8 +283,8 @@ __interrupt void Port_2(void)
     if (P2IFG & P2_ENCODER_PIN)
     {
         // Falling edge on this pin, P2.7 (CCW)
-        // Check for it anyway
-        if (!P2_ENCODER_PIN_IS_HIGH) {
+        // Check for it anyway, and the encoderDebounceTimer must be zero
+        if (!P2_ENCODER_PIN_IS_HIGH && encoderDebounceTimer == 0) {
             // If other guy is high, I'm leading. Otherwise, I'm lagging.
             if (P3_ENCODER_PIN_IS_HIGH) {
                 // P2 is leading, increment the P2 (CCW)
@@ -283,9 +294,10 @@ __interrupt void Port_2(void)
                 ACCUMULATED_CW_STEPS++;
             }
 
-            P2IFG &= ~P2_ENCODER_PIN;  // Clear interrupt flag
-            return;
+            encoderDebounceTimer = ENCODER_DEBOUNCE_RESET; // Simple encoder debouncing timer reset back up
         }
+
+        P2IFG &= ~P2_ENCODER_PIN;  // Clear interrupt flag
     }
 
 
@@ -295,8 +307,8 @@ __interrupt void Port_2(void)
 
     // Simple debouncing timer check
     if (debounceTimer > 0) {
-        // Clear all interrupt flags
-        P2IFG &= 0;
+        // Clear button interrupt flags
+        P2IFG &= ~(ALL_BUTTONS);
         return;
     }
 
@@ -307,33 +319,35 @@ __interrupt void Port_2(void)
         // Fire a missile!
         COM_UART_MakeAndTransmitMessagePacket_BLOCKING(LAUNCH, 0, 0);
         P2IFG &= ~FIRE_BUTTON;  // Clear interrupt flag
+        debounceTimer = DEBOUNCE_RESET; // Simple debouncing timer reset back up
     }
 
     if (P2IFG & MACHINE_BUTTON_1)
     {
         IncrementStateMachine(&StateMachine_State, 1);
         P2IFG &= ~MACHINE_BUTTON_1;     // Clear interrupt flag
+        debounceTimer = DEBOUNCE_RESET; // Simple debouncing timer reset back up
     }
     if (P2IFG & MACHINE_BUTTON_2)
     {
         IncrementStateMachine(&StateMachine_State, 2);
         P2IFG &= ~MACHINE_BUTTON_2;     // Clear interrupt flag
+        debounceTimer = DEBOUNCE_RESET; // Simple debouncing timer reset back up
     }
     if (P2IFG & MACHINE_BUTTON_3)
     {
         IncrementStateMachine(&StateMachine_State, 3);
         P2IFG &= ~MACHINE_BUTTON_3;     // Clear interrupt flag
+        debounceTimer = DEBOUNCE_RESET; // Simple debouncing timer reset back up
     }
     if (P2IFG & MACHINE_BUTTON_4)
     {
         IncrementStateMachine(&StateMachine_State, 4);
         P2IFG &= ~MACHINE_BUTTON_4;     // Clear interrupt flag
+        debounceTimer = DEBOUNCE_RESET; // Simple debouncing timer reset back up
     }
 
-    WriteStateToLEDs(StateMachine_State);
 
-    // Simple debouncing timer reset back up
-    debounceTimer = DEBOUNCE_RESET;
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -345,8 +359,8 @@ __interrupt void Port_2(void)
 __interrupt void Port_3(void)
 {
     // Rising edge on P3.7 (CW)
-    // Check for it anyway
-    if (P3_ENCODER_PIN_IS_HIGH) {
+    // Check for it anyway, and the encoderDebounceTimer must be zero
+    if (P3_ENCODER_PIN_IS_HIGH && encoderDebounceTimer == 0) {
         // If other guy is high, I'm lagging. Otherwise, I'm leading.
         if (P2_ENCODER_PIN_IS_HIGH) {
             // P2 is leading, increment the P2 (CCW)
@@ -355,8 +369,9 @@ __interrupt void Port_3(void)
             // P3 is leading, increment the P3 (CW)
             ACCUMULATED_CW_STEPS++;
         }
+
+        encoderDebounceTimer = ENCODER_DEBOUNCE_RESET; // Simple encoder debouncing timer reset back up
     }
 
-    // Clear all interrupt flags
-    P3IFG &= 0;
+    P3IFG &= ~P3_ENCODER_PIN;  // Clear interrupt flag
 }
