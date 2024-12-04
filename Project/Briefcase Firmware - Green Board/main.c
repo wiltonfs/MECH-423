@@ -66,7 +66,7 @@ volatile unsigned char Slider2 = 0;
 volatile unsigned char StateMachine_State = 15;
 
 // Buttons de-bouncing
-#define DEBOUNCE_RESET 10
+#define DEBOUNCE_RESET 50
 volatile unsigned char debounceTimer = 0;
 
 
@@ -192,9 +192,11 @@ int main(void)
     {
         DelayMillis_8Mhz(10);
 
-        // Simple debouncing timer decrement
-        if (debounceTimer > 0)
+        // Simple debouncing timer decrement. Decrement when no button is down
+        if (debounceTimer > 0 && NO_BUTTON_DOWN)
+        {
             debounceTimer--;
+        }
     }
 
     return 0;

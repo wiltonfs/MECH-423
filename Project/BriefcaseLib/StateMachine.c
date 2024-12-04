@@ -15,19 +15,26 @@
 #define MACHINE_BUTTON_2 (BIT3)
 #define MACHINE_BUTTON_3 (BIT4)
 
+// When buttons are down, they return 0.
+#define BUTTON_REGISTER (P2IN)
+#define ALL_BUTTONS (STATE_MACHINE_BUTTONS | FIRE_BUTTON)
+#define NON_BUTTONS_TO_1 (BUTTON_REGISTER | ~(ALL_BUTTONS))
+#define SOME_BUTTON_DOWN ((~(NON_BUTTONS_TO_1)) > 0)
+#define NO_BUTTON_DOWN (!SOME_BUTTON_DOWN)
+
 void SetupStateMachineAndLaunchButton()
 {
     // Configure buttons as a digital input       (M) pg. 74, 76, 77, 78
-	P2DIR  &= ~((STATE_MACHINE_BUTTONS | FIRE_BUTTON));
-    P2SEL1 &= ~((STATE_MACHINE_BUTTONS | FIRE_BUTTON));
-    P2SEL0 &= ~((STATE_MACHINE_BUTTONS | FIRE_BUTTON));
+	P2DIR  &= ~(ALL_BUTTONS);
+    P2SEL1 &= ~(ALL_BUTTONS);
+    P2SEL0 &= ~(ALL_BUTTONS);
 
     // Buttons will bridge to GND, so we need to pullup.
-    P2OUT |= ((STATE_MACHINE_BUTTONS | FIRE_BUTTON));   // Pullup               (L) pg. 314
-    P2REN |= ((STATE_MACHINE_BUTTONS | FIRE_BUTTON));   // Enable resistors     (L) pg. 315
+    P2OUT |= (ALL_BUTTONS);   // Pullup               (L) pg. 314
+    P2REN |= (ALL_BUTTONS);   // Enable resistors     (L) pg. 315
     
     // Interrupt from a falling edge (user presses the button)
-    P2IES |= ((STATE_MACHINE_BUTTONS | FIRE_BUTTON)); // Falling edge detection (L) pg. 316
+    P2IES |= (ALL_BUTTONS); // Falling edge detection (L) pg. 316
 }
 
 // The state machine maxes out at 5 binary values, or 31 in decimal
