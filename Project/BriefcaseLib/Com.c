@@ -115,13 +115,13 @@ void COM_CombineDataBytes(MessagePacket *MP);
 // ~~~~~~~~~~~~ Transmitting ~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-void COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(unsigned char comm, unsigned char d1, unsigned char d2);
+void COM_UART_MakeAndTransmitMessagePacket_BLOCKING(unsigned char comm, unsigned char d1, unsigned char d2);
 
-void COM_UART1_TransmitMessagePacket_BLOCKING(MessagePacket *MP);
+void COM_UART_TransmitMessagePacket_BLOCKING(MessagePacket *MP);
 // Requires the address of a target message packet
 // Transmits a complete message packet, blocks until complete
 
-bool COM_UART1_TransmitMessagePacketFragment(MessagePacket *MP, volatile PACKET_FRAGMENT *ExpectedNextTransmit);
+bool COM_UART_TransmitMessagePacketFragment(MessagePacket *MP, volatile PACKET_FRAGMENT *ExpectedNextTransmit);
 // Requires the address of a target message packet and the address of a PACKET_FRAGMENT that tracks the next expected fragment to transmit
 // Returns true if just transmitted the start byte (255)
 
@@ -207,16 +207,16 @@ bool COM_MessagePacketAssembly_StateMachine(MessagePacket *MP, volatile PACKET_F
 // ~~~~~~~~~~~~ Transmitting ~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-void COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(unsigned char comm, unsigned char d1, unsigned char d2)
+void COM_UART_MakeAndTransmitMessagePacket_BLOCKING(unsigned char comm, unsigned char d1, unsigned char d2)
 {
     MessagePacket MP = EMPTY_MESSAGE_PACKET;
     MP.comm = comm;
     MP.d1 = d1;
     MP.d2 = d2;
-    COM_UART1_TransmitMessagePacket_BLOCKING(&MP);
+    COM_UART_TransmitMessagePacket_BLOCKING(&MP);
 }
 
-void COM_UART1_TransmitMessagePacket_BLOCKING(MessagePacket *MP)
+void COM_UART_TransmitMessagePacket_BLOCKING(MessagePacket *MP)
 {
     COM_CalculateEscapeByte(MP);
     UART_TX_Char_BLOCKING(255);
@@ -226,7 +226,7 @@ void COM_UART1_TransmitMessagePacket_BLOCKING(MessagePacket *MP)
     UART_TX_Char_BLOCKING(MP->esc);
 }
 
-bool COM_UART1_TransmitMessagePacketFragment(MessagePacket *MP, volatile PACKET_FRAGMENT *ExpectedNextTransmit)
+bool COM_UART_TransmitMessagePacketFragment(MessagePacket *MP, volatile PACKET_FRAGMENT *ExpectedNextTransmit)
 {
     bool newPacket = false;
 

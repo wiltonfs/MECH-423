@@ -1,5 +1,6 @@
 #include <msp430.h> 
 #include "../BriefcaseLib/Red.c"
+#include "../BriefcaseLib/General.c"
 #include "../BriefcaseLib/Com.c"
 #include "../BriefcaseLib/Encoder.c"
 #include "../BriefcaseLib/Analog.c"
@@ -118,7 +119,7 @@ void TxBriefcaseState()
     }
 
     // Send the packet
-    COM_UART1_TransmitMessagePacket_BLOCKING(&TxPacket);
+    COM_UART_TransmitMessagePacket_BLOCKING(&TxPacket);
 
     // Increment next update
     if (NextUpdate >= BINARIES) {
@@ -277,7 +278,7 @@ __interrupt void Port_2(void)
     if (P2IFG & FIRE_BUTTON)// Check if interrupt is from P2.7 (Launch button) (L) pg. 317
     {
         // Fire a missile!
-        COM_UART1_MakeAndTransmitMessagePacket_BLOCKING(LAUNCH, 0, 0);
+        COM_UART_MakeAndTransmitMessagePacket_BLOCKING(LAUNCH, 0, 0);
         P2IFG &= ~FIRE_BUTTON;  // Clear interrupt flag
     }
 

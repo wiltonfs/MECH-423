@@ -1,5 +1,5 @@
 #include <msp430.h> 
-// Standard functions for programming the Green board in our MECH 423 project
+// Green-board specific functionality for our MECH 423 project
 // Felix Wilton & Lazar Stanojevic
 // Nov 2024
 // (L) = MSP430 Fammily User Guide [576 pages]
@@ -10,84 +10,19 @@
 #ifndef GREEN_INCLUDED
 #define GREEN_INCLUDED
 
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~ Handy Definitions ~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ---------------------------------------------
+// -- Green Specific Input Button Definitions --
+// ---------------------------------------------
 
-// ----------------------
-// -- bool Definitions --
-// ----------------------
+#define FIRE_BUTTON (BIT0)
+#define MACHINE_BUTTON_4 (BIT1)
 
-#define true 1
-#define false 0
-typedef short bool;
-
-// ------------------------
-// -- System Definitions --
-// ------------------------
+// -----------------------------------
+// -- Red Specific UART Definitions --
+// -----------------------------------
 
 #define UART_READY_TO_TX (UCA1IFG & UCTXIFG)
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~ Function Declarations ~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-// ----------------------------
-// -- System Setup Functions --
-// ----------------------------
-
-void StandardClockSetup_8Mhz_1Mhz();
-// Setup Master Clock (MCLK) to 8Mhz
-// Setup Subsystem Master Clock (SMCLK) to 1Mhz
-// Uses the DCO
-
-void StandardUARTSetup_9600_8();
-// [Requires StandardClockSetup_8Mhz_1Mhz()]
-// Setup UART1 at 9800 baud, 8 data bits, no parity, 1 stop bit
-
-// --------------------
-// -- Misc Functions --
-// --------------------
-
-void UART_TX_Char_BLOCKING(unsigned char c);
-// Transmits a char through uart. Blocks until complete!
-
-void UART_TX_String_BLOCKING(const unsigned char *str);
-// Transmits a string through uart. Blocks until complete!
-
-void DelayMillis_8Mhz(unsigned int millis);
-void DelayMillis_1Mhz(unsigned int millis);
-
-void DelaySeconds_8Mhz(unsigned int seconds);
-void DelaySeconds_1Mhz(unsigned int seconds);
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~ Function Definitions ~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-// ----------------------------
-// -- System Setup Functions --
-// ----------------------------
-
-void StandardClockSetup_8Mhz_1Mhz()
-{
-    // Setup Subsystem Master Clock (SMCLK) to 1Mhz
-    CSCTL0 = CSKEY;                         // Set the clock password.  (L) pg. 80
-    CSCTL1 |= DCOFSEL_3;                    // Set DCO Freq to 8 MHz.   (L) pg. 81
-    CSCTL2 |= SELM__DCOCLK;                 // Set MCLK to run on DCO.  (L) pg. 82
-    CSCTL2 |= SELS__DCOCLK;                 // Set SMCLK to run on DCO. (L) pg. 82
-    CSCTL2 |= SELA__DCOCLK;                 // Set ACLK to run on DCO.  (L) pg. 82
-    CSCTL3 &= ~(BIT0 | BIT1 | BIT2);        // MCLK divider of 1        (L) pg. 83
-
-    CSCTL3 &= ~(BIT4 | BIT5 | BIT6);        // Clear relevant bits
-    CSCTL3 |= DIVS__8;                      // SMCLK divider of 8       (L) pg. 83
-}
+#define UART_TX_BUFFER UCA1TXBUF
 
 void StandardUARTSetup_9600_8()
 {
@@ -117,65 +52,6 @@ void StandardUARTSetup_9600_8()
     // Start UART
     UCA1CTLW0 &= ~UCSWRST;       // Undo reset on eUSCI (L) pg. 495
 }
-
-// --------------------
-// -- Misc Functions --
-// --------------------
-
-void UART_TX_Char_BLOCKING(unsigned char c)
-{
-    // Transmits a char through uart. Blocks until complete!
-    while(!UART_READY_TO_TX);
-    UCA1TXBUF = c; // Write to transmit buffer
-}
-
-void UART_TX_String_BLOCKING(const unsigned char *str)
-{
-    // Transmits a string through uart. Blocks until complete!
-    while (*str != '\0') { // Continue until we reach the null terminator
-        UART_TX_Char_BLOCKING(*str);
-        str++; // Move to the next character in the string
-    }
-}
-
-void DelayMillis_8Mhz(unsigned int millis)
-{
-    // Assumes 8Mhz clock cycle
-    while(millis-- > 0)
-    {
-        __delay_cycles(8000);
-    }
-}
-
-void DelayMillis_1Mhz(unsigned int millis)
-{
-    // Assumes 1Mhz clock cycle
-    while(millis-- > 0)
-    {
-        __delay_cycles(1000);
-    }
-}
-
-void DelaySeconds_8Mhz(unsigned int seconds)
-{
-    // Assumes 8Mhz clock cycle
-    while(seconds-- > 0)
-    {
-        __delay_cycles(8000000);
-    }
-}
-
-void DelaySeconds_1Mhz(unsigned int seconds)
-{
-    // Assumes 1Mhz clock cycle
-    while(seconds-- > 0)
-    {
-        __delay_cycles(1000000);
-    }
-}
-
-
-
 
 
 
