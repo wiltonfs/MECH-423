@@ -19,10 +19,8 @@
 //      P2.6 - UART TX
 //      P2.5 - UART RX
 // Encoder:
-//      P1.1 - CCW step pulse
-//      P1.2 - CW step pulse
-//      Timer A0 - CW counter
-//      Timer A1 - CCW counter
+//      P2.7 - CCW step pulse
+//      P3.7 - CW step pulse
 // Sliders:
 //      P3.0 (A12) - Slider 1
 //      P3.1 (A13) - Slider 2
@@ -168,6 +166,7 @@ int main(void)
 // Setting up INPUTS
     // Encoder set-up
     ENCODER_SetupEncoder();
+    P2IE |= P2_ENCODER_PIN; P3IE |= P3_ENCODER_PIN;   // Enable encoder interrupts     (L) pg. 316
 
     // Analog set-up
     ADCSetup();
@@ -265,9 +264,35 @@ __interrupt void ADC_ISR(void)
 
 
 // State machine buttons or launch button
+// Also includes one of the encoder pins (falling edge)
 #pragma vector=PORT2_VECTOR
 __interrupt void Port_2(void)
 {
+    // First, check if it's the encoder interrupt
+    if (P2IFG & P2_ENCODER_PIN)
+    {
+        // Falling edge on this pin, P2.7 (CCW)
+        // Check for it anyway
+        if (!P2_ENCODER_PIN_IS_HIGH) {
+            // If other guy is high, I'm leading. Otherwise, I'm lagging.
+            if (P3_ENCODER_PIN_IS_HIGH) {
+                // P2 is leading, increment the P2 (CCW)
+                ACCUMULATED_CCW_STEPS++;
+            } else {
+                // P3 is leading, increment the P3 (CW)
+                ACCUMULATED_CW_STEPS++;
+            }
+
+            P2IFG &= ~P2_ENCODER_PIN;  // Clear interrupt flag
+            return;
+        }
+    }
+
+
+
+
+
+
     // Simple debouncing timer check
     if (debounceTimer > 0) {
         // Clear all interrupt flags
@@ -309,4 +334,29 @@ __interrupt void Port_2(void)
 
     // Simple debouncing timer reset back up
     debounceTimer = DEBOUNCE_RESET;
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~ Other Encoder ISR ~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+// Encoder pin (rising edge)
+#pragma vector=PORT3_VECTOR
+__interrupt void Port_3(void)
+{
+    // Rising edge on P3.7 (CW)
+    // Check for it anyway
+    if (P3_ENCODER_PIN_IS_HIGH) {
+        // If other guy is high, I'm lagging. Otherwise, I'm leading.
+        if (P2_ENCODER_PIN_IS_HIGH) {
+            // P2 is leading, increment the P2 (CCW)
+            ACCUMULATED_CCW_STEPS++;
+        } else {
+            // P3 is leading, increment the P3 (CW)
+            ACCUMULATED_CW_STEPS++;
+        }
+    }
+
+    // Clear all interrupt flags
+    P3IFG &= 0;
 }
