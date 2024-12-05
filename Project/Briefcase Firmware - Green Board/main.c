@@ -18,7 +18,7 @@
 // UART:
 //      P2.5 - UART TX
 //      P2.6 - UART RX - Piped directly to printer
-// Encoder:
+// Encoder (Use Interrupts):
 //      P3.6 - CCW step pulse
 //      P3.7 - CW step pulse
 // Sliders:
@@ -59,7 +59,7 @@ volatile bool readingSlider1 = true;
 // Briefcase Data
 volatile unsigned char Slider1 = 0;
 volatile unsigned char Slider2 = 0;
-volatile unsigned char StateMachine_State = 15;
+volatile unsigned char StateMachine_State = 31;
 
 // Buttons de-bouncing
 #define DEBOUNCE_RESET 10
@@ -239,7 +239,7 @@ __interrupt void TIMER_B1_ISR(void)
 #pragma vector = ADC10_VECTOR
 __interrupt void ADC_ISR(void)
 {
-    unsigned char result = ADC10MEM0 >> 2;  // Read and shift 10-bit result to 8 bits
+    volatile unsigned char result = ADC10MEM0 >> 2;  // Read and shift 10-bit result to 8 bits
 
     if (readingSlider1)
     {
@@ -262,15 +262,6 @@ __interrupt void ADC_ISR(void)
 #pragma vector=PORT2_VECTOR
 __interrupt void Port_2(void)
 {
-
-    // Simple debouncing timer check
-    if (debounceTimer > 0) {
-        // Clear button interrupt flags
-        P2IFG &= ~(ALL_BUTTONS);
-        return;
-    }
-
-
 
     if (P2IFG & FIRE_BUTTON)// Check if interrupt is from P2.7 (Launch button) (L) pg. 317
     {
