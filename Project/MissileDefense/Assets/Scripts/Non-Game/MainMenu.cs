@@ -43,7 +43,7 @@ public class MainMenu: MonoBehaviour
             if (!inTag)
             {
                 displayText.text += c;
-                yield return new WaitForSeconds(Random.Range(fastType, fastType)); // Add delay outside of tags
+                yield return new WaitForSeconds(Random.Range(fastType, slowType)); // Add delay outside of tags
             }
             else
             {
@@ -78,7 +78,7 @@ public class MainMenu: MonoBehaviour
             if (!inTag)
             {
                 displayText.text += c;
-                yield return new WaitForSeconds(Random.Range(fastType, fastType)); // Add delay outside of tags
+                yield return new WaitForSeconds(Random.Range(fastType, slowType)); // Add delay outside of tags
             }
             else
             {
@@ -86,19 +86,19 @@ public class MainMenu: MonoBehaviour
             }
             if (c == '>') inTag = false; // Detect the end of a tag
         }
-        yield return new WaitForSeconds(Random.Range(0.25f, 0.5f));
+        yield return new WaitForSeconds(Random.Range(0.5f, 1.5f));
         additionalText = "SUCCESS\nWarming launcher lines: ";
         foreach (char c in additionalText)
         {
             displayText.text += c;
-            yield return new WaitForSeconds(Random.Range(fastType, fastType));
+            yield return new WaitForSeconds(Random.Range(fastType, slowType));
         }
-        yield return new WaitForSeconds(Random.Range(0.25f, 0.5f));
+        yield return new WaitForSeconds(Random.Range(0.5f, 1.5f));
         additionalText = "INITIATED\nPrepare for control............";
         foreach (char c in additionalText)
         {
             displayText.text += c;
-            yield return new WaitForSeconds(Random.Range(fastType, fastType));
+            yield return new WaitForSeconds(Random.Range(fastType, slowType));
         }
 
         // Start game

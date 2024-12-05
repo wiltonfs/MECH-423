@@ -56,6 +56,10 @@ public class ScoreManager : MonoBehaviour
         }
         // Display Game Over window
         GameOverVisualCollection.gameObject.SetActive(true);
-        GameOverScoreDisplayText.text = $"Final Score: {Score}"; ;
+        GameOverScoreDisplayText.text = $"Final Score: {Score}";
+
+        // Request the player's receipt to be printed
+        SerialScanner serialScanner = FindObjectOfType<SerialScanner>();
+        serialScanner.TransmitScoreToThermalPrinter(Score);
     }
 }

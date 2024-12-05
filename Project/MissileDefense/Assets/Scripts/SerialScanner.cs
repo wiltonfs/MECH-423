@@ -57,6 +57,10 @@ public struct MessagePacket
 
 public class SerialScanner : MonoBehaviour
 {
+    [Header("Player Details")]
+    public string PlayerName = "Lazar";
+
+
     [Header("Serial Parameters")]
     public int baudRate = 9600;
     public string portName = "COM6";
@@ -118,6 +122,13 @@ public class SerialScanner : MonoBehaviour
     void Update()
     {
         ReadSerial();
+    }
+
+    public void TransmitScoreToThermalPrinter(int score)
+    {
+        data_stream.WriteLine($"Operator: {PlayerName}");
+        data_stream.WriteLine($"Final Score: {score}");
+        data_stream.WriteLine("Thanks for playing!");
     }
 
     public bool IsBoardConnected()
