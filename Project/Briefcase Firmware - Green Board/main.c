@@ -16,8 +16,8 @@
 // General:
 //      Timer B1 - UART TX timer
 // UART:
-//      P2.6 - UART TX
-//      P2.5 - UART RX - Piped directly to printer
+//      P2.5 - UART TX
+//      P2.6 - UART RX - Piped directly to printer
 // Encoder:
 //      P3.6 - CCW step pulse
 //      P3.7 - CW step pulse

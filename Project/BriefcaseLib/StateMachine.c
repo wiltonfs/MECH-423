@@ -37,10 +37,20 @@ void SetupStateMachineAndLaunchButton()
     P2IES |= (ALL_BUTTONS); // Falling edge detection (L) pg. 316
 }
 
-// The state machine maxes out at 5 binary values, or 31 in decimal
+// The state machine maxes out at 5 binary values, or 31 in decimal. Also, it can't be zero
 void ClampStateMachine(volatile unsigned char* MachineState)
 {
     if (*MachineState > 31)
+    {
+        *MachineState = 31;
+    }
+    if (*MachineState == 0)
+    {
+        *MachineState = 31;
+    }
+
+    // Illegal entries take you back to 31
+    if (*MachineState == 1 || *MachineState == 2 || *MachineState == 4 || *MachineState == 8 || *MachineState == 16)
     {
         *MachineState = 31;
     }
@@ -49,34 +59,212 @@ void ClampStateMachine(volatile unsigned char* MachineState)
 void IncrementStateMachine(volatile unsigned char* MachineState, unsigned char Button)
 {
     ClampStateMachine(MachineState); // Clamp just in case
+    volatile unsigned char inputState = *MachineState;
+    volatile unsigned char outputState = *MachineState;
 
-    // Stand in switching functionality
+    bool button_X = (Button == 1);
+    bool button_Y = (Button == 2);
+    bool button_Z = (Button == 3);
+    bool button_T = (Button == 4);
 
-    if (Button == 1)
+    // Entry points to different state groups
+    #define A_entry 5
+    #define B_entry 6
+    #define C_entry 29
+    #define D_entry 25
+    #define E_entry 14
+    #define F_entry 3
+    #define G_entry 31
+
+    #define NO_CHANGE outputState
+
+    // A Group - five states, [5, 10, 13, 17, 21]
+    if (inputState == 5)
     {
-        *MachineState += 1;
+        if (button_Z) {outputState = 10;}
     }
-    else if (Button == 2)
+    else if (inputState == 10)
     {
-        *MachineState -= 1;
+        if (button_X){outputState = 17;}
+        if (button_T){outputState = B_entry;}
     }
-    else if (Button == 3)
+    else if (inputState == 13)
     {
-        *MachineState += 10;
+        if (button_Y){outputState = 21;}
+        if (button_T){outputState = 5;}
     }
-    else if (Button == 4)
+    else if (inputState == 17)
     {
-        *MachineState -= 10;
+        if (button_Y){outputState = 5;}
+        if (button_Z){outputState = 13;}
+    }
+    else if (inputState == 21)
+    {
+        if (button_X){outputState = 17;}
     }
 
+    // B Group - four states, [6, 9, 12, 20]
+    if (inputState == 6)
+    {
+        if (button_X){outputState = NO_CHANGE;}
+        if (button_Y){outputState = NO_CHANGE;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = 9;}
+    }
+    else if (inputState == 9)
+    {
+        if (button_X){outputState = 6;}
+        if (button_Y){outputState = 12;}
+        if (button_Z){outputState = 20;}
+        if (button_T){outputState = C_entry;}
+    }
+    else if (inputState == 12)
+    {
+        if (button_X){outputState = NO_CHANGE;}
+        if (button_Y){outputState = NO_CHANGE;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = 9;}
+    }
+    else if (inputState == 20)
+    {
+        if (button_X){outputState = NO_CHANGE;}
+        if (button_Y){outputState = NO_CHANGE;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = 9;}
+    }
+
+    // C Group - three states, [27, 28, 29]
+    if (inputState == 27)
+    {
+        if (button_X){outputState = NO_CHANGE;}
+        if (button_Y){outputState = NO_CHANGE;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = 29;}
+    }
+    else if (inputState == 28)
+    {
+        if (button_X){outputState = G_entry;}
+        if (button_Y){outputState = 27;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = NO_CHANGE;}
+    }
+    else if (inputState == 29)
+    {
+        if (button_X){outputState = NO_CHANGE;}
+        if (button_Y){outputState = NO_CHANGE;}
+        if (button_Z){outputState = 28;}
+        if (button_T){outputState = NO_CHANGE;}
+    }
+
+    // D Group - three states, [23, 24, 25]
+    if (inputState == 23)
+    {
+        if (button_X){outputState = NO_CHANGE;}
+        if (button_Y){outputState = 24;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = A_entry;}
+    }
+    else if (inputState == 24)
+    {
+        if (button_X){outputState = NO_CHANGE;}
+        if (button_Y){outputState = 23;}
+        if (button_Z){outputState = 25;}
+        if (button_T){outputState = A_entry;}
+    }
+    else if (inputState == 25)
+    {
+        if (button_X){outputState = 23;}
+        if (button_Y){outputState = NO_CHANGE;}
+        if (button_Z){outputState = 24;}
+        if (button_T){outputState = NO_CHANGE;}
+    }
+
+    // E Group - five states, [14, 18, 22, 26, 30]
+    if (inputState == 14)
+    {
+        if (button_X){outputState = 22;}
+        if (button_Y){outputState = G_entry;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = 26;}
+    }
+    else if (inputState == 18)
+    {
+        if (button_X){outputState = NO_CHANGE;}
+        if (button_Y){outputState = 14;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = NO_CHANGE;}
+    }
+    else if (inputState == 22)
+    {
+        if (button_X){outputState = NO_CHANGE;}
+        if (button_Y){outputState = 14;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = 30;}
+    }
+    else if (inputState == 26)
+    {
+        if (button_X){outputState = NO_CHANGE;}
+        if (button_Y){outputState = 18;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = NO_CHANGE;}
+    }
+    else if (inputState == 30)
+    {
+        if (button_X){outputState = NO_CHANGE;}
+        if (button_Y){outputState = 18;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = NO_CHANGE;}
+    }
+
+    // F Group - five states, [3, 7, 11, 15, 19]
+    if (inputState == 3)
+    {
+        if (button_X){outputState = 11;}
+        if (button_Y){outputState = NO_CHANGE;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = 7;}
+    }
+    else if (inputState == 7)
+    {
+        if (button_X){outputState = G_entry;}
+        if (button_Y){outputState = NO_CHANGE;}
+        if (button_Z){outputState = 3;}
+        if (button_T){outputState = NO_CHANGE;}
+    }
+    else if (inputState == 11)
+    {
+        if (button_X){outputState = 15;}
+        if (button_Y){outputState = NO_CHANGE;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = NO_CHANGE;}
+    }
+    else if (inputState == 15)
+    {
+        if (button_X){outputState = 19;}
+        if (button_Y){outputState = NO_CHANGE;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = NO_CHANGE;}
+    }
+    else if (inputState == 19)
+    {
+        if (button_X){outputState = 3;}
+        if (button_Y){outputState = NO_CHANGE;}
+        if (button_Z){outputState = NO_CHANGE;}
+        if (button_T){outputState = NO_CHANGE;}
+    }
+
+    // G Group - one state, [31]
+    if (inputState == 31)
+    {
+        if (button_X){outputState = D_entry;}
+        if (button_Y){outputState = C_entry;}
+        if (button_Z){outputState = F_entry;}
+        if (button_T){outputState = E_entry;}
+    }
+
+    *MachineState = outputState;
     ClampStateMachine(MachineState); // Clamp just in case
 }
-
-
-
-
-
-
 
 
 

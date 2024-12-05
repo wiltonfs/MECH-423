@@ -16,6 +16,7 @@
 void ADCSetup()
 {
     // Set up the Analog Digital Converter (ADC)
+    ADC10CTL0 &= ~ADC10ENC;     // Disable conversion               (L) pg. 450
     ADC10CTL0 |= ADC10ON;       // ADC on                           (L) pg. 450
     ADC10CTL0 |= ADC10SHT_8;    // 256 samples per conversion       (L) pg. 449
     ADC10CTL1 |= ADC10CONSEQ_0; // 1 channel and 1 conversion       (L) pg. 452

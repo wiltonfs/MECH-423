@@ -28,6 +28,10 @@ void SetupOutputLEDs()
 
 void WriteStateToLEDs(volatile unsigned char state)
 {
+    // If module 3 is not enabled, turn all the LEDs off
+    if (!MODULE_3_ENABLED) {
+        state = 0;
+    }
     P1OUT = (P1OUT & ~STATE_MACHINE_LED_OUTS) | ((state << 3) & STATE_MACHINE_LED_OUTS);
 }
 
