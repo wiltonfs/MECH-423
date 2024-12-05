@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 public class MissileLauncher : MonoBehaviour
@@ -26,6 +27,9 @@ public class MissileLauncher : MonoBehaviour
     private float aimSpeed = 0f;
     private float aimSpeedCoarse = 100f;
     private float aimSpeedFine = 10f;
+
+    private SerialScanner SerialScanner;
+    public float EncoderMultiplier;
 
     public void TrackNewEnemy(Enemy enemy)
     {
@@ -61,6 +65,13 @@ public class MissileLauncher : MonoBehaviour
         aimLine.endColor = aimColor;
         aimLine.startWidth = aimLineThickness;
         aimLine.endWidth = aimLineThickness;
+
+        // Grab the serial scanner
+        SerialScanner = FindObjectOfType<SerialScanner>();
+        if (SerialScanner == null)
+        {
+            SerialScanner = gameObject.AddComponent<SerialScanner>();
+        }
     }
 
     // Update is called once per frame
@@ -76,7 +87,7 @@ public class MissileLauncher : MonoBehaviour
         }
 
         // Fine vs coarse aim
-        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) || SerialScanner.FineAdjustmentSwitch)
         {
             aimSpeed = aimSpeedFine;
         } 
@@ -111,6 +122,10 @@ public class MissileLauncher : MonoBehaviour
         {
             aimRotationDegrees += Time.deltaTime * aimSpeed;
         }
+
+        // Update aim line from Serial Scanner
+        aimRotationDegrees += EncoderMultiplier * ((float)SerialScanner.CummulativeEncoderCounts) * aimSpeed;
+        SerialScanner.CummulativeEncoderCounts = 0;
     }
 
     private void UpdateAimLine()

@@ -59,7 +59,7 @@ public class SerialScanner : MonoBehaviour
 {
     [Header("Serial Parameters")]
     public int baudRate = 9600;
-    public string portName = "COM3";
+    public string portName = "COM6";
     public MessagePacket MostRecentRxPacket = new MessagePacket(CommBytes.DEBUG_0);
 
     [Header("Serial Status")]

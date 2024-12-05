@@ -19,7 +19,7 @@
 //      P2.6 - UART TX
 //      P2.5 - UART RX - Piped directly to printer
 // Encoder:
-//      P2.7 - CCW step pulse
+//      P3.6 - CCW step pulse
 //      P3.7 - CW step pulse
 // Sliders:
 //      P3.0 (A12) - Slider 1
@@ -62,12 +62,12 @@ volatile unsigned char Slider2 = 0;
 volatile unsigned char StateMachine_State = 15;
 
 // Buttons de-bouncing
-#define DEBOUNCE_RESET 50
-volatile unsigned char debounceTimer = 0;
+#define DEBOUNCE_RESET 10
+volatile unsigned char debounceTimer = 0; // * 5 millis
 
 // Encoder de-bouncing
-#define ENCODER_DEBOUNCE_RESET 3
-volatile unsigned char encoderDebounceTimer = 0;
+#define ENCODER_DEBOUNCE_RESET 2
+volatile unsigned char encoderDebounceTimer = 0; // * 5 millis
 
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -172,7 +172,7 @@ int main(void)
 // Setting up INPUTS
     // Encoder set-up
     ENCODER_SetupEncoder();
-    P3IE |= ENCODER_PINS;   // Enable encoder interrupts     (L) pg. 316
+    P3IE |= ENCODER_PINS;   // Re-enable encoder interrupts     (L) pg. 316
 
     // Analog set-up
     ADCSetup();
@@ -181,7 +181,7 @@ int main(void)
 
     // Input buttons set-up
     SetupStateMachineAndLaunchButton();
-    P2IE |=   (STATE_MACHINE_BUTTONS | FIRE_BUTTON);    // Enable button interrupts     (L) pg. 316
+    P2IE |= ALL_BUTTONS;        // Enable button interrupts     (L) pg. 316
 
     // Input switches set-up
     SetupBinaryInputSwitches();
@@ -195,20 +195,22 @@ int main(void)
 
     while(1)
     {
-        DelayMillis_8Mhz(10);
+        DelayMillis_8Mhz(5);
         // Display the state on the LEDs
         WriteStateToLEDs(StateMachine_State);
 
         // Simple debouncing timer decrement. Decrement when no button is down
-        if (debounceTimer > 0 && NO_BUTTON_DOWN)
-        {
+        if (debounceTimer > 0 && NO_BUTTON_DOWN) {
             debounceTimer--;
+        } else {
+            P2IE |= ALL_BUTTONS;    // Re-enable button interrupts     (L) pg. 316
         }
 
         // Simple encoder debouncing timer decrement
-        if (encoderDebounceTimer > 0)
-        {
+        if (encoderDebounceTimer > 0) {
             encoderDebounceTimer--;
+        } else {
+            P3IE |= ENCODER_PINS;   // Re-enable encoder interrupts     (L) pg. 316
         }
     }
 
@@ -276,6 +278,7 @@ __interrupt void Port_2(void)
         COM_UART_MakeAndTransmitMessagePacket_BLOCKING(LAUNCH, 0, 0);
         P2IFG &= ~FIRE_BUTTON;  // Clear interrupt flag
         debounceTimer = DEBOUNCE_RESET; // Simple debouncing timer reset back up
+        P2IE &= ~(ALL_BUTTONS);         // Disable button interrupts     (L) pg. 316
     }
 
     if (P2IFG & MACHINE_BUTTON_1)
@@ -283,24 +286,28 @@ __interrupt void Port_2(void)
         IncrementStateMachine(&StateMachine_State, 1);
         P2IFG &= ~MACHINE_BUTTON_1;     // Clear interrupt flag
         debounceTimer = DEBOUNCE_RESET; // Simple debouncing timer reset back up
+        P2IE &= ~(ALL_BUTTONS);         // Disable button interrupts     (L) pg. 316
     }
     if (P2IFG & MACHINE_BUTTON_2)
     {
         IncrementStateMachine(&StateMachine_State, 2);
         P2IFG &= ~MACHINE_BUTTON_2;     // Clear interrupt flag
         debounceTimer = DEBOUNCE_RESET; // Simple debouncing timer reset back up
+        P2IE &= ~(ALL_BUTTONS);         // Disable button interrupts     (L) pg. 316
     }
     if (P2IFG & MACHINE_BUTTON_3)
     {
         IncrementStateMachine(&StateMachine_State, 3);
         P2IFG &= ~MACHINE_BUTTON_3;     // Clear interrupt flag
         debounceTimer = DEBOUNCE_RESET; // Simple debouncing timer reset back up
+        P2IE &= ~(ALL_BUTTONS);         // Disable button interrupts     (L) pg. 316
     }
     if (P2IFG & MACHINE_BUTTON_4)
     {
         IncrementStateMachine(&StateMachine_State, 4);
         P2IFG &= ~MACHINE_BUTTON_4;     // Clear interrupt flag
         debounceTimer = DEBOUNCE_RESET; // Simple debouncing timer reset back up
+        P2IE &= ~(ALL_BUTTONS);         // Disable button interrupts     (L) pg. 316
     }
 
 
@@ -314,14 +321,18 @@ __interrupt void Port_2(void)
 #pragma vector=PORT3_VECTOR
 __interrupt void Port_3(void)
 {
+    // Immediately extract the two pin values
+    volatile unsigned char cw = (P3IN & CW_PIN);
+    volatile unsigned char ccw = (P3IN & CCW_PIN);
+
     if (P3IFG & CW_PIN)
     {
         // CW Pin, Falling Edge
 
-        // Check for it anyway, and the encoderDebounceTimer must be zero
-        if (!CW_PIN_IS_HIGH && encoderDebounceTimer == 0) {
+        // Confirm CW pin is low
+        if (cw == 0) {
             // If other guy is still high, I'm leading. Otherwise, I'm lagging.
-            if (CCW_PIN_IS_HIGH) {
+            if (ccw > 0) {
                 // CW is leading, increment the CW
                 ACCUMULATED_CW_STEPS++;
             } else {
@@ -330,6 +341,7 @@ __interrupt void Port_3(void)
             }
 
             encoderDebounceTimer = ENCODER_DEBOUNCE_RESET; // Simple encoder debouncing timer reset back up
+            P3IE &= ~ENCODER_PINS;   // Disable encoder interrupts     (L) pg. 316
         }
 
         P3IFG &= ~CW_PIN;  // Clear interrupt flag
@@ -339,10 +351,10 @@ __interrupt void Port_3(void)
     {
         // CCW Pin, Rising Edge
 
-        // Check for it anyway, and the encoderDebounceTimer must be zero
-        if (CCW_PIN_IS_HIGH && encoderDebounceTimer == 0) {
+        // Confirm CCW pin is high
+        if (ccw > 0) {
             // If other guy is already high, I'm lagging. Otherwise, I'm leading.
-            if (CW_PIN_IS_HIGH) {
+            if (cw > 0) {
                 // CW is leading, increment the CW
                 ACCUMULATED_CW_STEPS++;
             } else {
@@ -351,6 +363,7 @@ __interrupt void Port_3(void)
             }
 
             encoderDebounceTimer = ENCODER_DEBOUNCE_RESET; // Simple encoder debouncing timer reset back up
+            P3IE &= ~ENCODER_PINS;   // Disable encoder interrupts     (L) pg. 316
         }
 
         P3IFG &= ~CCW_PIN;  // Clear interrupt flag
