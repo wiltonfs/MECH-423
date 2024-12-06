@@ -1,6 +1,19 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-1800906185615034294
+--- !u!114 &-6129995989667328818
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 639247ca83abc874e893eb93af2b5e44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 0
+--- !u!114 &-2776357401270045229
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20,8 +33,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: RetroShader
-  m_Shader: {fileID: -6465566751694194690, guid: f6fb78e4fb36f5f4396a3411794a5a79, type: 3}
+  m_Name: Combined
+  m_Shader: {fileID: -6465566751694194690, guid: 4a6b09ee285226c478a742ba119162e9, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -50,29 +63,16 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BUILTIN_QueueControl: -1
+    - _BUILTIN_QueueControl: 0
     - _BUILTIN_QueueOffset: 0
-    - _NoiseAmmount: 0.25
     - _NoiseScale: 1000
+    - _NoiseStrength: 0.1
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _ScanLines: 8
+    - _ScanLinesCount: 8
     - _ScanLinesStrength: 0.05
-    - _ScanSpeed: 1
+    - _ScanSpeed: 2
     m_Colors:
-    - _NoiseSpeed: {r: 0, g: 0.3, b: 0, a: 0}
-    - _Tinge: {r: 0.7223334, g: 1, b: 0.65999997, a: 1}
+    - _FisheyeScale: {r: 0.3, g: 0.3, b: 0, a: 0}
+    - _Tinge: {r: 0.72156864, g: 1, b: 0.65882355, a: 1}
   m_BuildTextureStacks: []
---- !u!114 &7183631137591592612
-MonoBehaviour:
-  m_ObjectHideFlags: 11
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 639247ca83abc874e893eb93af2b5e44, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 0
