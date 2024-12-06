@@ -253,6 +253,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7dae7202a94ea342965d940a3294bdf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  PlayerName: Lazar
   baudRate: 9600
   portName: COM6
   printMessages: 0
@@ -569,7 +570,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
-  m_RequiresOpaqueTextureOption: 2
+  m_RequiresOpaqueTextureOption: 1
   m_CameraType: 0
   m_Cameras: []
   m_RendererIndex: -1
