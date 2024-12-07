@@ -200,9 +200,12 @@ int main(void)
         WriteStateToLEDs(StateMachine_State);
 
         // Simple debouncing timer decrement. Decrement when no button is down
-        if (debounceTimer > 0 && NO_BUTTON_DOWN) {
-            debounceTimer--;
+        if (debounceTimer > 0) {
+            if (NO_BUTTON_DOWN) {
+                debounceTimer--;
+            }
         } else {
+            P2IFG &= ~(ALL_BUTTONS); // Clear interrupt flags
             P2IE |= ALL_BUTTONS;    // Re-enable button interrupts     (L) pg. 316
         }
 
@@ -210,6 +213,7 @@ int main(void)
         if (encoderDebounceTimer > 0) {
             encoderDebounceTimer--;
         } else {
+            P3IFG &= ~(ENCODER_PINS); // Clear interrupt flags
             P3IE |= ENCODER_PINS;   // Re-enable encoder interrupts     (L) pg. 316
         }
     }
@@ -301,7 +305,7 @@ __interrupt void Port_2(void)
         P2IE &= ~(ALL_BUTTONS);         // Disable button interrupts     (L) pg. 316
     }
 
-
+    P2IFG &= ~(ALL_BUTTONS); // Clear interrupt flags
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
