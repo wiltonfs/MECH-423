@@ -38,7 +38,7 @@ public class Enemy : MonoBehaviour
     void Update()
     {
         // If I get close enough to the center, game over!
-        if (Vector3.Distance(transform.position, Vector3.zero) < 1f)
+        if (Vector3.Distance(transform.position, Vector3.zero) < 4f)
         {
             FindObjectOfType<ScoreManager>().GameOver();
         }

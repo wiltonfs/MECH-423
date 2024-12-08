@@ -1804,11 +1804,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9eda3e392ec7f384dafd5224dfa6d29b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnDelay:
-  - 5
-  - 11
-  - 17
-  spawnDelayDecrement: 0.1
   spawnRadius: 50
   enemyPrefab: {fileID: 4836905802213501933, guid: 240a4b969cb5881489e01a18a13faeed, type: 3}
 --- !u!1 &1862601703
