@@ -20,6 +20,7 @@ public class MissileLauncher : MonoBehaviour
     private List<EnemyDescription> descriptions = new List<EnemyDescription>();
 
     // Aiming Parameters
+    public float reloadTime = 0.5f;
     public float aimLineThickness = 2f;
     public float aimLineLength = 150f;
     private LineRenderer aimLine;
@@ -30,6 +31,8 @@ public class MissileLauncher : MonoBehaviour
 
     private SerialScanner SerialScanner;
     public float EncoderMultiplier;
+
+    private float reloadTimer;
 
     public void TrackNewEnemy(Enemy enemy)
     {
@@ -51,8 +54,12 @@ public class MissileLauncher : MonoBehaviour
 
     public void LaunchMissile()
     {
-        GameObject missile = Instantiate(missilePrefab, cities[activeCity].position, Quaternion.Euler(0, 0, aimRotationDegrees));
-        missile.GetComponent<Missile>().speed = 20f;
+        if (reloadTimer < 0)
+        {
+            GameObject missile = Instantiate(missilePrefab, cities[activeCity].position, Quaternion.Euler(0, 0, aimRotationDegrees));
+            missile.GetComponent<Missile>().speed = 20f;
+            reloadTimer = reloadTime;
+        }
     }
 
     // Start is called before the first frame update
@@ -78,6 +85,7 @@ public class MissileLauncher : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        reloadTimer -= Time.deltaTime;
         UpdateMissileDescriptions();
         UpdateAimLine();
 

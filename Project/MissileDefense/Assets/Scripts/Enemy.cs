@@ -64,8 +64,15 @@ public class Enemy : MonoBehaviour
         {
             FindObjectOfType<MissileLauncher>().DeregisterEnemy(this);
             FindObjectOfType<ScoreManager>().DestroyEnemyGetPoints(myPoints);
-            Destroy(visualizer);
-            Destroy(gameObject);
+            // Consume missile
+            Destroy(collision.gameObject);
+            DestroyEnemy();
         }
+    }
+
+    public void DestroyEnemy()
+    {
+        Destroy(visualizer);
+        Destroy(gameObject);
     }
 }

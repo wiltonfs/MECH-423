@@ -6,16 +6,19 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu: MonoBehaviour
 {
+    public TextMeshProUGUI selectText;
     private TextMeshProUGUI displayText;
     private SerialScanner SerialScanner;
     private string baseText = "";
     private int dotCount = 0;
     private bool threatTriggered = false;
 
-    private float slowType = 0.06f;
-    private float fastType = 0.03f;
+    private float slowType = 0.03f;
+    private float fastType = 0.01f;
 
-    private Coroutine visualCoroutine; // Store reference to the visual coroutine so we can stop it when we detect a threat
+    private long baseEncoderCounts;
+    private uint baseFireCommands;
+    private bool arcadeSelected = true;
 
     void Start()
     {
@@ -23,15 +26,57 @@ public class MainMenu: MonoBehaviour
         baseText = displayText.text;
         displayText.text = ""; // Clear initial text
         SerialScanner = FindObjectOfType<SerialScanner>();
-        visualCoroutine = StartCoroutine(TypeText(baseText)); // Start typing animation
+        StartCoroutine(TypeText(baseText)); // Start typing animation
+        StartCoroutine(HandleSelection()); // Start logging inputs
+
+        baseEncoderCounts = SerialScanner.CummulativeEncoderCounts;
+        baseFireCommands = SerialScanner.RxdLaunchCommands;
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1) && !threatTriggered)
+        bool FirePressed = SerialScanner.RxdLaunchCommands > baseFireCommands;
+        // Handle starting a level
+        if (!threatTriggered)
         {
-            threatTriggered = true;
-            StartCoroutine(HandleThreatAndLoadGame());
+            if (Input.GetKeyDown(KeyCode.Alpha1) || (arcadeSelected && (Input.GetKeyDown(KeyCode.Space) || FirePressed)))
+            {
+                threatTriggered = true;
+                StopAllCoroutines();
+                StartCoroutine(StartArcade());
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha2) || (!arcadeSelected && (Input.GetKeyDown(KeyCode.Space) || FirePressed)))
+            {
+                threatTriggered = true;
+                StopAllCoroutines();
+                StartCoroutine(StartChallenge());
+            }
+        }
+        
+    }
+
+    private IEnumerator HandleSelection()
+    {
+        while (true)
+        {
+            // If dial rotates, change the selection
+            if (Mathf.Abs(SerialScanner.CummulativeEncoderCounts - baseEncoderCounts) > 2 || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                arcadeSelected = !arcadeSelected;
+                baseEncoderCounts = SerialScanner.CummulativeEncoderCounts;
+            }
+
+            // Display selection
+            if (arcadeSelected)
+            {
+                selectText.text = "-> Arcade Mode <-\t-- Challenge Mode --";
+            }
+            else
+            {
+                selectText.text = "-- Arcade Mode --\t-> Challenge Mode <-";
+            }
+            yield return null;
         }
     }
     private IEnumerator TypeText(string text)
@@ -51,7 +96,7 @@ public class MainMenu: MonoBehaviour
             }
             if (c == '>') inTag = false; // Detect the end of a tag
         }
-        visualCoroutine = StartCoroutine(AnimateDots()); // Start dots animation after typing finishes
+        StartCoroutine(AnimateDots()); // Start dots animation after typing finishes
     }
 
     private IEnumerator AnimateDots()
@@ -63,14 +108,10 @@ public class MainMenu: MonoBehaviour
             yield return new WaitForSeconds(1.2f); // Adjust timing
         }
     }
-    private IEnumerator HandleThreatAndLoadGame()
+    private IEnumerator StartArcade()
     {
-        if (visualCoroutine != null)
-        {
-            StopCoroutine(visualCoroutine); // Stop the current animation
-        }
         // Load modules
-        string additionalText = "\n<color=red>Threat detected.</color>\nStarting radar: ";
+        string additionalText = "\n<color=orange>Threat detected.</color>\nStarting radar: ";
         bool inTag = false; // Track if we're inside a tag
         foreach (char c in additionalText)
         {
@@ -86,19 +127,97 @@ public class MainMenu: MonoBehaviour
             }
             if (c == '>') inTag = false; // Detect the end of a tag
         }
-        yield return new WaitForSeconds(Random.Range(0.5f, 1.5f));
-        additionalText = "SUCCESS\nWarming launcher lines: ";
+        yield return new WaitForSeconds(Random.Range(0.2f, 0.5f));
+        additionalText = "<color=green>SUCCESS</color>\nWarming launcher lines: ";
+        inTag = false; // Track if we're inside a tag
         foreach (char c in additionalText)
         {
-            displayText.text += c;
-            yield return new WaitForSeconds(Random.Range(fastType, slowType));
+            if (c == '<') inTag = true;  // Detect the start of a tag
+            if (!inTag)
+            {
+                displayText.text += c;
+                yield return new WaitForSeconds(Random.Range(fastType, slowType)); // Add delay outside of tags
+            }
+            else
+            {
+                displayText.text += c; // Add tag characters immediately
+            }
+            if (c == '>') inTag = false; // Detect the end of a tag
         }
-        yield return new WaitForSeconds(Random.Range(0.5f, 1.5f));
-        additionalText = "INITIATED\nPrepare for control............";
+        yield return new WaitForSeconds(Random.Range(0.2f, 0.5f));
+        additionalText = "<color=green>INITIATED</color>\nPrepare for control...";
+        inTag = false; // Track if we're inside a tag
         foreach (char c in additionalText)
         {
-            displayText.text += c;
-            yield return new WaitForSeconds(Random.Range(fastType, slowType));
+            if (c == '<') inTag = true;  // Detect the start of a tag
+            if (!inTag)
+            {
+                displayText.text += c;
+                yield return new WaitForSeconds(Random.Range(fastType, slowType)); // Add delay outside of tags
+            }
+            else
+            {
+                displayText.text += c; // Add tag characters immediately
+            }
+            if (c == '>') inTag = false; // Detect the end of a tag
+        }
+
+        // Start game
+        SceneManager.LoadScene("ArcadeGame");
+    }
+
+    private IEnumerator StartChallenge()
+    {
+        // Load modules
+        string additionalText = "\n<color=red>Critical threat detected.</color>\nStarting autopilot: ";
+        bool inTag = false; // Track if we're inside a tag
+        foreach (char c in additionalText)
+        {
+            if (c == '<') inTag = true;  // Detect the start of a tag
+            if (!inTag)
+            {
+                displayText.text += c;
+                yield return new WaitForSeconds(Random.Range(fastType, slowType)); // Add delay outside of tags
+            }
+            else
+            {
+                displayText.text += c; // Add tag characters immediately
+            }
+            if (c == '>') inTag = false; // Detect the end of a tag
+        }
+        yield return new WaitForSeconds(Random.Range(0.2f, 0.5f));
+        additionalText = "<color=red>FAILED</color>\nArming warheads: ";
+        inTag = false; // Track if we're inside a tag
+        foreach (char c in additionalText)
+        {
+            if (c == '<') inTag = true;  // Detect the start of a tag
+            if (!inTag)
+            {
+                displayText.text += c;
+                yield return new WaitForSeconds(Random.Range(fastType, slowType)); // Add delay outside of tags
+            }
+            else
+            {
+                displayText.text += c; // Add tag characters immediately
+            }
+            if (c == '>') inTag = false; // Detect the end of a tag
+        }
+        yield return new WaitForSeconds(Random.Range(0.2f, 0.5f));
+        additionalText = "<color=green>INITIATED</color>\nManual control required\nPrepare for control...";
+        inTag = false; // Track if we're inside a tag
+        foreach (char c in additionalText)
+        {
+            if (c == '<') inTag = true;  // Detect the start of a tag
+            if (!inTag)
+            {
+                displayText.text += c;
+                yield return new WaitForSeconds(Random.Range(fastType, slowType)); // Add delay outside of tags
+            }
+            else
+            {
+                displayText.text += c; // Add tag characters immediately
+            }
+            if (c == '>') inTag = false; // Detect the end of a tag
         }
 
         // Start game

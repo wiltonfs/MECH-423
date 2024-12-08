@@ -126,9 +126,16 @@ public class SerialScanner : MonoBehaviour
 
     public void TransmitScoreToThermalPrinter(int score)
     {
-        data_stream.WriteLine($"Operator: {PlayerName}");
-        data_stream.WriteLine($"Final Score: {score}");
-        data_stream.WriteLine("Thanks for playing!");
+        if (data_stream.IsOpen)
+        {
+            data_stream.WriteLine("----------------------------------------");
+            data_stream.WriteLine($"Arcade Gamemode");
+            data_stream.WriteLine($"Operator: {PlayerName}");
+            data_stream.WriteLine($"Final Score: {score}");
+            data_stream.WriteLine("Thanks for playing!");
+            data_stream.WriteLine("----------------------------------------");
+            for (int i = 0; i < 3; i++) { data_stream.WriteLine("");}
+        }
     }
 
     public bool IsBoardConnected()
