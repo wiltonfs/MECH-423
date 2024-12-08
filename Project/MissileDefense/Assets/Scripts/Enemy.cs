@@ -1,11 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing.Text;
 using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
 
     private Rigidbody2D rb;
+    
+    // Visual parameters
+    public float radarSpeed;
+    public GameObject visualPrefab;
+    private GameObject visualizer;
 
     // Visible Enemy Parameters
     public int ID = 0;
@@ -22,6 +28,10 @@ public class Enemy : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         rb.velocity = transform.up * speed;
+
+        visualizer = Instantiate(visualPrefab, transform.position, Quaternion.identity);
+        visualizer.name = "Visualizer_" + ID;
+
     }
 
     // Update is called once per frame
@@ -32,6 +42,20 @@ public class Enemy : MonoBehaviour
         {
             FindObjectOfType<ScoreManager>().GameOver();
         }
+
+        // If the radar intersects me within a threshold, update my visual representation's location to my current location
+        float radarAngle = (Time.time * 2f * Mathf.PI * radarSpeed) - 0f * Mathf.PI;
+        float intersectionThreshold_degrees = 5f;
+
+        // Calculate angle towards the center
+        float angleToCenter = Mathf.Atan2(transform.position.y, transform.position.x);
+
+        // Check if within radar intersection threshold
+        if (Mathf.Abs(Mathf.DeltaAngle(Mathf.Rad2Deg * radarAngle, Mathf.Rad2Deg * angleToCenter)) < intersectionThreshold_degrees)
+        {
+            visualizer.transform.position = transform.position;
+            visualizer.GetComponent<EnemyViz>().Pulse();
+        }
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -40,6 +64,7 @@ public class Enemy : MonoBehaviour
         {
             FindObjectOfType<MissileLauncher>().DeregisterEnemy(this);
             FindObjectOfType<ScoreManager>().DestroyEnemyGetPoints(myPoints);
+            Destroy(visualizer);
             Destroy(gameObject);
         }
     }

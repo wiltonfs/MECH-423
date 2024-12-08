@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Radar
-  m_Shader: {fileID: -6465566751694194690, guid: 1edd8ce58c7ef7948ab42950c6d25825, type: 3}
+  m_Name: Grid
+  m_Shader: {fileID: -6465566751694194690, guid: c151e22a130cedf42baf7fbfafd1fb4d, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -41,16 +41,19 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BUILTIN_QueueControl: 0
-    - _BUILTIN_QueueOffset: 0
-    - _CircleFraction: 0.3
-    - _RadarSpeed: 1
-    - _RadarSpeed_Hz: 0.5
+    - _CircleFraction: 0.25
+    - _GridWidth: 0.1
+    - _MajorCount: 10
+    - _MajorGridWidth: 0.01
+    - _MinorCount: 40
+    - _MinorGridWidth: 0.1
+    - _RadarSpeed_Hz: 0.75
     - _RadarWidth: 0.01
+    - _Radius: 0.0625
     m_Colors:
     - _RadarColor: {r: 0.11012388, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []
---- !u!114 &7895519326327006417
+--- !u!114 &4001206382644804621
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
@@ -63,16 +66,3 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   version: 7
---- !u!114 &8992177427033139342
-MonoBehaviour:
-  m_ObjectHideFlags: 11
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 639247ca83abc874e893eb93af2b5e44, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 0

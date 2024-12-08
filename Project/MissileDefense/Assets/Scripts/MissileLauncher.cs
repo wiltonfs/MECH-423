@@ -60,7 +60,7 @@ public class MissileLauncher : MonoBehaviour
     {
         // Configure aiming line
         float opacity = 1f;
-        Color aimColor = new Color(1f, 0f, 0f, opacity);
+        Color aimColor = new Color(1f, 1f, 1f, opacity);
         aimLine = gameObject.GetComponent<LineRenderer>();
         aimLine.startColor = aimColor;
         aimLine.endColor = aimColor;

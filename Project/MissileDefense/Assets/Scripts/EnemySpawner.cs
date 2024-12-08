@@ -44,7 +44,7 @@ public class EnemySpawner : MonoBehaviour
             GameObject newEnemy = Instantiate(enemyPrefab, spawnPosition, spawnRotation);
             // Set the parameters
             newEnemy.GetComponent<Enemy>().ID = nextID;
-            newEnemy.GetComponent<Enemy>().speed = 4f;
+            newEnemy.GetComponent<Enemy>().speed = 2f;
             newEnemy.GetComponent<Enemy>().emissivity = Random.Range(0.5f, 1f);
             newEnemy.GetComponent<Enemy>().radarCrossSection = Random.Range(.2f, 2f);
             // Add to the list
