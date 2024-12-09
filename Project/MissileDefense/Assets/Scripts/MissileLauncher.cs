@@ -12,12 +12,6 @@ public class MissileLauncher : MonoBehaviour
     // Missiles
     public GameObject missilePrefab;
 
-    // Enemies
-    public GameObject enemiesListParent;
-    public GameObject enemyUIPrefab;
-    private List<Enemy> enemies = new List<Enemy>();
-    private List<EnemyDescription> descriptions = new List<EnemyDescription>();
-
     // Aiming Parameters
     public float reloadTime = 0.5f;
     public float aimLineThickness = 2f;
@@ -32,24 +26,6 @@ public class MissileLauncher : MonoBehaviour
     public float EncoderMultiplier;
 
     private float reloadTimer;
-
-    public void TrackNewEnemy(Enemy enemy)
-    {
-        enemies.Add(enemy);
-        GameObject newEnemyUI = Instantiate(enemyUIPrefab, enemiesListParent.transform);
-        descriptions.Add(newEnemyUI.GetComponent<EnemyDescription>());
-    }
-
-    public void DeregisterEnemy(Enemy enemy)
-    {
-        int i = enemies.IndexOf(enemy);
-        if (i >= 0)
-        {
-            enemies.RemoveAt(i);
-            Destroy(descriptions[i].gameObject);
-            descriptions.RemoveAt(i);
-        }
-    }
 
     public void LaunchMissile()
     {
@@ -85,7 +61,6 @@ public class MissileLauncher : MonoBehaviour
     void Update()
     {
         reloadTimer -= Time.deltaTime;
-        UpdateMissileDescriptions();
         UpdateAimLine();
 
         // Fire button
@@ -102,24 +77,6 @@ public class MissileLauncher : MonoBehaviour
         else
         {
             aimSpeed = aimSpeedCoarse;
-        }
-
-
-        
-
-        // Update selected city
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            activeCity = 0;
-        } else if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            activeCity = 1;
-        } else if (Input.GetKeyDown(KeyCode.Alpha3))
-        {
-            activeCity = 2;
-        } else if (Input.GetKeyDown(KeyCode.Alpha4))
-        {
-            activeCity = 3;
         }
 
         // Update aim line
@@ -145,15 +102,4 @@ public class MissileLauncher : MonoBehaviour
         aimLine.SetPosition(0, startPoint);
         aimLine.SetPosition(1, endPoint);
     }
-
-    private void UpdateMissileDescriptions()
-    {
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            Enemy enemy = enemies[i];
-            int distance = (int) Mathf.Abs(enemy.transform.position.magnitude);
-            descriptions[i].UpdateDescription(enemy.ID, distance, (int)enemy.speed, enemy.radarCrossSection, enemy.emissivity);
-        }
-    }
-
 }

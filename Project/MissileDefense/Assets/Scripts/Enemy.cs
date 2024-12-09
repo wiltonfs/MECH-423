@@ -13,15 +13,11 @@ public class Enemy : MonoBehaviour
     public GameObject visualPrefab;
     private GameObject visualizer;
 
-    // Visible Enemy Parameters
-    public int ID = 0;
     public float speed = 20f;
-    public float radarCrossSection; // square meters
-    public float emissivity; // dimensionless
-
-    // Secret Enemy Parameters
     public int myPoints = 10;
-    public int level = 1;
+
+    // Tracks if in arcade game mode
+    public bool amArcadeMissile = true;
 
     // Start is called before the first frame update
     void Start()
@@ -30,8 +26,6 @@ public class Enemy : MonoBehaviour
         rb.velocity = transform.up * speed;
 
         visualizer = Instantiate(visualPrefab, transform.position, Quaternion.identity);
-        visualizer.name = "Visualizer_" + ID;
-
     }
 
     // Update is called once per frame
@@ -40,7 +34,13 @@ public class Enemy : MonoBehaviour
         // If I get close enough to the center, game over!
         if (Vector3.Distance(transform.position, Vector3.zero) < 4f)
         {
-            FindObjectOfType<ScoreManager>().GameOver();
+            if (amArcadeMissile)
+            {
+                FindObjectOfType<ScoreManager>().GameOver();
+            } else
+            {
+                FindObjectOfType<EnemySpawner>().MissileReachedTheCenter();
+            }
         }
 
         // If the radar intersects me within a threshold, update my visual representation's location to my current location
@@ -62,8 +62,15 @@ public class Enemy : MonoBehaviour
     {
         if (collision.GetComponent<Missile>() != null)
         {
-            FindObjectOfType<MissileLauncher>().DeregisterEnemy(this);
-            FindObjectOfType<ScoreManager>().DestroyEnemyGetPoints(myPoints);
+            if (amArcadeMissile)
+            {
+                FindObjectOfType<ScoreManager>().DestroyEnemyGetPoints(myPoints);
+            } 
+            else
+            {
+                FindObjectOfType<EnemySpawner>().waitingForPlayerToShootMissile = false;
+            }
+
             // Consume missile
             Destroy(collision.gameObject);
             DestroyEnemy();
