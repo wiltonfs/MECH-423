@@ -23,8 +23,8 @@ MonoBehaviour:
   BS3_HeavyMass: 1
   isCruiseMissile: 0
   usesModule2: 1
-  Slider1: 63
-  Slider2: 145
+  Slider1: 203
+  Slider2: 76
   FourState_1: 1
   FourState_0: 1
   usesModule3: 1
