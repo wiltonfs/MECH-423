@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b7c2f8f35fb7b547960a0ff881352ea, type: 3}
+  m_Name: Enemy_33
+  m_EditorClassIdentifier: 
+  enemyName: Missile 33
+  enemyID: 33
+  isAmerican: 0
+  RadarCrossSection: 471
+  RadarCrossSectionSTD: 8
+  Emissivity: 615
+  EmissivitySTD: 11
+  BS2_IronRich: 0
+  BS3_HeavyMass: 1
+  isCruiseMissile: 1
+  usesModule2: 1
+  Slider1: 196
+  Slider2: 215
+  FourState_1: 1
+  FourState_0: 0
+  usesModule3: 1
+  StateMachine: 21
