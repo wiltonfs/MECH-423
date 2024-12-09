@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Drawing;
+using UnityEngine.SocialPlatforms.Impl;
 public enum ExpectedNextRead
 {
     START, COMM, DATA1, DATA2, ESCAPE
@@ -134,7 +135,35 @@ public class SerialScanner : MonoBehaviour
             data_stream.WriteLine($"Final Score: {score}");
             data_stream.WriteLine("Thanks for playing!");
             data_stream.WriteLine("----------------------------------------");
-            for (int i = 0; i < 3; i++) { data_stream.WriteLine("");}
+            ThermalPrinter_FinishParagraph();
+        }
+    }
+
+    public void StartChallengeReceipt()
+    {
+        if (data_stream.IsOpen)
+        {
+            data_stream.WriteLine("----------------------------------------");
+            data_stream.WriteLine($"Challenge Gamemode");
+            data_stream.WriteLine($"Operator: {PlayerName}");
+            ThermalPrinter_FinishParagraph(2);
+        }
+    }
+
+    public void ThermalPrinter_FinishParagraph(int spacerLines = 3)
+    {
+        if (data_stream.IsOpen)
+        {
+            for (int i = 0; i < spacerLines; i++) { data_stream.WriteLine(""); }
+        }
+    }
+
+    public void ThermalPrinter_WriteLine(string line)
+    {
+        Debug.Log("Thermal Printer: " + line);
+        if (data_stream.IsOpen)
+        {
+            data_stream.WriteLine(line);
         }
     }
 

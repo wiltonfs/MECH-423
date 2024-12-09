@@ -31,9 +31,23 @@ public class MissileLauncher : MonoBehaviour
     {
         if (reloadTimer < 0)
         {
-            GameObject missile = Instantiate(missilePrefab, cities[activeCity].position, Quaternion.Euler(0, 0, aimRotationDegrees));
-            missile.GetComponent<Missile>().speed = 20f;
+            Missile missile = Instantiate(missilePrefab, cities[activeCity].position, Quaternion.Euler(0, 0, aimRotationDegrees)).GetComponent<Missile>();
+            missile.speed = 20f;
             reloadTimer = reloadTime;
+
+            missile.BS1_Coriolis = SerialScanner.BatterySelect1;
+            missile.BS2_IronRich = SerialScanner.BatterySelect2;
+            missile.BS3_HeavyMass = SerialScanner.BatterySelect3;
+            missile.isCruiseMissile = SerialScanner.CruiseMissileSwitch;
+
+            missile.usesModule2 = SerialScanner.Module2Enabled;
+            missile.Slider1 = SerialScanner.Slider1;
+            missile.Slider2 = SerialScanner.Slider2;
+            missile.FourState_1 = SerialScanner.ThermalCorrectionByte1;
+            missile.FourState_0 = SerialScanner.ThermalCorrectionByte0;
+
+            missile.usesModule3 = SerialScanner.Module3Enabled;
+            missile.StateMachine = SerialScanner.StateMachine;
         }
     }
 

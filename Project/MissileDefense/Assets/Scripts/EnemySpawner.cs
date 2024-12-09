@@ -15,6 +15,7 @@ public class EnemySpawner : MonoBehaviour
     public TextMeshProUGUI EnemyDisplayText;
     public TextMeshProUGUI WaveDisplay;
     public TextMeshProUGUI TimerDisplay;
+    public TextMeshProUGUI ScoreDisplay;
     public ushort[] waveMissileLevels;
 
     public bool waitingForPlayerToShootMissile;
@@ -25,6 +26,7 @@ public class EnemySpawner : MonoBehaviour
     public EnemyData CurrentEnemy = null;
 
     private float startTime;
+    private uint totalScore = 0;
     // Start is called before the first frame update
     void Start()
     {
@@ -35,6 +37,7 @@ public class EnemySpawner : MonoBehaviour
         WaveDisplay.text = $"Wave 1/{waveMissileLevels.Length}";
 
         StartCoroutine(ChallengeSpawning());
+        SerialScanner.StartChallengeReceipt();
     }
 
     // Update is called once per frame
@@ -44,6 +47,8 @@ public class EnemySpawner : MonoBehaviour
         int minutes = Mathf.FloorToInt(time / 60);
         int seconds = Mathf.FloorToInt(time % 60);
         TimerDisplay.text = $"{minutes:00}:{seconds:00}";
+
+        ScoreDisplay.text = $"Score: {totalScore}";
     }
 
     private float RandomParam(uint Param, uint STD)
@@ -108,6 +113,151 @@ public class EnemySpawner : MonoBehaviour
 
         // Player has won!
         Debug.Log("Player wins!");
+    }
+
+    public void PlayerShotMissile(Missile missile)
+    {
+        uint score = 0;
+        uint addedPoints = 0;
+        // TODO: Check if player was correct or not
+        SerialScanner.ThermalPrinter_WriteLine("Missile shot down");
+        SerialScanner.ThermalPrinter_WriteLine($"{CurrentEnemy.name}");
+
+        SerialScanner.ThermalPrinter_WriteLine($"   Module 1:");
+        if (missile.BS1_Coriolis == CurrentEnemy.isAmerican)
+        {
+            addedPoints = 5;
+            SerialScanner.ThermalPrinter_WriteLine($"- Coriolis: +{addedPoints}");
+            score += addedPoints;
+        } else {
+            SerialScanner.ThermalPrinter_WriteLine($"- Coriolis set wrong: +0");
+        }
+        
+
+        if (missile.BS2_IronRich == CurrentEnemy.BS2_IronRich)
+        {
+            addedPoints = 5;
+            SerialScanner.ThermalPrinter_WriteLine($"- Gyroscope: +{addedPoints}");
+            score += addedPoints;
+        }
+        else
+        {
+            SerialScanner.ThermalPrinter_WriteLine($"- Gyroscope set wrong: +0");
+        }
+        
+
+        if (missile.BS3_HeavyMass == CurrentEnemy.BS3_HeavyMass)
+        {
+            addedPoints = 5;
+            SerialScanner.ThermalPrinter_WriteLine($"- Boost: +{addedPoints}");
+            score += addedPoints;
+        }
+        else
+        {
+            SerialScanner.ThermalPrinter_WriteLine($"- Boost set wrong: +0");
+        }
+        
+
+        if (missile.isCruiseMissile == CurrentEnemy.isCruiseMissile)
+        {
+            addedPoints = 5;
+            SerialScanner.ThermalPrinter_WriteLine($"- Cruise: +{addedPoints}");
+            score += addedPoints;
+        }
+        else
+        {
+            SerialScanner.ThermalPrinter_WriteLine($"- Cruise set wrong: +0");
+        }
+        
+
+        SerialScanner.ThermalPrinter_WriteLine($"   Module 2:");
+        if (CurrentEnemy.usesModule2)
+        {
+            uint SLIDER_THRESHOLD = 50;
+            if (Mathf.Abs(missile.Slider1 - CurrentEnemy.Slider1) <= SLIDER_THRESHOLD)
+            {
+                addedPoints = 15;
+                SerialScanner.ThermalPrinter_WriteLine($"- QF: +{addedPoints}");
+                score += addedPoints;
+            }
+            else
+            {
+                SerialScanner.ThermalPrinter_WriteLine($"- QF set wrong: +0");
+            }
+
+            if (Mathf.Abs(missile.Slider2 - CurrentEnemy.Slider2) <= SLIDER_THRESHOLD)
+            {
+                addedPoints = 15;
+                SerialScanner.ThermalPrinter_WriteLine($"- AF: +{addedPoints}");
+                score += addedPoints;
+            }
+            else
+            {
+                SerialScanner.ThermalPrinter_WriteLine($"- AF set wrong: +0");
+            }
+
+            if (missile.FourState_0 == CurrentEnemy.FourState_0 && missile.FourState_1 == CurrentEnemy.FourState_1)
+            {
+                addedPoints = 10;
+                SerialScanner.ThermalPrinter_WriteLine($"- Thermal: +{addedPoints}");
+                score += addedPoints;
+            }
+            else
+            {
+                SerialScanner.ThermalPrinter_WriteLine($"- Thermal set wrong: +0");
+            }
+
+        }
+        else
+        {
+            if (missile.usesModule2)
+            {
+                SerialScanner.ThermalPrinter_WriteLine($"- Mod 2 should not have been enabled: +0");
+            }
+            else
+            {
+                addedPoints = 40;
+                SerialScanner.ThermalPrinter_WriteLine($"- Mod 2 correctly disabled: +{addedPoints}");
+                score += addedPoints;
+            }
+        }
+
+        SerialScanner.ThermalPrinter_WriteLine($"   Module 3:");
+        if (CurrentEnemy.usesModule3)
+        {
+            if (missile.StateMachine == CurrentEnemy.StateMachine)
+            {
+                addedPoints = 40;
+                SerialScanner.ThermalPrinter_WriteLine($"- Warhead state machine: +{addedPoints}");
+                score += addedPoints;
+            }
+            else
+            {
+                SerialScanner.ThermalPrinter_WriteLine($"- Warhead state machine set wrong: +0");
+            }
+
+        }
+        else
+        {
+            if (missile.usesModule3)
+            {
+                SerialScanner.ThermalPrinter_WriteLine($"- Mod 3 should not have been enabled: +0");
+            }
+            else
+            {
+                addedPoints = 40;
+                SerialScanner.ThermalPrinter_WriteLine($"- Mod 3 correctly disabled: +{addedPoints}");
+                score += addedPoints;
+            }
+        }
+
+        SerialScanner.ThermalPrinter_WriteLine("");
+        SerialScanner.ThermalPrinter_WriteLine($"Total missile score: {score}/100");
+        SerialScanner.ThermalPrinter_WriteLine("");
+
+
+        totalScore += score;
+        waitingForPlayerToShootMissile = false;
     }
 
     public void MissileReachedTheCenter()

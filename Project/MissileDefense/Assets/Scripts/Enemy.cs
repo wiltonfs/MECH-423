@@ -68,7 +68,7 @@ public class Enemy : MonoBehaviour
             } 
             else
             {
-                FindObjectOfType<EnemySpawner>().waitingForPlayerToShootMissile = false;
+                FindObjectOfType<EnemySpawner>().PlayerShotMissile(collision.GetComponent<Missile>());
             }
 
             // Consume missile
