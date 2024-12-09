@@ -93,6 +93,11 @@ public class SerialScanner : MonoBehaviour
     public bool Module3Enabled = false;
     public byte StateMachine = 0;
 
+    [Header("High Scores")]
+    public uint HighScore_Arcade = 100;
+    public uint HighScore_Challenge = 250;
+    public float BestTime_Challenge = Mathf.Infinity;
+
 
     // Serial reading
     SerialPort data_stream;
@@ -125,16 +130,24 @@ public class SerialScanner : MonoBehaviour
         ReadSerial();
     }
 
-    public void TransmitScoreToThermalPrinter(int score)
+    private void HorizontalLine()
     {
         if (data_stream.IsOpen)
         {
             data_stream.WriteLine("----------------------------------------");
+        }
+    }
+
+    public void TransmitScoreToThermalPrinter(int score)
+    {
+        if (data_stream.IsOpen)
+        {
+            HorizontalLine();
             data_stream.WriteLine($"Arcade Gamemode");
             data_stream.WriteLine($"Operator: {PlayerName}");
             data_stream.WriteLine($"Final Score: {score}");
             data_stream.WriteLine("Thanks for playing!");
-            data_stream.WriteLine("----------------------------------------");
+            HorizontalLine();
             ThermalPrinter_FinishParagraph();
         }
     }
@@ -143,10 +156,20 @@ public class SerialScanner : MonoBehaviour
     {
         if (data_stream.IsOpen)
         {
-            data_stream.WriteLine("----------------------------------------");
+            HorizontalLine();
             data_stream.WriteLine($"Challenge Gamemode");
             data_stream.WriteLine($"Operator: {PlayerName}");
             ThermalPrinter_FinishParagraph(2);
+        }
+    }
+
+    public void FinishChallengeReceipt()
+    {
+        if (data_stream.IsOpen)
+        {
+            data_stream.WriteLine("Thanks for playing!");
+            HorizontalLine();
+            ThermalPrinter_FinishParagraph();
         }
     }
 

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b7c2f8f35fb7b547960a0ff881352ea, type: 3}
   m_Name: Enemy_10
   m_EditorClassIdentifier: 
-  enemyName: Missile 10
+  enemyName: Hornet
   enemyID: 10
   isAmerican: 1
   RadarCrossSection: 310

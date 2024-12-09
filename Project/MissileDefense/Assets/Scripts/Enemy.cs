@@ -37,9 +37,11 @@ public class Enemy : MonoBehaviour
             if (amArcadeMissile)
             {
                 FindObjectOfType<ScoreManager>().GameOver();
+                DestroyEnemy();
             } else
             {
                 FindObjectOfType<EnemySpawner>().MissileReachedTheCenter();
+                DestroyEnemy();
             }
         }
 

@@ -5,10 +5,6 @@ using UnityEngine;
 
 public class MissileLauncher : MonoBehaviour
 {
-    // Cities
-    public Transform[] cities = new Transform[4];
-    private int activeCity = 0;
-
     // Missiles
     public GameObject missilePrefab;
 
@@ -31,7 +27,7 @@ public class MissileLauncher : MonoBehaviour
     {
         if (reloadTimer < 0)
         {
-            Missile missile = Instantiate(missilePrefab, cities[activeCity].position, Quaternion.Euler(0, 0, aimRotationDegrees)).GetComponent<Missile>();
+            Missile missile = Instantiate(missilePrefab, new Vector3(0,0,0), Quaternion.Euler(0, 0, aimRotationDegrees)).GetComponent<Missile>();
             missile.speed = 20f;
             reloadTimer = reloadTime;
 
@@ -110,7 +106,7 @@ public class MissileLauncher : MonoBehaviour
     private void UpdateAimLine()
     {
         Vector3 direction = Quaternion.Euler(0, 0, aimRotationDegrees) * Vector3.right;
-        Vector3 startPoint = cities[activeCity].position;
+        Vector3 startPoint = new Vector3(0, 0, 0);
         Vector3 endPoint = startPoint + direction.normalized * aimLineLength;
         aimLine.positionCount = 2;
         aimLine.SetPosition(0, startPoint);

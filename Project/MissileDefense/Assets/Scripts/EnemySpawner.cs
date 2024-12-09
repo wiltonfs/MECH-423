@@ -4,27 +4,39 @@ using System.Reflection;
 using System.Text;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class EnemySpawner : MonoBehaviour
 {
+    
     public GameObject enemyPrefab;
 
+    [Header("Game Progression")]
+    public float enemyStartingSpeed = 0.4f;
     public EnemyData[] Enemies_LevelOne;
     public EnemyData[] Enemies_LevelTwo;
     public EnemyData[] Enemies_LevelThree;
+    public ushort[] waveMissileLevels;
+
+    [Header("Game UI")]
     public TextMeshProUGUI EnemyDisplayText;
     public TextMeshProUGUI WaveDisplay;
     public TextMeshProUGUI TimerDisplay;
     public TextMeshProUGUI ScoreDisplay;
-    public ushort[] waveMissileLevels;
 
+    [Header("End of Round")]
+    public GameObject EndOfRound_VisualCollection;
+    public TextMeshProUGUI EndOfRound_ScoreDisplay;
+    public TextMeshProUGUI EndOfRound_Instructions;
+
+
+    [Header("Hands Off")]
     public bool waitingForPlayerToShootMissile;
-
+    public EnemyData CurrentEnemy = null;
 
     private MissileLauncher MissileLauncher;
     private SerialScanner SerialScanner;
-    public EnemyData CurrentEnemy = null;
-
+    
     private float startTime;
     private uint totalScore = 0;
     // Start is called before the first frame update
@@ -33,11 +45,15 @@ public class EnemySpawner : MonoBehaviour
         MissileLauncher = FindObjectOfType<MissileLauncher>();
         SerialScanner = FindObjectOfType<SerialScanner>();
 
+        EndOfRound_VisualCollection.gameObject.SetActive(false);
+
         startTime = Time.time;
         WaveDisplay.text = $"Wave 1/{waveMissileLevels.Length}";
 
         StartCoroutine(ChallengeSpawning());
         SerialScanner.StartChallengeReceipt();
+
+
     }
 
     // Update is called once per frame
@@ -69,7 +85,83 @@ public class EnemySpawner : MonoBehaviour
     }
 
 
+    private void EndOfRound()
+    {
+        uint finalScore = totalScore;
+        float totalTime = Time.time - startTime;
 
+        int minutes = Mathf.FloorToInt(totalTime / 60);
+        int seconds = Mathf.FloorToInt(totalTime % 60);
+        TimerDisplay.text = $"{minutes:00}:{seconds:00}";
+
+        EndOfRound_ScoreDisplay.text = $"Final score: {finalScore}\nTime: {minutes:00}:{seconds:00}";
+
+        SerialScanner.ThermalPrinter_WriteLine("");
+        SerialScanner.ThermalPrinter_WriteLine("Challenge Complete");
+        SerialScanner.ThermalPrinter_WriteLine($"Final score: {finalScore}");
+        SerialScanner.ThermalPrinter_WriteLine($"Time: {minutes:00}:{seconds:00}:");
+
+        if (finalScore >= SerialScanner.HighScore_Challenge)
+        {
+            EndOfRound_ScoreDisplay.text += $"\nNew high score!";
+            SerialScanner.ThermalPrinter_WriteLine("New high score!");
+            SerialScanner.HighScore_Challenge = finalScore;
+        }
+
+        if (SerialScanner.BestTime_Challenge >= totalTime && finalScore >= 400)
+        {
+            EndOfRound_ScoreDisplay.text += $"\nNew best time!";
+            SerialScanner.ThermalPrinter_WriteLine("New best time!");
+            SerialScanner.BestTime_Challenge = totalTime;
+        }
+
+        SerialScanner.FinishChallengeReceipt();
+        EndOfRound_Instructions.text = "";
+
+        EndOfRound_VisualCollection.gameObject.SetActive(true);
+        StartCoroutine(HandleGameOverFlow_Coroutine());
+    }
+
+    private IEnumerator HandleGameOverFlow_Coroutine()
+    {
+        yield return new WaitForSeconds(0.5f);
+        uint baseFireCommands = SerialScanner.RxdLaunchCommands;
+        long baseEncoder = SerialScanner.CummulativeEncoderCounts;
+        bool mainMenu = true;
+        while (true)
+        {
+            // If dial rotates, change the selection
+            if (Mathf.Abs(SerialScanner.CummulativeEncoderCounts - baseEncoder) > 2 || Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                mainMenu = !mainMenu;
+                baseEncoder = SerialScanner.CummulativeEncoderCounts;
+            }
+
+            // Display selection
+            if (mainMenu)
+            {
+                EndOfRound_Instructions.text = "-> Main Menu <-\n-- Play Again --";
+            }
+            else
+            {
+                EndOfRound_Instructions.text = "-- Main Menu --\n-> Play Again <-";
+            }
+
+            // If fire button pressed, load selection
+            if (SerialScanner.RxdLaunchCommands > baseFireCommands || Input.GetKeyDown(KeyCode.Space))
+            {
+                if (mainMenu)
+                {
+                    SceneManager.LoadScene("MainMenu");
+                }
+                else
+                {
+                    SceneManager.LoadScene("Game");
+                }
+            }
+            yield return null;
+        }
+    }
 
 
 
@@ -86,12 +178,14 @@ public class EnemySpawner : MonoBehaviour
     private IEnumerator ChallengeSpawning()
     {
         UpdateEnemyDisplayedText();
-        yield return new WaitForSeconds(R(5f));
+        yield return new WaitForSeconds(R(1f));
         Shuffle(waveMissileLevels);
 
         for (int i = 0; i < waveMissileLevels.Length; i++)
         {
             WaveDisplay.text = $"Wave {i+1}/{waveMissileLevels.Length}";
+
+            yield return new WaitForSeconds(R(3f));
 
             SpawnEnemy(waveMissileLevels[i]);
 
@@ -101,18 +195,14 @@ public class EnemySpawner : MonoBehaviour
                 yield return null;
             }
 
-            // TODO: Check if player was correct or not
-
-
             CurrentEnemy = null;
             UpdateEnemyDisplayedText();
-
-            yield return new WaitForSeconds(R(3f));
         }
 
 
         // Player has won!
         Debug.Log("Player wins!");
+        EndOfRound();
     }
 
     public void PlayerShotMissile(Missile missile)
@@ -173,38 +263,45 @@ public class EnemySpawner : MonoBehaviour
         SerialScanner.ThermalPrinter_WriteLine($"   Module 2:");
         if (CurrentEnemy.usesModule2)
         {
-            uint SLIDER_THRESHOLD = 50;
-            if (Mathf.Abs(missile.Slider1 - CurrentEnemy.Slider1) <= SLIDER_THRESHOLD)
+            if (missile.usesModule2)
             {
-                addedPoints = 15;
-                SerialScanner.ThermalPrinter_WriteLine($"- QF: +{addedPoints}");
-                score += addedPoints;
-            }
-            else
-            {
-                SerialScanner.ThermalPrinter_WriteLine($"- QF set wrong: +0");
-            }
+                uint SLIDER_THRESHOLD = 50;
+                if (Mathf.Abs(missile.Slider1 - CurrentEnemy.Slider1) <= SLIDER_THRESHOLD)
+                {
+                    addedPoints = 15;
+                    SerialScanner.ThermalPrinter_WriteLine($"- QF: +{addedPoints}");
+                    score += addedPoints;
+                }
+                else
+                {
+                    SerialScanner.ThermalPrinter_WriteLine($"- QF set wrong: +0");
+                }
 
-            if (Mathf.Abs(missile.Slider2 - CurrentEnemy.Slider2) <= SLIDER_THRESHOLD)
-            {
-                addedPoints = 15;
-                SerialScanner.ThermalPrinter_WriteLine($"- AF: +{addedPoints}");
-                score += addedPoints;
-            }
-            else
-            {
-                SerialScanner.ThermalPrinter_WriteLine($"- AF set wrong: +0");
-            }
+                if (Mathf.Abs(missile.Slider2 - CurrentEnemy.Slider2) <= SLIDER_THRESHOLD)
+                {
+                    addedPoints = 15;
+                    SerialScanner.ThermalPrinter_WriteLine($"- AF: +{addedPoints}");
+                    score += addedPoints;
+                }
+                else
+                {
+                    SerialScanner.ThermalPrinter_WriteLine($"- AF set wrong: +0");
+                }
 
-            if (missile.FourState_0 == CurrentEnemy.FourState_0 && missile.FourState_1 == CurrentEnemy.FourState_1)
-            {
-                addedPoints = 10;
-                SerialScanner.ThermalPrinter_WriteLine($"- Thermal: +{addedPoints}");
-                score += addedPoints;
+                if (missile.FourState_0 == CurrentEnemy.FourState_0 && missile.FourState_1 == CurrentEnemy.FourState_1)
+                {
+                    addedPoints = 10;
+                    SerialScanner.ThermalPrinter_WriteLine($"- Thermal: +{addedPoints}");
+                    score += addedPoints;
+                }
+                else
+                {
+                    SerialScanner.ThermalPrinter_WriteLine($"- Thermal set wrong: +0");
+                }
             }
             else
             {
-                SerialScanner.ThermalPrinter_WriteLine($"- Thermal set wrong: +0");
+                SerialScanner.ThermalPrinter_WriteLine($"- Mod 2 should not be disabled: +0");
             }
 
         }
@@ -225,18 +322,25 @@ public class EnemySpawner : MonoBehaviour
         SerialScanner.ThermalPrinter_WriteLine($"   Module 3:");
         if (CurrentEnemy.usesModule3)
         {
-            if (missile.StateMachine == CurrentEnemy.StateMachine)
+            if(missile.usesModule3)
             {
-                addedPoints = 40;
-                SerialScanner.ThermalPrinter_WriteLine($"- Warhead state machine: +{addedPoints}");
-                score += addedPoints;
+                if (missile.StateMachine == CurrentEnemy.StateMachine)
+                {
+                    addedPoints = 40;
+                    SerialScanner.ThermalPrinter_WriteLine($"- Warhead state machine: +{addedPoints}");
+                    score += addedPoints;
+                }
+                else
+                {
+                    SerialScanner.ThermalPrinter_WriteLine($"- Warhead state machine set wrong: +0");
+                }
             }
             else
             {
-                SerialScanner.ThermalPrinter_WriteLine($"- Warhead state machine set wrong: +0");
+                SerialScanner.ThermalPrinter_WriteLine($"- Mod 3 should not be disabled: +0");
             }
 
-        }
+    }
         else
         {
             if (missile.usesModule3)
@@ -265,6 +369,7 @@ public class EnemySpawner : MonoBehaviour
         StopAllCoroutines();
         // Show the game over state
         Debug.Log("Player loses!");
+        EndOfRound();
     }
 
     public void SpawnEnemy(int enemyLevel)
@@ -313,7 +418,7 @@ public class EnemySpawner : MonoBehaviour
 
         Quaternion spawnRotation = Quaternion.LookRotation(Vector3.forward, -spawnPosition);
         GameObject newEnemy = Instantiate(enemyPrefab, spawnPosition, spawnRotation);
-        newEnemy.GetComponent<Enemy>().speed = 0.05f;
+        newEnemy.GetComponent<Enemy>().speed = enemyStartingSpeed;
         newEnemy.GetComponent<Enemy>().amArcadeMissile = false;
     }
 

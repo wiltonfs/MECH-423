@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b7c2f8f35fb7b547960a0ff881352ea, type: 3}
   m_Name: Enemy_23
   m_EditorClassIdentifier: 
-  enemyName: Missile 23
+  enemyName: 3M-54 Kalibr
   enemyID: 23
   isAmerican: 0
   RadarCrossSection: 406
