@@ -15,7 +15,7 @@ MonoBehaviour:
   enemyName: Trident II
   enemyID: 31
   isAmerican: 1
-  RadarCrossSection: 448
+  RadarCrossSection: 2448
   RadarCrossSectionSTD: 2
   Emissivity: 639
   EmissivitySTD: 3

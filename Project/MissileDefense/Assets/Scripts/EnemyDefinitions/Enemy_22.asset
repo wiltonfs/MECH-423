@@ -15,7 +15,7 @@ MonoBehaviour:
   enemyName: P-5 Pyatyorka
   enemyID: 22
   isAmerican: 0
-  RadarCrossSection: 345
+  RadarCrossSection: 1345
   RadarCrossSectionSTD: 1
   Emissivity: 793
   EmissivitySTD: 17

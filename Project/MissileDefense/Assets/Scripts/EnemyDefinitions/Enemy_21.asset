@@ -15,7 +15,7 @@ MonoBehaviour:
   enemyName: SSM-N-9 Regulus II
   enemyID: 21
   isAmerican: 1
-  RadarCrossSection: 350
+  RadarCrossSection: 1350
   RadarCrossSectionSTD: 3
   Emissivity: 792
   EmissivitySTD: 19

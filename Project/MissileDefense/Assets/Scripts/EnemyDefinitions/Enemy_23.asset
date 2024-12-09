@@ -15,7 +15,7 @@ MonoBehaviour:
   enemyName: 3M-54 Kalibr
   enemyID: 23
   isAmerican: 0
-  RadarCrossSection: 406
+  RadarCrossSection: 1406
   RadarCrossSectionSTD: 10
   Emissivity: 754
   EmissivitySTD: 5

@@ -15,7 +15,7 @@ MonoBehaviour:
   enemyName: R-36M2 Voyevoda
   enemyID: 32
   isAmerican: 0
-  RadarCrossSection: 509
+  RadarCrossSection: 2509
   RadarCrossSectionSTD: 15
   Emissivity: 696
   EmissivitySTD: 13

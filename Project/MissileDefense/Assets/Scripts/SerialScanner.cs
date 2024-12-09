@@ -130,12 +130,28 @@ public class SerialScanner : MonoBehaviour
         ReadSerial();
     }
 
-    private void HorizontalLine()
+    public void HorizontalLine()
     {
         if (data_stream.IsOpen)
         {
-            data_stream.WriteLine("----------------------------------------");
+            data_stream.WriteLine("--------------------------------");
         }
+    }
+
+    public string ReadName()
+    {
+        string filePath = "C:/Users/fsant/Desktop/PlayerName.txt";
+
+        if (File.Exists(filePath))
+        {
+            string content = File.ReadAllText(filePath);
+            return content;
+        }
+        else
+        {
+            return PlayerName;
+        }
+
     }
 
     public void TransmitScoreToThermalPrinter(int score)
@@ -144,7 +160,7 @@ public class SerialScanner : MonoBehaviour
         {
             HorizontalLine();
             data_stream.WriteLine($"Arcade Gamemode");
-            data_stream.WriteLine($"Operator: {PlayerName}");
+            data_stream.WriteLine($"Operator: {ReadName()}");
             data_stream.WriteLine($"Final Score: {score}");
             data_stream.WriteLine("Thanks for playing!");
             HorizontalLine();
@@ -158,7 +174,7 @@ public class SerialScanner : MonoBehaviour
         {
             HorizontalLine();
             data_stream.WriteLine($"Challenge Gamemode");
-            data_stream.WriteLine($"Operator: {PlayerName}");
+            data_stream.WriteLine($"Operator: {ReadName()}");
             ThermalPrinter_FinishParagraph(2);
         }
     }
@@ -167,6 +183,7 @@ public class SerialScanner : MonoBehaviour
     {
         if (data_stream.IsOpen)
         {
+            data_stream.WriteLine($"Operator: {ReadName()}");
             data_stream.WriteLine("Thanks for playing!");
             HorizontalLine();
             ThermalPrinter_FinishParagraph();

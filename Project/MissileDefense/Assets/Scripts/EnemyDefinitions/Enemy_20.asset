@@ -15,7 +15,7 @@ MonoBehaviour:
   enemyName: BGM-109 Tomahawk
   enemyID: 20
   isAmerican: 1
-  RadarCrossSection: 423
+  RadarCrossSection: 1423
   RadarCrossSectionSTD: 6
   Emissivity: 719
   EmissivitySTD: 4

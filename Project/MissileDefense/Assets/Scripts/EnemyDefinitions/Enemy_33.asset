@@ -15,7 +15,7 @@ MonoBehaviour:
   enemyName: RS-24 Yars
   enemyID: 33
   isAmerican: 0
-  RadarCrossSection: 471
+  RadarCrossSection: 2471
   RadarCrossSectionSTD: 8
   Emissivity: 615
   EmissivitySTD: 11

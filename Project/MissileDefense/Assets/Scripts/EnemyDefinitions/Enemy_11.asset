@@ -15,7 +15,7 @@ MonoBehaviour:
   enemyName: PGM-11 Redstone
   enemyID: 11
   isAmerican: 1
-  RadarCrossSection: 255
+  RadarCrossSection: 1255
   RadarCrossSectionSTD: 3
   Emissivity: 897
   EmissivitySTD: 9

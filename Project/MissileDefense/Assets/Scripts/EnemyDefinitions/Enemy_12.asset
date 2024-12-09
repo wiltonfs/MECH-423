@@ -15,7 +15,7 @@ MonoBehaviour:
   enemyName: Hermes
   enemyID: 12
   isAmerican: 0
-  RadarCrossSection: 245
+  RadarCrossSection: 1245
   RadarCrossSectionSTD: 5
   Emissivity: 851
   EmissivitySTD: 17

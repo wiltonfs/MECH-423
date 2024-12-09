@@ -15,7 +15,7 @@ MonoBehaviour:
   enemyName: Hornet
   enemyID: 10
   isAmerican: 1
-  RadarCrossSection: 310
+  RadarCrossSection: 1310
   RadarCrossSectionSTD: 7
   Emissivity: 820
   EmissivitySTD: 5

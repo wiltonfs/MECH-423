@@ -15,7 +15,7 @@ MonoBehaviour:
   enemyName: 9K720 Iskander
   enemyID: 13
   isAmerican: 0
-  RadarCrossSection: 300
+  RadarCrossSection: 1300
   RadarCrossSectionSTD: 7
   Emissivity: 880
   EmissivitySTD: 2

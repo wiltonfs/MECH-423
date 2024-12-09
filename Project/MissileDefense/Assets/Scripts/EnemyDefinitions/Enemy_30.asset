@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b7c2f8f35fb7b547960a0ff881352ea, type: 3}
   m_Name: Enemy_30
   m_EditorClassIdentifier: 
-  enemyName: Minuteman
+  enemyName: LGM-30G Minuteman III
   enemyID: 30
   isAmerican: 1
-  RadarCrossSection: 485
+  RadarCrossSection: 2485
   RadarCrossSectionSTD: 4
   Emissivity: 675
   EmissivitySTD: 5

@@ -96,7 +96,7 @@ public class EnemySpawner : MonoBehaviour
 
         EndOfRound_ScoreDisplay.text = $"Final score: {finalScore}\nTime: {minutes:00}:{seconds:00}";
 
-        SerialScanner.ThermalPrinter_WriteLine("");
+        SerialScanner.HorizontalLine();
         SerialScanner.ThermalPrinter_WriteLine("Challenge Complete");
         SerialScanner.ThermalPrinter_WriteLine($"Final score: {finalScore}");
         SerialScanner.ThermalPrinter_WriteLine($"Time: {minutes:00}:{seconds:00}:");
@@ -213,7 +213,7 @@ public class EnemySpawner : MonoBehaviour
         SerialScanner.ThermalPrinter_WriteLine("Missile shot down");
         SerialScanner.ThermalPrinter_WriteLine($"{CurrentEnemy.name}");
 
-        SerialScanner.ThermalPrinter_WriteLine($"   Module 1:");
+        SerialScanner.ThermalPrinter_WriteLine($"   Trajectory Module:");
         if (missile.BS1_Coriolis == CurrentEnemy.isAmerican)
         {
             addedPoints = 5;
@@ -227,24 +227,24 @@ public class EnemySpawner : MonoBehaviour
         if (missile.BS2_IronRich == CurrentEnemy.BS2_IronRich)
         {
             addedPoints = 5;
-            SerialScanner.ThermalPrinter_WriteLine($"- Gyroscope: +{addedPoints}");
+            SerialScanner.ThermalPrinter_WriteLine($"- Iron rich: +{addedPoints}");
             score += addedPoints;
         }
         else
         {
-            SerialScanner.ThermalPrinter_WriteLine($"- Gyroscope set wrong: +0");
+            SerialScanner.ThermalPrinter_WriteLine($"- Iron rich set wrong: +0");
         }
         
 
         if (missile.BS3_HeavyMass == CurrentEnemy.BS3_HeavyMass)
         {
             addedPoints = 5;
-            SerialScanner.ThermalPrinter_WriteLine($"- Boost: +{addedPoints}");
+            SerialScanner.ThermalPrinter_WriteLine($"- Heavy mass: +{addedPoints}");
             score += addedPoints;
         }
         else
         {
-            SerialScanner.ThermalPrinter_WriteLine($"- Boost set wrong: +0");
+            SerialScanner.ThermalPrinter_WriteLine($"- Heavy mass set wrong: +0");
         }
         
 
@@ -260,7 +260,7 @@ public class EnemySpawner : MonoBehaviour
         }
         
 
-        SerialScanner.ThermalPrinter_WriteLine($"   Module 2:");
+        SerialScanner.ThermalPrinter_WriteLine($"   Guidance Module:");
         if (CurrentEnemy.usesModule2)
         {
             if (missile.usesModule2)
@@ -301,7 +301,7 @@ public class EnemySpawner : MonoBehaviour
             }
             else
             {
-                SerialScanner.ThermalPrinter_WriteLine($"- Mod 2 should not be disabled: +0");
+                SerialScanner.ThermalPrinter_WriteLine($"- Guidance Module should not be disabled: +0");
             }
 
         }
@@ -309,17 +309,17 @@ public class EnemySpawner : MonoBehaviour
         {
             if (missile.usesModule2)
             {
-                SerialScanner.ThermalPrinter_WriteLine($"- Mod 2 should not have been enabled: +0");
+                SerialScanner.ThermalPrinter_WriteLine($"- Guidance Module should not have been enabled: +0");
             }
             else
             {
                 addedPoints = 40;
-                SerialScanner.ThermalPrinter_WriteLine($"- Mod 2 correctly disabled: +{addedPoints}");
+                SerialScanner.ThermalPrinter_WriteLine($"- Guidance Module correctly disabled: +{addedPoints}");
                 score += addedPoints;
             }
         }
 
-        SerialScanner.ThermalPrinter_WriteLine($"   Module 3:");
+        SerialScanner.ThermalPrinter_WriteLine($"   Warhead Module:");
         if (CurrentEnemy.usesModule3)
         {
             if(missile.usesModule3)
@@ -337,7 +337,7 @@ public class EnemySpawner : MonoBehaviour
             }
             else
             {
-                SerialScanner.ThermalPrinter_WriteLine($"- Mod 3 should not be disabled: +0");
+                SerialScanner.ThermalPrinter_WriteLine($"- Warhead Module should not be disabled: +0");
             }
 
     }
@@ -345,19 +345,19 @@ public class EnemySpawner : MonoBehaviour
         {
             if (missile.usesModule3)
             {
-                SerialScanner.ThermalPrinter_WriteLine($"- Mod 3 should not have been enabled: +0");
+                SerialScanner.ThermalPrinter_WriteLine($"- Warhead Module should not have been enabled: +0");
             }
             else
             {
                 addedPoints = 40;
-                SerialScanner.ThermalPrinter_WriteLine($"- Mod 3 correctly disabled: +{addedPoints}");
+                SerialScanner.ThermalPrinter_WriteLine($"- Warhead Module correctly disabled: +{addedPoints}");
                 score += addedPoints;
             }
         }
 
         SerialScanner.ThermalPrinter_WriteLine("");
         SerialScanner.ThermalPrinter_WriteLine($"Total missile score: {score}/100");
-        SerialScanner.ThermalPrinter_WriteLine("");
+        SerialScanner.ThermalPrinter_FinishParagraph();
 
 
         totalScore += score;
