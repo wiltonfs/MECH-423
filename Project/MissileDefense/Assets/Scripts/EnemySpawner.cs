@@ -179,7 +179,7 @@ public class EnemySpawner : MonoBehaviour
     {
         UpdateEnemyDisplayedText();
         yield return new WaitForSeconds(R(1f));
-        Shuffle(waveMissileLevels);
+        //Shuffle(waveMissileLevels);
 
         for (int i = 0; i < waveMissileLevels.Length; i++)
         {
@@ -418,7 +418,7 @@ public class EnemySpawner : MonoBehaviour
 
         Quaternion spawnRotation = Quaternion.LookRotation(Vector3.forward, -spawnPosition);
         GameObject newEnemy = Instantiate(enemyPrefab, spawnPosition, spawnRotation);
-        newEnemy.GetComponent<Enemy>().speed = enemyStartingSpeed;
+        newEnemy.GetComponent<Enemy>().speed = enemyStartingSpeed / ((float)enemyLevel);
         newEnemy.GetComponent<Enemy>().amArcadeMissile = false;
     }
 

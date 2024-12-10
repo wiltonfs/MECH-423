@@ -191,11 +191,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d120cad5183458142b1bf88e87c1e179, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cities:
-  - {fileID: 1405395722}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
   missilePrefab: {fileID: 3050431738041259636, guid: 064d80730f07cac46ad10ba032c11a60, type: 3}
   reloadTime: 0.5
   aimLineThickness: 1
@@ -2103,6 +2098,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 4836905802213501933, guid: 240a4b969cb5881489e01a18a13faeed, type: 3}
+  enemyStartingSpeed: 0.2
   Enemies_LevelOne:
   - {fileID: 11400000, guid: 151ba3485b5a6eb4298117b38df6b90f, type: 2}
   - {fileID: 11400000, guid: 5655aa4c051cee649bd0445538ffa100, type: 2}
@@ -2118,7 +2114,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c39ad13e6207fc34481dfe018bddbcbe, type: 2}
   - {fileID: 11400000, guid: b9a938b9d7ec97240b7427194c3b0d79, type: 2}
   - {fileID: 11400000, guid: dddc534e457dde740996683b98127f59, type: 2}
-  waveMissileLevels: 01000200020003000300
+  waveMissileLevels: 01000200030002000300
   EnemyDisplayText: {fileID: 1235430721}
   WaveDisplay: {fileID: 1157357946}
   TimerDisplay: {fileID: 716369325}
