@@ -179,7 +179,7 @@ public class EnemySpawner : MonoBehaviour
     {
         UpdateEnemyDisplayedText();
         yield return new WaitForSeconds(R(1f));
-        //Shuffle(waveMissileLevels);
+        Shuffle(waveMissileLevels);
 
         for (int i = 0; i < waveMissileLevels.Length; i++)
         {
